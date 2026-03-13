@@ -1,18 +1,28 @@
 import { useState, useMemo } from "react";
 import "./EmployeeTable.scss";
 
-function EmployeeTable({ users, onEdit }) {
+function EmployeeTable({ users, onEdit, onView }) {
   // 1. STATE SẮP XẾP
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
 
   // 2. STATE PHÂN TRANG
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5; // Bạn có thể đổi số này thành 10 hoặc 20 tùy ý
+  const itemsPerPage = 5;
 
   const roleMap = {
     ADMIN: "Quản trị viên",
     CONSULTANT: "Nhân viên tư vấn",
     STAFF: "Nhân viên",
+  };
+
+  // Hàm xử lý hiển thị Giới tính
+  const getGenderLabel = (gender) => {
+    if (!gender) return "-";
+    const genderUpper = gender.toUpperCase();
+    if (genderUpper === "MALE") return "Nam";
+    if (genderUpper === "FEMALE") return "Nữ";
+    if (genderUpper === "OTHER") return "Khác";
+    return gender;
   };
 
   // Hàm xử lý Sắp xếp
@@ -44,17 +54,15 @@ function EmployeeTable({ users, onEdit }) {
     return sortableItems;
   }, [users, sortConfig]);
 
-  // Logic Phân trang (Lấy ra dữ liệu của trang hiện tại)
+  // Logic Phân trang
   const currentTableData = useMemo(() => {
     const firstPageIndex = (currentPage - 1) * itemsPerPage;
     const lastPageIndex = firstPageIndex + itemsPerPage;
     return sortedUsers.slice(firstPageIndex, lastPageIndex);
   }, [currentPage, sortedUsers]);
 
-  // Tính toán tổng số trang
   const totalPages = Math.ceil(sortedUsers.length / itemsPerPage);
 
-  // Hàm chuyển trang
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
@@ -87,6 +95,9 @@ function EmployeeTable({ users, onEdit }) {
             <th onClick={() => requestSort("phone")} className="sortable">
               SĐT {getSortIcon("phone")}
             </th>
+            <th onClick={() => requestSort("gender")} className="sortable">
+              Giới tính {getSortIcon("gender")}
+            </th>
             <th>Ngày sinh</th>
             <th onClick={() => requestSort("status")} className="sortable">
               Trạng thái {getSortIcon("status")}
@@ -101,7 +112,7 @@ function EmployeeTable({ users, onEdit }) {
         <tbody>
           {currentTableData.length === 0 ? (
             <tr>
-              <td colSpan="8" className="empty-state">
+              <td colSpan="9" className="empty-state">
                 Chưa có dữ liệu nhân viên nào
               </td>
             </tr>
@@ -112,6 +123,7 @@ function EmployeeTable({ users, onEdit }) {
                 <td className="font-medium">{user.fullName || user.name}</td>
                 <td>{user.email}</td>
                 <td>{user.phone || "-"}</td>
+                <td>{getGenderLabel(user.gender)}</td>
                 <td>{formatDate(user.dateOfBirth)}</td>
                 <td>
                   <span
@@ -131,6 +143,27 @@ function EmployeeTable({ users, onEdit }) {
                 </td>
                 <td>
                   <div className="action-btns">
+                    {/* NÚT CHỮ "I" XEM CHI TIẾT */}
+                    <button
+                      className="view-btn"
+                      title="Xem chi tiết"
+                      onClick={() => onView && onView(user)}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                      </svg>
+                    </button>
+
+                    {/* NÚT SỬA */}
                     <button
                       className="edit-btn"
                       title="Sửa"
