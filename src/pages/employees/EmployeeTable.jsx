@@ -2,16 +2,20 @@ import { useState, useMemo } from "react";
 import "./EmployeeTable.scss";
 
 function EmployeeTable({ users, onEdit }) {
-  // Trạng thái sort: mặc định sort theo ID tăng dần
+  // 1. STATE SẮP XẾP
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
+
+  // 2. STATE PHÂN TRANG
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5; // Bạn có thể đổi số này thành 10 hoặc 20 tùy ý
 
   const roleMap = {
     ADMIN: "Quản trị viên",
-    CONSULTANT: "Tư vấn viên",
+    CONSULTANT: "Nhân viên tư vấn",
     STAFF: "Nhân viên",
   };
 
-  // Hàm xử lý khi click vào tiêu đề cột
+  // Hàm xử lý Sắp xếp
   const requestSort = (key) => {
     let direction = "asc";
     if (sortConfig.key === key && sortConfig.direction === "asc") {
@@ -20,12 +24,11 @@ function EmployeeTable({ users, onEdit }) {
     setSortConfig({ key, direction });
   };
 
-  // Logic sắp xếp dữ liệu
+  // Logic Sắp xếp toàn bộ dữ liệu
   const sortedUsers = useMemo(() => {
     let sortableItems = users ? [...users] : [];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
-        // Xử lý giá trị null/undefined để tránh lỗi khi so sánh
         const aValue = a[sortConfig.key] ?? "";
         const bValue = b[sortConfig.key] ?? "";
 
@@ -41,16 +44,29 @@ function EmployeeTable({ users, onEdit }) {
     return sortableItems;
   }, [users, sortConfig]);
 
+  // Logic Phân trang (Lấy ra dữ liệu của trang hiện tại)
+  const currentTableData = useMemo(() => {
+    const firstPageIndex = (currentPage - 1) * itemsPerPage;
+    const lastPageIndex = firstPageIndex + itemsPerPage;
+    return sortedUsers.slice(firstPageIndex, lastPageIndex);
+  }, [currentPage, sortedUsers]);
+
+  // Tính toán tổng số trang
+  const totalPages = Math.ceil(sortedUsers.length / itemsPerPage);
+
+  // Hàm chuyển trang
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return "-";
     const date = new Date(dateString);
     return date.toLocaleDateString("vi-VN");
   };
 
-  // Hiển thị icon mũi tên dựa trên trạng thái sort
   const getSortIcon = (key) => {
-    if (sortConfig.key !== key)
-      return <span className="sort-arrow-default">↕</span>;
+    if (sortConfig.key !== key) return <span className="sort-arrow">↕</span>;
     return sortConfig.direction === "asc" ? " ↑" : " ↓";
   };
 
@@ -83,14 +99,14 @@ function EmployeeTable({ users, onEdit }) {
         </thead>
 
         <tbody>
-          {sortedUsers.length === 0 ? (
+          {currentTableData.length === 0 ? (
             <tr>
               <td colSpan="8" className="empty-state">
                 Chưa có dữ liệu nhân viên nào
               </td>
             </tr>
           ) : (
-            sortedUsers.map((user) => (
+            currentTableData.map((user) => (
               <tr key={user.id}>
                 <td>{user.id}</td>
                 <td className="font-medium">{user.fullName || user.name}</td>
@@ -139,6 +155,42 @@ function EmployeeTable({ users, onEdit }) {
           )}
         </tbody>
       </table>
+
+      {/* GIAO DIỆN NÚT PHÂN TRANG */}
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button
+            className="page-btn"
+            disabled={currentPage === 1}
+            onClick={() => handlePageChange(currentPage - 1)}
+          >
+            &laquo; Trước
+          </button>
+
+          <div className="page-numbers">
+            {[...Array(totalPages)].map((_, index) => {
+              const pageNumber = index + 1;
+              return (
+                <button
+                  key={pageNumber}
+                  className={`page-num ${currentPage === pageNumber ? "active" : ""}`}
+                  onClick={() => handlePageChange(pageNumber)}
+                >
+                  {pageNumber}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            className="page-btn"
+            disabled={currentPage === totalPages}
+            onClick={() => handlePageChange(currentPage + 1)}
+          >
+            Sau &raquo;
+          </button>
+        </div>
+      )}
     </div>
   );
 }

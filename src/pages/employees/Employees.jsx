@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import "./Employees.scss";
 
 import { getUsers } from "../../services/userService";
@@ -14,6 +14,21 @@ function Employees() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("ALL");
   const [filterStatus, setFilterStatus] = useState("ALL");
+
+  // State quản lý Custom Dropdown
+  const [openDropdown, setOpenDropdown] = useState(null); // 'role' hoặc 'status' hoặc null
+  const dropdownRef = useRef(null);
+
+  // Đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpenDropdown(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -39,7 +54,6 @@ function Employees() {
     setOpenModal(true);
   };
 
-  // Logic lọc dữ liệu tổng hợp
   const filteredUsers = users.filter((user) => {
     const term = searchTerm.toLowerCase();
     const nameMatch = (user.fullName || user.name || "")
@@ -56,13 +70,38 @@ function Employees() {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
+  // Dữ liệu cho Dropdown
+  const roleOptions = [
+    { value: "ALL", label: "Tất cả vai trò" },
+    { value: "ADMIN", label: "Quản trị viên" },
+    { value: "CONSULTANT", label: "Nhân viên tư vấn" },
+  ];
+
+  const statusOptions = [
+    { value: "ALL", label: "Tất cả trạng thái" },
+    { value: "ACTIVE", label: "Hoạt động" },
+    { value: "INACTIVE", label: "Ngưng hoạt động" },
+  ];
+
   return (
     <div className="employees-page">
       <div className="header">
         <h2>Quản lý nhân viên</h2>
 
-        <div className="header-actions">
-          {/* Ô Tìm kiếm với Icon Kính lúp */}
+        <div className="header-actions" ref={dropdownRef}>
+          {/* Bẫy Autofill */}
+          <input
+            type="text"
+            style={{ position: "absolute", opacity: 0, width: 0, zIndex: -1 }}
+            tabIndex="-1"
+          />
+          <input
+            type="password"
+            style={{ position: "absolute", opacity: 0, width: 0, zIndex: -1 }}
+            tabIndex="-1"
+          />
+
+          {/* Ô Tìm kiếm */}
           <div className="search-box">
             <svg
               className="icon-search"
@@ -77,60 +116,104 @@ function Employees() {
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
             <input
-              type="text"
+              type="search"
+              name="search_real_field"
+              autoComplete="new-password"
               placeholder="Tìm tên, email, sđt..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          {/* Lọc Vai trò với Icon Mũi tên */}
-          <div className="filter-box">
-            <select
-              value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
+          {/* =========================================
+              CUSTOM DROPDOWN - VAI TRÒ
+          ========================================== */}
+          <div className="custom-dropdown">
+            <div
+              className={`dropdown-trigger ${openDropdown === "role" ? "active" : ""}`}
+              onClick={() =>
+                setOpenDropdown(openDropdown === "role" ? null : "role")
+              }
             >
-              <option value="ALL">Tất cả vai trò</option>
-              <option value="ADMIN">Quản trị viên</option>
-              <option value="CONSULTANT">Tư vấn viên</option>
-            </select>
-            <svg
-              className="icon-chevron"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
+              <span>
+                {roleOptions.find((opt) => opt.value === filterRole)?.label}
+              </span>
+              <svg
+                className={`icon-chevron ${openDropdown === "role" ? "open" : ""}`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+
+            {openDropdown === "role" && (
+              <div className="dropdown-menu">
+                {roleOptions.map((opt) => (
+                  <div
+                    key={opt.value}
+                    className={`dropdown-item ${filterRole === opt.value ? "selected" : ""}`}
+                    onClick={() => {
+                      setFilterRole(opt.value);
+                      setOpenDropdown(null);
+                    }}
+                  >
+                    {opt.label}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Lọc Trạng thái với Icon Mũi tên */}
-          <div className="filter-box">
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
+          {/* =========================================
+              CUSTOM DROPDOWN - TRẠNG THÁI
+          ========================================== */}
+          <div className="custom-dropdown">
+            <div
+              className={`dropdown-trigger ${openDropdown === "status" ? "active" : ""}`}
+              onClick={() =>
+                setOpenDropdown(openDropdown === "status" ? null : "status")
+              }
             >
-              <option value="ALL">Tất cả trạng thái</option>
-              <option value="ACTIVE">Hoạt động</option>
-              <option value="INACTIVE">Ngưng hoạt động</option>
-            </select>
-            <svg
-              className="icon-chevron"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
+              <span>
+                {statusOptions.find((opt) => opt.value === filterStatus)?.label}
+              </span>
+              <svg
+                className={`icon-chevron ${openDropdown === "status" ? "open" : ""}`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+
+            {openDropdown === "status" && (
+              <div className="dropdown-menu">
+                {statusOptions.map((opt) => (
+                  <div
+                    key={opt.value}
+                    className={`dropdown-item ${filterStatus === opt.value ? "selected" : ""}`}
+                    onClick={() => {
+                      setFilterStatus(opt.value);
+                      setOpenDropdown(null);
+                    }}
+                  >
+                    {opt.label}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          <button className="add-btn" onClick={handleCreate}>
+          <button type="button" className="add-btn" onClick={handleCreate}>
             + Thêm nhân viên
           </button>
         </div>
