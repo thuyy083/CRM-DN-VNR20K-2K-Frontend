@@ -1,0 +1,182 @@
+/* =========================
+   Variables (Giữ nguyên)
+========================= */
+$primary: #EE0033;
+$primary-light: #fef2f2;
+$text-main: #111827;
+$text-muted: #6b7280;
+$border: #e5e7eb;
+$bg-table: #ffffff;
+$bg-hover: #f9fafb;
+$danger: #ef4444;
+$danger-light: #fef2f2;
+
+/* =========================
+   Container Bảng
+========================= */
+.table-container {
+  background: $bg-table;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border: 1px solid $border;
+  overflow-x: auto;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin-top: 20px;
+}
+
+/* =========================
+   Style Cấu Trúc Bảng
+========================= */
+.employee-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  th,
+  td {
+    padding: 16px 20px;
+    border-bottom: 1px solid $border;
+    vertical-align: middle;
+    /* CHÌA KHÓA: Căn giữa nội dung văn bản cho toàn bộ các ô */
+    text-align: center;
+  }
+
+  /* Tiêu đề cột */
+  th {
+    background-color: #f9fafb;
+    color: $text-muted;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Hàng dữ liệu */
+  tbody {
+    tr {
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: $bg-hover;
+      }
+
+      &:last-child td {
+        border-bottom: none;
+      }
+    }
+  }
+
+  .font-medium {
+    font-weight: 500;
+    color: $text-main;
+  }
+
+  td {
+    color: #374151;
+  }
+}
+
+/* =========================
+   Badge Vai Trò & Trạng Thái
+========================= */
+.role-badge,
+.status-badge {
+  /* Dùng inline-flex để đảm bảo nội dung bên trong badge cũng được căn giữa */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 100px;
+  /* Giúp các badge đều nhau, nhìn cột sẽ thẳng hơn */
+}
+
+.role-badge {
+  &.admin {
+    background-color: #f3e8ff;
+    color: #7e22ce;
+  }
+
+  &.consultant {
+    background-color: #dcfce7;
+    color: #15803d;
+  }
+
+  &.staff {
+    background-color: #e0f2fe;
+    color: #0369a1;
+  }
+}
+
+.status-badge {
+  &.active {
+    background-color: #dcfce7;
+    color: #15803d;
+  }
+
+  &.inactive {
+    background-color: #fee2e2;
+    color: #b91c1c;
+  }
+}
+
+/* =========================
+   ACTION BUTTONS
+========================= */
+.action-btns {
+  /* Chuyển sang flex để justify-content: center hoạt động chuẩn nhất trong ô td */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+
+  button {
+    border: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all .2s;
+    padding: 0;
+    margin: 0;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+  }
+
+  .edit-btn {
+    background: #e0e7ff;
+    color: #4f46e5;
+
+    &:hover {
+      background: #c7d2fe;
+      transform: translateY(-1px);
+    }
+  }
+
+  .delete-btn {
+    background: $danger-light;
+    color: $danger;
+
+    &:hover {
+      background: #fecaca;
+      transform: translateY(-1px);
+    }
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px !important;
+  color: $text-muted;
+  font-style: italic;
+}
