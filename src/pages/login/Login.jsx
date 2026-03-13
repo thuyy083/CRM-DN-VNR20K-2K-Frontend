@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { login } from "../../redux/slices/authSlice";
+import { login, getMe } from "../../redux/slices/authSlice";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+
 import logo from "../../assets/images/logo.png";
 import "./Login.scss";
 
 function Login() {
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -19,33 +22,54 @@ function Login() {
       ...form,
       [e.target.name]: e.target.value
     });
-    console.log('form: ', form)
   };
 
-    const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await dispatch(login(form));
-    if (result.payload?.data?.accessToken) {
-        localStorage.setItem("token", result.payload.data.accessToken);
-        navigate("/");
-    }
-    };
 
+    // validate
+    if (!form.username.trim()) {
+      toast.warning("Vui lòng nhập email");
+      return;
+    }
+
+    if (!form.password.trim()) {
+      toast.warning("Vui lòng nhập mật khẩu");
+      return;
+    }
+
+    const result = await dispatch(login(form));
+
+    if (result.type === "auth/login/fulfilled") {
+
+      await dispatch(getMe());
+
+      toast.success("Đăng nhập thành công");
+
+      navigate("/");
+    } 
+    else {
+
+      toast.error("Sai tài khoản hoặc mật khẩu");
+
+    }
+  };
 
   return (
     <div className="login-page">
 
-      <div className="login-container">
+      <div className="login-card">
 
         <div className="login-logo">
-          <img src={logo} alt="viettel logo" />
+          <img src={logo} alt="logo" />
         </div>
 
-        <h2>CRM Login</h2>
+        <h2>HỆ THỐNG QUẢN LÝ <br/> TIẾP XÚC DOANH NGHIỆP</h2>
+        <p className="login-subtitle">Đăng nhập để tiếp tục</p>
 
         <form onSubmit={handleSubmit}>
 
-          <div className="input-group">
+          <div className="form-group">
             <input
               type="text"
               name="username"
@@ -54,7 +78,7 @@ function Login() {
             />
           </div>
 
-          <div className="input-group">
+          <div className="form-group">
             <input
               type="password"
               name="password"
@@ -63,7 +87,7 @@ function Login() {
             />
           </div>
 
-          <button type="submit">
+          <button type="submit" className="login-btn">
             Đăng nhập
           </button>
 
