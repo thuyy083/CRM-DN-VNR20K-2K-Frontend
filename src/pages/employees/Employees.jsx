@@ -116,13 +116,32 @@ function Employees() {
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
             <input
-              type="search"
+              type="text"
               name="search_real_field"
-              autoComplete="new-password"
+              autoComplete="off"
               placeholder="Tìm tên, email, sđt..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              readOnly={true}
+              onFocus={(e) => e.target.removeAttribute("readonly")}
             />
+
+            {/* THÊM NÚT X XÓA NHANH Ở ĐÂY */}
+            {searchTerm && (
+              <svg
+                className="icon-clear"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                onClick={() => setSearchTerm("")}
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            )}
           </div>
 
           {/* =========================================
