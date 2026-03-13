@@ -70,7 +70,8 @@ $shadow-md: 0 6px 20px rgba(238, 0, 51, 0.15);
     input {
         height: 100%;
         width: 250px;
-        padding: 0 16px 0 40px;
+        /* SỬA PADDING Ở ĐÂY: Thêm khoảng trống bên phải (40px) để không đè lên dấu X */
+        padding: 0 40px 0 40px;
         background-color: #ffffff;
         border: 1px solid #d1d5db;
         border-radius: 8px;
@@ -93,6 +94,22 @@ $shadow-md: 0 6px 20px rgba(238, 0, 51, 0.15);
 
     &:focus-within .icon-search {
         color: $primary;
+    }
+
+    /* THÊM STYLE CHO NÚT X */
+    .icon-clear {
+        position: absolute;
+        right: 14px;
+        width: 16px;
+        height: 16px;
+        color: #9ca3af;
+        cursor: pointer;
+        transition: color 0.2s ease;
+
+        &:hover {
+            color: $primary;
+            /* Đổi sang màu đỏ khi hover */
+        }
     }
 }
 
