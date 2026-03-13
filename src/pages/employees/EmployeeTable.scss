@@ -11,9 +11,6 @@ $bg-hover: #f9fafb;
 $danger: #ef4444;
 $danger-light: #fef2f2;
 
-/* =========================
-   Container Bảng
-========================= */
 .table-container {
   background: $bg-table;
   border-radius: 12px;
@@ -24,9 +21,6 @@ $danger-light: #fef2f2;
   margin-top: 20px;
 }
 
-/* =========================
-   Style Cấu Trúc Bảng
-========================= */
 .employee-table {
   width: 100%;
   border-collapse: collapse;
@@ -37,11 +31,28 @@ $danger-light: #fef2f2;
     padding: 16px 20px;
     border-bottom: 1px solid $border;
     vertical-align: middle;
-    /* CHÌA KHÓA: Căn giữa nội dung văn bản cho toàn bộ các ô */
     text-align: center;
+    /* Luôn căn giữa dữ liệu */
   }
 
-  /* Tiêu đề cột */
+  /* Style cho cột có thể sắp xếp */
+  th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+
+    &:hover {
+      background-color: #f1f5f9;
+      color: $primary;
+    }
+
+    .sort-arrow {
+      color: #cbd5e1;
+      margin-left: 4px;
+      font-size: 12px;
+    }
+  }
+
   th {
     background-color: #f9fafb;
     color: $text-muted;
@@ -51,18 +62,15 @@ $danger-light: #fef2f2;
     letter-spacing: 0.05em;
   }
 
-  /* Hàng dữ liệu */
-  tbody {
-    tr {
-      transition: background-color 0.2s ease;
+  tbody tr {
+    transition: background-color 0.2s ease;
 
-      &:hover {
-        background-color: $bg-hover;
-      }
+    &:hover {
+      background-color: $bg-hover;
+    }
 
-      &:last-child td {
-        border-bottom: none;
-      }
+    &:last-child td {
+      border-bottom: none;
     }
   }
 
@@ -76,58 +84,48 @@ $danger-light: #fef2f2;
   }
 }
 
-/* =========================
-   Badge Vai Trò & Trạng Thái
-========================= */
 .role-badge,
 .status-badge {
-  /* Dùng inline-flex để đảm bảo nội dung bên trong badge cũng được căn giữa */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   padding: 6px 12px;
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 600;
   min-width: 100px;
-  /* Giúp các badge đều nhau, nhìn cột sẽ thẳng hơn */
 }
 
 .role-badge {
   &.admin {
-    background-color: #f3e8ff;
+    background: #f3e8ff;
     color: #7e22ce;
   }
 
   &.consultant {
-    background-color: #dcfce7;
+    background: #dcfce7;
     color: #15803d;
   }
 
   &.staff {
-    background-color: #e0f2fe;
+    background: #e0f2fe;
     color: #0369a1;
   }
 }
 
 .status-badge {
   &.active {
-    background-color: #dcfce7;
+    background: #dcfce7;
     color: #15803d;
   }
 
   &.inactive {
-    background-color: #fee2e2;
+    background: #fee2e2;
     color: #b91c1c;
   }
 }
 
-/* =========================
-   ACTION BUTTONS
-========================= */
 .action-btns {
-  /* Chuyển sang flex để justify-content: center hoạt động chuẩn nhất trong ô td */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -142,9 +140,8 @@ $danger-light: #fef2f2;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all .2s;
+    transition: all 0.2s;
     padding: 0;
-    margin: 0;
 
     svg {
       width: 16px;
@@ -179,4 +176,95 @@ $danger-light: #fef2f2;
   padding: 40px !important;
   color: $text-muted;
   font-style: italic;
+}
+
+/* =========================
+   PAGINATION (PHÂN TRANG - BẢN NÂNG CẤP)
+========================= */
+.pagination {
+  display: flex;
+  justify-content: flex-end;
+  /* Ép toàn bộ cụm phân trang dạt sang lề phải */
+  align-items: center;
+  padding: 16px 20px;
+  gap: 12px;
+  border-top: 1px solid $border;
+  background-color: white;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+
+  /* Nút Trước / Sau */
+  .page-btn {
+    height: 36px;
+    padding: 0 16px;
+    background-color: white;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+
+    /* BÙA CHÚ CHỐNG DÃN: Ép nút chỉ to bằng nội dung */
+    width: auto !important;
+    min-width: max-content;
+    flex: 0 0 auto !important;
+    margin: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background-color: #f9fafb;
+      border-color: #9ca3af;
+      color: $text-main;
+    }
+
+    &:disabled {
+      color: #9ca3af;
+      background-color: #f3f4f6;
+      border-color: #e5e7eb;
+      cursor: not-allowed;
+    }
+  }
+
+  /* Cụm số trang */
+  .page-numbers {
+    display: flex;
+    gap: 6px;
+
+    .page-num {
+      width: 36px;
+      /* Vuông vức tăm tắp */
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 500;
+      color: #4b5563;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 0;
+      margin: 0;
+
+      &:hover:not(.active) {
+        background-color: #f3f4f6;
+      }
+
+      /* TRANG HIỆN TẠI: Đỏ nổi bật */
+      &.active {
+        background-color: $primary;
+        color: white;
+        font-weight: 600;
+        box-shadow: 0 2px 6px rgba(238, 0, 51, 0.25);
+        /* Đổ bóng đỏ cho sang */
+      }
+    }
+  }
 }

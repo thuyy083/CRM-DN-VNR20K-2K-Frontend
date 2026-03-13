@@ -37,43 +37,43 @@ function EmployeeModal({ user, close, reload }) {
   };
 
   const handleSubmit = async () => {
-    // 1. FRONTEND VALIDATION (Kiểm tra nhanh các lỗi cơ bản trước khi gọi API)
+    // 1. FRONTEND VALIDATION
     const newErrors = {};
     let hasError = false;
 
-    // Chỉ kiểm tra email nếu là Thêm Mới (vì Cập nhật đã bị khóa)
+    if (!form.fullName.trim()) {
+      newErrors.fullName = "Vui lòng nhập họ tên";
+      hasError = true;
+    }
+
     if (!user) {
       if (!form.email.trim()) {
         newErrors.email = "Vui lòng nhập email";
         hasError = true;
       } else if (!isValidEmail(form.email)) {
-        newErrors.email = "Email không đúng định dạng (ví dụ: abc@gmail.com)";
+        newErrors.email = "Email không đúng định dạng";
+        hasError = true;
+      }
+
+      if (!form.password || form.password.length < 6) {
+        newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
         hasError = true;
       }
     }
 
     if (hasError) {
       setErrors(newErrors);
-      return; // Dừng lại, không gọi API nếu Frontend đã bắt được lỗi
+      return;
     }
 
-    // 2. XỬ LÝ GỌI BACKEND VÀ CATCH LỖI TỪ SERVER
+    // 2. XỬ LÝ GỌI BACKEND
     try {
       setErrors({});
-      let formattedDateOfBirth = form.dateOfBirth;
 
-      // Xử lý chuyển Format ngày sinh từ YYYY-MM-DD sang DD-MM-YYYY
-      if (formattedDateOfBirth && formattedDateOfBirth.includes("-")) {
-        const parts = formattedDateOfBirth.split("-");
-        if (parts[0].length === 4) {
-          const [year, month, day] = parts;
-          formattedDateOfBirth = `${day}-${month}-${year}`;
-        }
-      }
-
+      // Giữ nguyên định dạng YYYY-MM-DD để gửi lên Java Backend
       const dataToSubmit = {
         ...form,
-        dateOfBirth: formattedDateOfBirth,
+        dateOfBirth: form.dateOfBirth || null,
       };
 
       if (user) {
@@ -84,7 +84,8 @@ function EmployeeModal({ user, close, reload }) {
         toast.success("Thêm nhân viên thành công");
       }
 
-      reload();
+      // QUAN TRỌNG: Đợi tải lại dữ liệu từ server xong rồi mới đóng modal
+      await reload();
       close();
     } catch (error) {
       console.error("Submit error:", error.response?.data);
@@ -138,7 +139,7 @@ function EmployeeModal({ user, close, reload }) {
               placeholder="Nhập email"
               value={form.email}
               onChange={(e) => handleChange("email", e.target.value)}
-              disabled={!!user} // KHÓA: Nếu có biến user (đang cập nhật) thì disable ô này
+              disabled={!!user}
               style={
                 user
                   ? {
@@ -147,7 +148,7 @@ function EmployeeModal({ user, close, reload }) {
                       color: "#6b7280",
                     }
                   : {}
-              } // Đổi màu xám cho dễ nhìn
+              }
             />
             {errors.email && <span className="error-text">{errors.email}</span>}
           </div>
@@ -202,7 +203,6 @@ function EmployeeModal({ user, close, reload }) {
             <div className="form-group">
               <label>Vai trò</label>
               <select
-                className={errors.role ? "input-error" : ""}
                 value={form.role}
                 onChange={(e) => handleChange("role", e.target.value)}
               >
@@ -214,7 +214,6 @@ function EmployeeModal({ user, close, reload }) {
             <div className="form-group">
               <label>Trạng thái</label>
               <select
-                className={errors.status ? "input-error" : ""}
                 value={form.status}
                 onChange={(e) => handleChange("status", e.target.value)}
               >
