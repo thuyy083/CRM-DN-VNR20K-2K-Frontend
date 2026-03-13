@@ -1,21 +1,47 @@
 import axios from "axios";
 
+let store;
+
+export const injectStore = (_store) => {
+  store = _store;
+};
+
 const axiosClient = axios.create({
-  baseURL: "http://localhost:8080",
-  headers: {
-    "Content-Type": "application/json",
-  },
+  baseURL: "http://localhost:8080"
 });
 
-// tự động gắn token nếu đã lưu
+// request interceptor
 axiosClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+
+  const token = store?.getState()?.auth?.token;
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
   return config;
+
 });
+
+// response interceptor
+axiosClient.interceptors.response.use(
+
+  (response) => response,
+
+  (error) => {
+
+    if (error.response?.status === 401) {
+
+      localStorage.removeItem("token");
+
+      window.location.href = "/login";
+
+    }
+
+    return Promise.reject(error);
+
+  }
+
+);
 
 export default axiosClient;
