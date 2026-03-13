@@ -4,10 +4,12 @@ import "./Employees.scss";
 import { getUsers } from "../../services/userService";
 import EmployeeModal from "./EmployeeModal";
 import EmployeeTable from "./EmployeeTable";
+import EmployeeViewModal from "./EmployeeViewModal";
 
 function Employees() {
   const [users, setUsers] = useState([]);
   const [openModal, setOpenModal] = useState(false);
+  const [openViewModal, setOpenViewModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
   // State quản lý bộ lọc
@@ -47,6 +49,11 @@ function Employees() {
   const handleEdit = (user) => {
     setSelectedUser(user);
     setOpenModal(true);
+  };
+
+  const handleView = (user) => {
+    setSelectedUser(user);
+    setOpenViewModal(true);
   };
 
   const handleCreate = () => {
@@ -243,14 +250,24 @@ function Employees() {
           users={filteredUsers}
           refresh={fetchUsers}
           onEdit={handleEdit}
+          onView={handleView}
         />
       </div>
 
+      {/* MODAL THÊM / SỬA */}
       {openModal && (
         <EmployeeModal
           user={selectedUser}
           close={() => setOpenModal(false)}
           reload={fetchUsers}
+        />
+      )}
+
+      {/* MODAL XEM CHI TIẾT (ĐOẠN VỪA THÊM) */}
+      {openViewModal && (
+        <EmployeeViewModal
+          user={selectedUser}
+          close={() => setOpenViewModal(false)}
         />
       )}
     </div>
