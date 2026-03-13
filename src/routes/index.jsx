@@ -5,6 +5,7 @@ import Login from "../pages/login/Login";
 import Dashboard from "../pages/dashboard/Dashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import Profile from "../pages/profile/Profile";
+import Employees from "../pages/employees/Employees";
 
 function AppRoutes() {
   return (
@@ -27,6 +28,7 @@ function AppRoutes() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/employees" element={<Employees />} />
         </Route>
 
       </Routes>
