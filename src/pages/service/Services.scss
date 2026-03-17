@@ -10,7 +10,7 @@ $border: #e5e7eb;
 $shadow-sm: 0 2px 6px rgba(238, 0, 51, 0.1);
 $shadow-md: 0 6px 20px rgba(238, 0, 51, 0.15);
 
-.employees-page {
+.services-page {
     padding: 35px;
     background: $bg-page;
     min-height: 100vh;
@@ -19,7 +19,7 @@ $shadow-md: 0 6px 20px rgba(238, 0, 51, 0.15);
 }
 
 /* =========================
-   HEADER & ACTIONS (CHỐNG VỠ BỐ CỤC)
+   HEADER & ACTIONS
 ========================= */
 .header {
     display: flex;
@@ -70,7 +70,6 @@ $shadow-md: 0 6px 20px rgba(238, 0, 51, 0.15);
     input {
         height: 100%;
         width: 250px;
-        /* SỬA PADDING Ở ĐÂY: Thêm khoảng trống bên phải (40px) để không đè lên dấu X */
         padding: 0 40px 0 40px;
         background-color: #ffffff;
         border: 1px solid #d1d5db;
@@ -96,7 +95,6 @@ $shadow-md: 0 6px 20px rgba(238, 0, 51, 0.15);
         color: $primary;
     }
 
-    /* THÊM STYLE CHO NÚT X */
     .icon-clear {
         position: absolute;
         right: 14px;
@@ -108,13 +106,12 @@ $shadow-md: 0 6px 20px rgba(238, 0, 51, 0.15);
 
         &:hover {
             color: $primary;
-            /* Đổi sang màu đỏ khi hover */
         }
     }
 }
 
 /* =========================
-   CUSTOM DROPDOWN (UI MỚI)
+   CUSTOM DROPDOWN
 ========================= */
 .custom-dropdown {
     position: relative;
@@ -142,7 +139,6 @@ $shadow-md: 0 6px 20px rgba(238, 0, 51, 0.15);
             border-color: #9ca3af;
         }
 
-        /* Khi menu đang mở */
         &.active {
             border-color: $primary;
             box-shadow: 0 0 0 3px rgba(238, 0, 51, 0.15);
@@ -154,7 +150,6 @@ $shadow-md: 0 6px 20px rgba(238, 0, 51, 0.15);
             color: #9ca3af;
             transition: transform 0.3s ease, color 0.2s ease;
 
-            /* Mũi tên lật ngược lên khi mở */
             &.open {
                 transform: rotate(180deg);
                 color: $primary;
@@ -165,7 +160,6 @@ $shadow-md: 0 6px 20px rgba(238, 0, 51, 0.15);
     .dropdown-menu {
         position: absolute;
         top: calc(100% + 6px);
-        /* Cách nút trigger một chút */
         left: 0;
         right: 0;
         background: #ffffff;
@@ -190,7 +184,6 @@ $shadow-md: 0 6px 20px rgba(238, 0, 51, 0.15);
             color: $text-main;
         }
 
-        /* Trạng thái đang được chọn */
         &.selected {
             background-color: $primary-light;
             color: $primary;
@@ -199,7 +192,6 @@ $shadow-md: 0 6px 20px rgba(238, 0, 51, 0.15);
     }
 }
 
-/* Hiệu ứng trượt và hiện rõ dần */
 @keyframes dropdownFadeIn {
     from {
         opacity: 0;
@@ -225,18 +217,15 @@ $shadow-md: 0 6px 20px rgba(238, 0, 51, 0.15);
     font-weight: 600;
     font-size: 14px;
     cursor: pointer;
-
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0;
     box-sizing: border-box;
     line-height: 1;
-
     gap: 8px;
     box-shadow: $shadow-sm;
     transition: all .25s ease;
-
     width: max-content !important;
     flex: 0 0 auto !important;
     white-space: nowrap;
