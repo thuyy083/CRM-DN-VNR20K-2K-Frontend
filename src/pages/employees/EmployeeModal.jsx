@@ -13,12 +13,29 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
   const [openDropdown, setOpenDropdown] = useState(null); // Quản lý trạng thái dropdown
   const dropdownRef = useRef(null);
 
+  // 1. Hàm chuyển từ API (DD-MM-YYYY) sang form (YYYY-MM-DD)
+  const formatDateForInput = (date) => {
+    if (!date) return "";
+    const dateOnly = date.substring(0, 10);
+    // Nếu chuỗi đã có định dạng YYYY-MM-DD thì giữ nguyên
+    if (dateOnly.indexOf("-") === 4) {
+      return dateOnly;
+    }
+    // Chuyển DD-MM-YYYY thành YYYY-MM-DD
+    const parts = dateOnly.split("-");
+    if (parts.length === 3) {
+      const [day, month, year] = parts;
+      return `${year}-${month}-${day}`;
+    }
+    return dateOnly;
+  };
+
   const [form, setForm] = useState({
     fullName: user?.fullName || "",
     email: user?.email || "",
     phone: user?.phone || "",
     gender: user?.gender || "MALE",
-    dateOfBirth: user?.dateOfBirth ? user.dateOfBirth.substring(0, 10) : "",
+    dateOfBirth: user?.dateOfBirth ? formatDateForInput(user.dateOfBirth) : "",
     status: user?.status || "ACTIVE",
     role: user?.role || "CONSULTANT",
     password: "",
@@ -56,6 +73,17 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
   const isValidEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  };
+
+  // 2. Hàm chuyển từ form (YYYY-MM-DD) ngược lại cho API (DD-MM-YYYY)
+  const formatDateForSubmit = (date) => {
+    if (!date) return null;
+    const parts = date.split("-");
+    if (parts.length === 3 && parts[0].length === 4) {
+      const [year, month, day] = parts;
+      return `${day}-${month}-${year}`;
+    }
+    return date;
   };
 
   const handleSubmit = async () => {
@@ -111,7 +139,8 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
         email: form.email,
         phone: form.phone,
         gender: form.gender,
-        dateOfBirth: form.dateOfBirth || null,
+        // Chuyển đổi ngày sinh trước khi gửi lên API
+        dateOfBirth: formatDateForSubmit(form.dateOfBirth),
         role: form.role,
         status: form.status,
       };
