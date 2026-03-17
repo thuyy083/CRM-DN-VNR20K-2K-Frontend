@@ -1,0 +1,38 @@
+.enterprise-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+  }
+
+  th {
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .status {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+
+    &.active {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    &.inactive {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+  }
+
+  .edit-btn {
+    background: #f59e0b;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+}

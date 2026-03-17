@@ -27,6 +27,7 @@ export const createUser = (data) => {
 };
 
 export const updateUser = (id, data) => {
+  console.log("data: ", data)
   return axios.put(`/users/${id}`, data);
 };
 
