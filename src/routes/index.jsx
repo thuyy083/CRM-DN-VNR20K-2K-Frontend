@@ -6,12 +6,12 @@ import Dashboard from "../pages/dashboard/Dashboard";
 import Employees from "../pages/employees/Employees";
 import ProtectedRoute from "./ProtectedRoute";
 import Profile from "../pages/profile/Profile";
+import Services from "../pages/service/Services";
 
 function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* Public route */}
         <Route path="/login" element={<Login />} />
 
@@ -29,8 +29,8 @@ function AppRoutes() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/employees" element={<Employees />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/services" element={<Services />} />
         </Route>
-
       </Routes>
     </BrowserRouter>
   );
