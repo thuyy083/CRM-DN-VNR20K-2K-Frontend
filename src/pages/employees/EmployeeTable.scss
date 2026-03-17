@@ -126,10 +126,12 @@ $danger-light: #fef2f2;
 }
 
 .action-btns {
-  display: flex;
+  /* Ép thành khối inline để nằm cùng dòng với chữ và được thẻ td căn giữa */
+  display: inline-flex;
   justify-content: center;
   align-items: center;
   gap: 8px;
+  vertical-align: middle;
 
   button {
     border: none;
@@ -142,6 +144,8 @@ $danger-light: #fef2f2;
     cursor: pointer;
     transition: all 0.2s;
     padding: 0;
+    margin: 0;
+    /* Khử margin rác đẩy nút trượt xuống */
 
     svg {
       width: 16px;
@@ -160,7 +164,7 @@ $danger-light: #fef2f2;
     }
   }
 
-  .delete-btn {
+  .view-btn {
     background: $danger-light;
     color: $danger;
 

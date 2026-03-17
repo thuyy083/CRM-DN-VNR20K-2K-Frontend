@@ -2,7 +2,6 @@
    Variables (Viettel Theme Palette)
 ========================= */
 $primary: #EE0033;
-/* Trả lại màu Đỏ Viettel */
 $primary-hover: #C8002B;
 $text-main: #111827;
 $text-label: #374151;
@@ -11,7 +10,7 @@ $error: #ef4444;
 $bg-input: #ffffff;
 $bg-overlay: rgba(17, 24, 39, 0.4);
 
-.modal,
+.modal-overlay,
 .modal-box,
 .modal-box * {
     box-sizing: border-box;
@@ -20,7 +19,7 @@ $bg-overlay: rgba(17, 24, 39, 0.4);
 /* =========================
    MODAL OVERLAY
 ========================= */
-.modal {
+.modal-overlay {
     position: fixed;
     inset: 0;
     background: $bg-overlay;
@@ -37,17 +36,12 @@ $bg-overlay: rgba(17, 24, 39, 0.4);
 ========================= */
 .modal-box {
     background: #ffffff;
-    width: 580px;
-    /* Nới rộng một chút cho 2 cột thoáng hơn */
+    width: 500px;
     max-width: 95vw;
     border-radius: 16px;
     padding: 32px;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
     animation: modalShow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-
-    max-height: 90vh;
-    /* Chống tràn màn hình */
-    overflow-y: auto;
 
     h3 {
         margin: 0 0 24px 0;
@@ -65,6 +59,17 @@ $bg-overlay: rgba(17, 24, 39, 0.4);
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+
+    .form-group {
+        flex: 1;
+        min-width: 0;
+    }
 }
 
 .form-group {
@@ -120,80 +125,20 @@ $bg-overlay: rgba(17, 24, 39, 0.4);
                 box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
             }
         }
+
+        &:disabled {
+            background-color: #f3f4f6;
+            cursor: not-allowed;
+            color: #6b7280;
+        }
     }
 }
 
-/* =========================
-   PASSWORD SECTION (TÍNH NĂNG ĐỔI PASS)
-========================= */
-.checkbox-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 4px;
-
-    input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
-        cursor: pointer;
-        accent-color: $primary;
-        /* Đổi màu checkbox sang đỏ */
-    }
-
-    label {
-        margin: 0;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 600;
-        color: $text-main;
-        user-select: none;
-    }
-}
-
-.password-section {
-    background: #f8fafc;
-    /* Khối màu nền xám nhạt để phân biệt */
-    border: 1px dashed #cbd5e1;
-    padding: 16px;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-5px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Text báo lỗi */
 .error-text {
     color: $error;
     font-size: 13px;
     margin-top: 6px;
     font-weight: 500;
-    display: flex;
-    align-items: center;
-}
-
-/* Layout 2 cột */
-.form-row {
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
-
-    .form-group {
-        flex: 1;
-        min-width: 0;
-    }
 }
 
 /* =========================

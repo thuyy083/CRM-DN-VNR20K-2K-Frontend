@@ -3,16 +3,16 @@ import MainLayout from "../layouts/mainLayout/MainLayout";
 
 import Login from "../pages/login/Login";
 import Dashboard from "../pages/dashboard/Dashboard";
+import Employees from "../pages/employees/Employees";
 import ProtectedRoute from "./ProtectedRoute";
 import Profile from "../pages/profile/Profile";
-import Employees from "../pages/employees/Employees";
+import Services from "../pages/service/Services";
 import Enterprises from "../pages/enterprises/Enterprises";
 
 function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* Public route */}
         <Route path="/login" element={<Login />} />
 
@@ -30,9 +30,9 @@ function AppRoutes() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/employees" element={<Employees />} />
+          <Route path="/services" element={<Services />} />
           <Route path="/enterprises" element={<Enterprises />} />
         </Route>
-
       </Routes>
     </BrowserRouter>
   );

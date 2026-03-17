@@ -4,10 +4,12 @@ import "./Employees.scss";
 import { getUsers } from "../../services/userService";
 import EmployeeModal from "./EmployeeModal";
 import EmployeeTable from "./EmployeeTable";
+import EmployeeViewModal from "./EmployeeViewModal";
 
 function Employees() {
   const [users, setUsers] = useState([]);
   const [openModal, setOpenModal] = useState(false);
+  const [openViewModal, setOpenViewModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
   // State quản lý bộ lọc
@@ -47,6 +49,11 @@ function Employees() {
   const handleEdit = (user) => {
     setSelectedUser(user);
     setOpenModal(true);
+  };
+
+  const handleView = (user) => {
+    setSelectedUser(user);
+    setOpenViewModal(true);
   };
 
   const handleCreate = () => {
@@ -116,13 +123,32 @@ function Employees() {
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
             <input
-              type="search"
+              type="text"
               name="search_real_field"
-              autoComplete="new-password"
+              autoComplete="off"
               placeholder="Tìm tên, email, sđt..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              readOnly={true}
+              onFocus={(e) => e.target.removeAttribute("readonly")}
             />
+
+            {/* THÊM NÚT X XÓA NHANH Ở ĐÂY */}
+            {searchTerm && (
+              <svg
+                className="icon-clear"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                onClick={() => setSearchTerm("")}
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            )}
           </div>
 
           {/* =========================================
@@ -224,14 +250,24 @@ function Employees() {
           users={filteredUsers}
           refresh={fetchUsers}
           onEdit={handleEdit}
+          onView={handleView}
         />
       </div>
 
+      {/* MODAL THÊM / SỬA */}
       {openModal && (
         <EmployeeModal
           user={selectedUser}
           close={() => setOpenModal(false)}
           reload={fetchUsers}
+        />
+      )}
+
+      {/* MODAL XEM CHI TIẾT (ĐOẠN VỪA THÊM) */}
+      {openViewModal && (
+        <EmployeeViewModal
+          user={selectedUser}
+          close={() => setOpenViewModal(false)}
         />
       )}
     </div>
