@@ -1,66 +1,88 @@
 import { useSelector } from "react-redux";
+import { useState } from "react";
 import "./Profile.scss";
 
+import ProfileModal from "./ProfileModal";
+
 function Profile() {
+    const user = useSelector((state) => state.auth.user);
 
-  const user = useSelector((state) => state.auth.user);
+    const [openModal, setOpenModal] = useState(false);
 
-  return (
-    <div className="profile-page">
+    const formatDate = (date) => {
 
-      <div className="profile-card">
+        if (!date) return "";
 
-        <div className="profile-header">
+        const [day, month, year] = date.split("-");
 
-          <div className="avatar-profile">
-            {user?.fullName?.charAt(0)}
-          </div>
+        return `${day}/${month}/${year}`;
+    };
+    const formatCreatedAt = (date) => {
 
-          <div className="profile-name">
-            <h2>{user?.fullName}</h2>
-            <span className="role-badge">{user?.role}</span>
-          </div>
+        if (!date) return "";
 
+        const d = new Date(date);
+
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const year = d.getFullYear();
+
+        return `${day}/${month}/${year}`;
+    };
+    return (
+        <div className="profile-page">
+            <div className="profile-card">
+                <div className="profile-header">
+                    <div className="avatar">{user?.fullName?.charAt(0)}</div>
+
+                    <div>
+                        <h2>{user?.fullName}</h2>
+                        <span className="role">{user?.role}</span>
+                    </div>
+                </div>
+
+                <div className="profile-body">
+                    <div className="info-item">
+                        <label>Email</label>
+                        <span>{user?.email}</span>
+                    </div>
+
+                    <div className="info-item">
+                        <label>Số điện thoại</label>
+                        <span>{user?.phone || "Chưa cập nhật"}</span>
+                    </div>
+
+                    <div className="info-item">
+                        <label>Ngày sinh</label>
+                        <span>{formatDate(user?.dateOfBirth) || "Chưa cập nhật"}</span>
+                    </div>
+
+                    <div className="info-item">
+                        <label>Giới tính</label>
+                        <span>{user?.gender || "Chưa cập nhật"}</span>
+                    </div>
+
+                    <div className="info-item">
+                        <label>Trạng thái</label>
+                        <span>{user?.status}</span>
+                    </div>
+
+                    <div className="info-item">
+                        <label>Ngày tạo</label>
+                        <span>{formatCreatedAt(user?.createdAt)}</span>
+                    </div>
+
+                    <button className="edit-btn" onClick={() => setOpenModal(true)}>
+                        Chỉnh sửa thông tin
+                    </button>
+                </div>
+            </div>
+
+            {openModal && (
+                <ProfileModal user={user} close={() => setOpenModal(false)} />
+            )}
         </div>
-
-        <div className="profile-body">
-
-          <div className="info-item">
-            <label>Email</label>
-            <span>{user?.email}</span>
-          </div>
-
-          <div className="info-item">
-            <label>Số điện thoại</label>
-            <span>{user?.phone || "Chưa cập nhật"}</span>
-          </div>
-
-          <div className="info-item">
-            <label>Giới tính</label>
-            <span>{user?.gender || "Chưa cập nhật"}</span>
-          </div>
-
-          <div className="info-item">
-            <label>Ngày sinh</label>
-            <span>{user?.dateOfBirth || "Chưa cập nhật"}</span>
-          </div>
-
-          <div className="info-item">
-            <label>Trạng thái</label>
-            <span className="status">{user?.status}</span>
-          </div>
-
-          <div className="info-item">
-            <label>Ngày tạo</label>
-            <span>{user?.createdAt}</span>
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-  );
+    );
 }
 
 export default Profile;

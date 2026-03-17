@@ -7,6 +7,7 @@ import Employees from "../pages/employees/Employees";
 import ProtectedRoute from "./ProtectedRoute";
 import Profile from "../pages/profile/Profile";
 import Services from "../pages/service/Services";
+import Enterprises from "../pages/enterprises/Enterprises";
 
 function AppRoutes() {
   return (
@@ -27,9 +28,10 @@ function AppRoutes() {
         {/* Protected routes dùng layout */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/employees" element={<Employees />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/employees" element={<Employees />} />
           <Route path="/services" element={<Services />} />
+          <Route path="/enterprises" element={<Enterprises />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -2,6 +2,7 @@
   height: 60px;
   background: #fff;
   border-bottom: 2px solid #c8102e;
+  margin-bottom: 0 !important;
 
   display: flex;
   justify-content: space-between;
@@ -21,7 +22,7 @@
   cursor: pointer;
 }
 
-.avatar {
+.avatar-header {
   width: 36px;
   height: 36px;
 

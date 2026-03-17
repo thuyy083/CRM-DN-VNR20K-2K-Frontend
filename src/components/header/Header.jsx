@@ -60,7 +60,7 @@ function Header() {
 
         <div className="user-info" onClick={toggleMenu}>
 
-          <div className="avatar">
+          <div className="avatar-header">
             {user?.fullName?.charAt(0)}
           </div>
 
