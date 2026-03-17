@@ -6,6 +6,7 @@ import Dashboard from "../pages/dashboard/Dashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import Profile from "../pages/profile/Profile";
 import Employees from "../pages/employees/Employees";
+import Enterprises from "../pages/enterprises/Enterprises";
 
 function AppRoutes() {
   return (
@@ -29,6 +30,7 @@ function AppRoutes() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/employees" element={<Employees />} />
+          <Route path="/enterprises" element={<Enterprises />} />
         </Route>
 
       </Routes>
