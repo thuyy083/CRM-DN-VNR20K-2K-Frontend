@@ -12,9 +12,9 @@ function Sidebar() {
 
       <nav className="menu">
         <Link to="/">Dashboard</Link>
-        <Link to="/customers">Quản lý người dùng</Link>
+        <Link to="/employees">Quản lý nhân viên</Link>
         <Link to="/orders">Quản lý dịch vụ</Link>
-        <Link to="/users">Quản lý doanh nghiệp</Link>
+        <Link to="/enterprises">Quản lý doanh nghiệp</Link>
         <Link to="/users">Quản lý tiếp xúc</Link>
       </nav>
 
