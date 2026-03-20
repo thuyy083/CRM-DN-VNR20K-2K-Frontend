@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import MainLayout from "../layouts/mainLayout/MainLayout";
 
 import Login from "../pages/login/Login";
@@ -9,32 +10,95 @@ import Profile from "../pages/profile/Profile";
 import Services from "../pages/service/Services";
 import Enterprises from "../pages/enterprises/Enterprises";
 import Users from "../pages/users/Users";
+// import Forbidden from "../pages/Forbidden";
+import NotFound from "../pages/NotFound";
+
+const getNormalizedRole = (user) => {
+  const directRole = user?.role || user?.roleName;
+  if (typeof directRole === "string" && directRole.trim()) {
+    return directRole.trim().toUpperCase();
+  }
+
+  const firstRole = user?.roles?.[0];
+  if (typeof firstRole === "string" && firstRole.trim()) {
+    return firstRole.trim().toUpperCase();
+  }
+  if (firstRole?.name && typeof firstRole.name === "string") {
+    return firstRole.name.trim().toUpperCase();
+  }
+
+  return "";
+};
+
+function HomeByRole() {
+  const user = useSelector((state) => state.auth.user);
+  const role = getNormalizedRole(user);
+
+  if (role === "USER" || role === "CONSULTANT") {
+    return <Dashboard />;
+  }
+
+  return <Dashboard />;
+}
 
 function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public route */}
         <Route path="/login" element={<Login />} />
+        {/* <Route path="/403" element={<Forbidden />} /> */}
 
         <Route
-          path="/"
           element={
             <ProtectedRoute>
               <MainLayout />
             </ProtectedRoute>
           }
-        ></Route>
-
-        {/* Protected routes dùng layout */}
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/employees" element={<Employees />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/enterprises" element={<Enterprises />} />
-          <Route path="/users" element={<Users />} />
+        >
+          <Route path="/" element={<HomeByRole />} />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN", "CONSULTANT", "USER"]}>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employees"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN", "USER", "CONSULTANT"]}>
+                <Employees />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/services"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN", "USER", "CONSULTANT"]}>
+                <Services />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/enterprises"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN", "USER", "CONSULTANT"]}>
+                <Enterprises />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN", "USER", "CONSULTANT"]}>
+                <Users />
+              </ProtectedRoute>
+            }
+          />
         </Route>
+
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );
