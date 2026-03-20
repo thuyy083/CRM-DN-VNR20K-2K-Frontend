@@ -15,6 +15,10 @@ function EnterpriseModal({ enterprise, close, reload }) {
     phone: enterprise?.phone || "",
     status: enterprise?.status || "ACTIVE",
     note: enterprise?.note || "",
+    contactFullName: "",
+    contactEmail: "",
+    contactPhone: "",
+    contactPosition: "",
   });
 
   const handleChange = (field, value) => {
@@ -27,7 +31,14 @@ function EnterpriseModal({ enterprise, close, reload }) {
   const handleSubmit = async () => {
     try {
       if (enterprise) {
-        await updateEnterprise(enterprise.id, form);
+        const {
+          contactFullName,
+          contactEmail,
+          contactPhone,
+          contactPosition,
+          ...updatePayload
+        } = form;
+        await updateEnterprise(enterprise.id, updatePayload);
         toast.success("Cập nhật doanh nghiệp thành công");
       } else {
         await createEnterprise(form);
@@ -101,6 +112,46 @@ function EnterpriseModal({ enterprise, close, reload }) {
           <input
             value={form.phone}
             onChange={(e) => handleChange("phone", e.target.value)}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Họ tên người liên hệ</label>
+          <input
+            value={form.contactFullName}
+            onChange={(e) => handleChange("contactFullName", e.target.value)}
+            placeholder="VD: Nguyễn Văn A"
+            disabled={!!enterprise}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Email người liên hệ</label>
+          <input
+            value={form.contactEmail}
+            onChange={(e) => handleChange("contactEmail", e.target.value)}
+            placeholder="VD: nguyenvana@company.com"
+            disabled={!!enterprise}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>SĐT người liên hệ</label>
+          <input
+            value={form.contactPhone}
+            onChange={(e) => handleChange("contactPhone", e.target.value)}
+            placeholder="VD: 0987654321"
+            disabled={!!enterprise}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Chức vụ người liên hệ</label>
+          <input
+            value={form.contactPosition}
+            onChange={(e) => handleChange("contactPosition", e.target.value)}
+            placeholder="VD: Giám đốc"
+            disabled={!!enterprise}
           />
         </div>
 
