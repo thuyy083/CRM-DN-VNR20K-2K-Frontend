@@ -7,7 +7,7 @@ export const injectStore = (_store) => {
 };
 
 const axiosClient = axios.create({
-  baseURL: "http://localhost:8080"
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
 });
 
 // request interceptor
