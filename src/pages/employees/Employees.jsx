@@ -18,7 +18,7 @@ function Employees() {
   const [filterStatus, setFilterStatus] = useState("ALL");
 
   // State quản lý Custom Dropdown
-  const [openDropdown, setOpenDropdown] = useState(null); // 'role' hoặc 'status' hoặc null
+  const [openDropdown, setOpenDropdown] = useState(null); 
   const dropdownRef = useRef(null);
 
   // Đóng dropdown khi click ra ngoài
