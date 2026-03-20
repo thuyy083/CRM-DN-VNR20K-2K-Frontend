@@ -7,6 +7,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import Profile from "../pages/profile/Profile";
 import Employees from "../pages/employees/Employees";
 import Enterprises from "../pages/enterprises/Enterprises";
+import Users from "../pages/users/Users";
 
 function AppRoutes() {
   return (
@@ -31,6 +32,7 @@ function AppRoutes() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/employees" element={<Employees />} />
           <Route path="/enterprises" element={<Enterprises />} />
+          <Route path="/users" element={<Users />} />
         </Route>
 
       </Routes>
