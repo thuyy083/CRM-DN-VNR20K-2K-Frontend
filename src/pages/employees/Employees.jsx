@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useSelector } from "react-redux";
 import "./Employees.scss";
 
 import { getUsers } from "../../services/userService";
@@ -7,6 +8,23 @@ import EmployeeTable from "./EmployeeTable";
 import EmployeeViewModal from "./EmployeeViewModal";
 
 function Employees() {
+  const user = useSelector((state) => state.auth.user);
+  const getNormalizedRole = (user) => {
+    const directRole = user?.role || user?.roleName;
+    if (typeof directRole === "string" && directRole.trim()) {
+      return directRole.trim().toUpperCase();
+    }
+    const firstRole = user?.roles?.[0];
+    if (typeof firstRole === "string" && firstRole.trim()) {
+      return firstRole.trim().toUpperCase();
+    }
+    if (firstRole?.name && typeof firstRole.name === "string") {
+      return firstRole.name.trim().toUpperCase();
+    }
+    return "";
+  };
+  const role = getNormalizedRole(user);
+  const canManageEmployees = role === "ADMIN";
   const [users, setUsers] = useState([]);
   const [openModal, setOpenModal] = useState(false);
   const [openViewModal, setOpenViewModal] = useState(false);
@@ -239,9 +257,12 @@ function Employees() {
             )}
           </div>
 
-          <button type="button" className="add-btn" onClick={handleCreate}>
-            + Thêm nhân viên
-          </button>
+          {/* Chỉ ADMIN mới thấy nút Thêm nhân viên */}
+          {canManageEmployees && (
+            <button type="button" className="add-btn" onClick={handleCreate}>
+              + Thêm nhân viên
+            </button>
+          )}
         </div>
       </div>
 
