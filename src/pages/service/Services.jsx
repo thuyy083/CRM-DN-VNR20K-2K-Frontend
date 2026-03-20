@@ -61,16 +61,27 @@ function Services() {
     }
   };
 
-  // ĐÃ SỬA: Bỏ logic lọc theo Category
+  // ĐÃ SỬA: Sửa lỗi lọc trạng thái và tối ưu tìm kiếm
   const filteredServices = services.filter((srv) => {
     const term = searchTerm.toLowerCase();
-    const matchSearch =
-      (srv.service_code || "").toLowerCase().includes(term) ||
-      (srv.service_name || "").toLowerCase().includes(term);
 
+    // 1. Lấy dữ liệu an toàn (hỗ trợ cả snake_case và camelCase từ API)
+    const code = srv.service_code || srv.serviceCode || "";
+    const name = srv.service_name || srv.serviceName || "";
+    const status = srv.is_active ?? srv.isActive ?? false;
+
+    // 2. Lọc theo text search
+    const matchSearch =
+      code.toLowerCase().includes(term) || name.toLowerCase().includes(term);
+
+    // 3. Lọc theo trạng thái
     let matchStatus = true;
-    if (filterStatus === "ACTIVE") matchStatus = srv.is_active === true;
-    if (filterStatus === "INACTIVE") matchStatus = srv.is_active === false;
+    if (filterStatus === "ACTIVE") {
+      matchStatus = status === true || String(status) === "true";
+    }
+    if (filterStatus === "INACTIVE") {
+      matchStatus = status === false || String(status) === "false";
+    }
 
     return matchSearch && matchStatus;
   });
