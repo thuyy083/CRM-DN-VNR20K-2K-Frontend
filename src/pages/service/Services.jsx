@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import "./Services.scss";
 import { getServices, deleteService } from "../../services/servicesService";
@@ -6,6 +7,7 @@ import ServiceTable from "./ServiceTable";
 import ServiceModal from "./ServiceModal";
 
 function Services() {
+  const currentUser = useSelector((state) => state.auth.user);
   const [services, setServices] = useState([]);
   const [openModal, setOpenModal] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
@@ -16,7 +18,24 @@ function Services() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
 
-  const currentUserRole = localStorage.getItem("ROLE") || "ADMIN";
+  const getNormalizedRole = (user) => {
+    const directRole = user?.role || user?.roleName;
+    if (typeof directRole === "string" && directRole.trim()) {
+      return directRole.trim().toUpperCase();
+    }
+
+    const firstRole = user?.roles?.[0];
+    if (typeof firstRole === "string" && firstRole.trim()) {
+      return firstRole.trim().toUpperCase();
+    }
+    if (firstRole?.name && typeof firstRole.name === "string") {
+      return firstRole.name.trim().toUpperCase();
+    }
+
+    return "";
+  };
+
+  const currentUserRole = getNormalizedRole(currentUser);
 
   useEffect(() => {
     function handleClickOutside(event) {
