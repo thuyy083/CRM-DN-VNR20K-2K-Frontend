@@ -1,7 +1,25 @@
 import { useState, useMemo, useEffect } from "react";
+
 import "./EmployeeTable.scss";
 
 function EmployeeTable({ users, onEdit, onView }) {
+  const user = useSelector((state) => state.auth.user);
+  const getNormalizedRole = (user) => {
+    const directRole = user?.role || user?.roleName;
+    if (typeof directRole === "string" && directRole.trim()) {
+      return directRole.trim().toUpperCase();
+    }
+    const firstRole = user?.roles?.[0];
+    if (typeof firstRole === "string" && firstRole.trim()) {
+      return firstRole.trim().toUpperCase();
+    }
+    if (firstRole?.name && typeof firstRole.name === "string") {
+      return firstRole.name.trim().toUpperCase();
+    }
+    return "";
+  };
+  const role = getNormalizedRole(user);
+  const canManageEmployees = role === "ADMIN";
   // 1. STATE SẮP XẾP
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
 
@@ -168,46 +186,49 @@ function EmployeeTable({ users, onEdit, onView }) {
                   </span>
                 </td>
                 <td>
-                  <div className="action-btns">
-                    {/* NÚT CHỮ "I" XEM CHI TIẾT */}
-                    <button
-                      className="view-btn"
-                      title="Xem chi tiết"
-                      onClick={() => onView && onView(user)}
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                  {/* Chỉ ADMIN mới thấy toàn bộ các nút hành động */}
+                  {canManageEmployees ? (
+                    <div className="action-btns">
+                      {/* NÚT CHỮ "I" XEM CHI TIẾT */}
+                      <button
+                        className="view-btn"
+                        title="Xem chi tiết"
+                        onClick={() => onView && onView(user)}
                       >
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                      </svg>
-                    </button>
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="12" y1="16" x2="12" y2="12"></line>
+                          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                      </button>
 
-                    {/* NÚT SỬA */}
-                    <button
-                      className="edit-btn"
-                      title="Sửa"
-                      onClick={() => onEdit(user)}
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                      {/* NÚT SỬA */}
+                      <button
+                        className="edit-btn"
+                        title="Sửa"
+                        onClick={() => onEdit(user)}
                       >
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                      </svg>
-                    </button>
-                  </div>
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  ) : null}
                 </td>
               </tr>
             ))
