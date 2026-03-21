@@ -164,15 +164,18 @@ $danger-light: #fef2f2;
     }
   }
 
-  .view-btn {
-    background: $danger-light;
-    color: $danger;
-
-    &:hover {
-      background: #fecaca;
-      transform: translateY(-1px);
+    .view-btn {
+      background: #fef3c7;
+      /* Nền vàng nhạt tinh tế */
+      color: #d97706;
+      /* Chữ vàng đậm cam (tương phản tốt, dễ đọc) */
+  
+      &:hover {
+        background: #fde68a;
+        /* Nền đậm lên một chút khi di chuột vào */
+        transform: translateY(-1px);
+      }
     }
-  }
 }
 
 .empty-state {
