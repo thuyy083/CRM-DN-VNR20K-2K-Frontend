@@ -27,7 +27,6 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // validate
     if (!form.username.trim()) {
       toast.warning("Vui lòng nhập email");
       return;
@@ -47,11 +46,14 @@ function Login() {
       toast.success("Đăng nhập thành công");
 
       navigate("/");
-    } 
+
+    }
     else {
 
-      toast.error("Sai tài khoản hoặc mật khẩu");
+      const message =
+        result.payload?.message || "Sai tài khoản hoặc mật khẩu";
 
+      toast.error(message);
     }
   };
 
@@ -64,7 +66,7 @@ function Login() {
           <img src={logo} alt="logo" />
         </div>
 
-        <h2>HỆ THỐNG QUẢN LÝ <br/> TIẾP XÚC DOANH NGHIỆP</h2>
+        <h2>HỆ THỐNG QUẢN LÝ <br /> TIẾP XÚC DOANH NGHIỆP</h2>
         <p className="login-subtitle">Đăng nhập để tiếp tục</p>
 
         <form onSubmit={handleSubmit}>

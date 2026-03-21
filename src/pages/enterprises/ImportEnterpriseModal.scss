@@ -1,0 +1,12 @@
+.modal-box input[type="file"] {
+  margin-top: 15px;
+  padding: 10px;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  width: 100%;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #EE0033;
+  }
+}
