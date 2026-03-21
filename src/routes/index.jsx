@@ -24,11 +24,9 @@ function AppRoutes() {
               <MainLayout />
             </ProtectedRoute>
           }
-        ></Route>
-
-        {/* Protected routes dùng layout */}
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<Dashboard />} />
+        >
+          {/* Protected routes dùng layout */}
+          <Route index element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/employees" element={<Employees />} />
           <Route path="/services" element={<Services />} />
