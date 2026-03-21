@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "react-toastify";
 import { createService, updateService } from "../../services/servicesService";
 import "./ServiceModal.scss";
+
+// Sử dụng bản nâng cấp react-quill-new dành cho React 19
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
 const generateBaseCode = (name) => {
   if (!name) return "DV";
@@ -19,11 +23,24 @@ const generateBaseCode = (name) => {
 function ServiceModal({ services, service, close, reload }) {
   const [form, setForm] = useState({
     service_name: service?.service_name || service?.serviceName || "",
+    description: service?.description || "", // Trường mô tả
     is_active: service ? (service.is_active ?? service.isActive ?? true) : true,
   });
 
   const [errors, setErrors] = useState({});
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+
+  // Cấu hình thanh công cụ soạn thảo
+  const modules = useMemo(() => ({
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      [{ 'align': [] }],
+      ['clean']
+    ],
+  }), []);
 
   const handleChange = (field, value) => {
     setForm({ ...form, [field]: value });
@@ -51,9 +68,11 @@ function ServiceModal({ services, service, close, reload }) {
         finalServiceCode = finalCode;
       }
 
+      // Gộp thêm description vào dữ liệu gửi lên API
       const payloadToSend = {
         serviceCode: finalServiceCode,
         serviceName: form.service_name,
+        description: form.description,
         isActive: form.is_active,
       };
 
@@ -121,6 +140,23 @@ function ServiceModal({ services, service, close, reload }) {
               )}
             </div>
 
+            {/* KHUNG SOẠN THẢO MÔ TẢ */}
+            <div className="form-group" style={{ marginBottom: "20px" }}>
+              <label style={{ marginBottom: "8px", display: "block" }}>
+                Mô tả dịch vụ
+              </label>
+              <div style={{ height: "200px", marginBottom: "50px" }}>
+                <ReactQuill 
+                  theme="snow"
+                  value={form.description}
+                  modules={modules}
+                  placeholder="Nhập mô tả chi tiết, in đậm, in nghiêng..."
+                  onChange={(content) => handleChange("description", content)}
+                  style={{ height: "100%", fontFamily: "inherit" }}
+                />
+              </div>
+            </div>
+
             <div className="form-group">
               <label>Tình trạng bán</label>
               <select
@@ -150,7 +186,6 @@ function ServiceModal({ services, service, close, reload }) {
       {showDuplicateWarning && (
         <div className="delete-modal-backdrop" style={{ zIndex: 1050 }}>
           <div className="delete-modal-box">
-            {/* CONTAINER ICON CẢNH BÁO */}
             <div
               style={{
                 position: "relative",
@@ -162,7 +197,6 @@ function ServiceModal({ services, service, close, reload }) {
                 marginBottom: "16px",
               }}
             >
-              {/* Vòng sáng (Glow) phía sau */}
               <div
                 style={{
                   position: "absolute",
@@ -176,7 +210,6 @@ function ServiceModal({ services, service, close, reload }) {
                 }}
               ></div>
 
-              {/* ICON HÌNH TAM GIÁC (WARNING) */}
               <svg
                 width="46"
                 height="46"
@@ -188,22 +221,8 @@ function ServiceModal({ services, service, close, reload }) {
                 strokeLinejoin="round"
               >
                 <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
-                <line
-                  x1="12"
-                  y1="9"
-                  x2="12"
-                  y2="13"
-                  stroke="#eab308"
-                  strokeWidth="3"
-                ></line>
-                <line
-                  x1="12"
-                  y1="17"
-                  x2="12.01"
-                  y2="17"
-                  stroke="#eab308"
-                  strokeWidth="3"
-                ></line>
+                <line x1="12" y1="9" x2="12" y2="13" stroke="#eab308" strokeWidth="3"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17" stroke="#eab308" strokeWidth="3"></line>
               </svg>
             </div>
 
@@ -212,10 +231,8 @@ function ServiceModal({ services, service, close, reload }) {
                 Cảnh báo trùng lặp
               </h2>
               <p className="delete-modal-text" style={{ lineHeight: "1.6" }}>
-                Dịch vụ <strong>{form.service_name}</strong> đã tồn tại trong hệ
-                thống. <br />
-                Bạn có chắc chắn muốn tiếp tục tạo thêm một dịch vụ mới với tên
-                này không?
+                Dịch vụ <strong>{form.service_name}</strong> đã tồn tại trong hệ thống. <br />
+                Bạn có chắc chắn muốn tiếp tục tạo thêm một dịch vụ mới với tên này không?
               </p>
             </div>
 
