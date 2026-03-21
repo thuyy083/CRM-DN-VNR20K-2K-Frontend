@@ -1,0 +1,208 @@
+/* =========================
+   VARIABLES (VIETTEL STYLE)
+========================= */
+$primary: #EE0033;
+$primary-dark: #C8002B;
+$bg-light: #fff5f5;
+$text-main: #111827;
+$text-sub: #6b7280;
+$border: #e5e7eb;
+
+/* =========================
+   MODAL
+========================= */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-box {
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+
+  &.large {
+    width: 950px;
+  }
+
+  h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: $primary;
+    margin-bottom: 20px;
+  }
+}
+
+/* =========================
+   INFO CARD (2 CỘT)
+========================= */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 30px;
+  padding: 18px;
+  background: $bg-light;
+  border-radius: 12px;
+  margin-bottom: 25px;
+
+  div {
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+
+    b {
+      color: $text-sub;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    span {
+      font-weight: 600;
+      color: $text-main;
+    }
+  }
+}
+
+/* =========================
+   CONTACT HEADER
+========================= */
+.contact-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+
+  h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: $text-main;
+  }
+
+  button {
+    background: linear-gradient(135deg, $primary, $primary-dark);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.25s;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(238, 0, 51, 0.25);
+    }
+  }
+}
+
+/* =========================
+   TABLE
+========================= */
+.contact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  border-radius: 10px;
+  overflow: hidden;
+
+  th {
+    background: #fff0f0;
+    color: $primary;
+    font-weight: 600;
+    padding: 12px;
+    text-align: left;
+  }
+
+  td {
+    padding: 12px;
+    border-bottom: 1px solid $border;
+  }
+
+  tbody tr {
+    transition: 0.2s;
+
+    &:hover {
+      background: #fff7f7;
+    }
+  }
+}
+
+/* =========================
+   ACTION BUTTONS
+========================= */
+.action-btns {
+  display: flex;
+  gap: 6px;
+}
+
+/* EDIT */
+.edit-btn {
+  background: #e0e7ff;
+  color: #4338ca;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    background: #c7d2fe;
+  }
+}
+
+/* DELETE */
+.delete-btn {
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    background: #fecaca;
+  }
+}
+
+/* =========================
+   MODAL ACTIONS
+========================= */
+.modal-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+
+  button {
+    background: #f3f4f6;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+
+    &:hover {
+      background: #e5e7eb;
+    }
+  }
+}
+
+/* =========================
+   SCROLLBAR
+========================= */
+.modal-box::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-box::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 6px;
+}
