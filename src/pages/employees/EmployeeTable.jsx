@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-
+import { useSelector } from "react-redux";
 import "./EmployeeTable.scss";
 
 function EmployeeTable({ users, onEdit, onView }) {
@@ -81,6 +81,8 @@ function EmployeeTable({ users, onEdit, onView }) {
   useEffect(() => {
     if (totalPages > 0 && currentPage > totalPages) {
       setCurrentPage(totalPages); // Nếu lọc xong còn 2 trang mà đang đứng ở trang 3 thì lùi về trang 2
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+
     } else if (totalPages === 0 && currentPage !== 1) {
       setCurrentPage(1); // Nếu rỗng ruột thì đưa về 1 tránh lỗi trắng bảng
     }
