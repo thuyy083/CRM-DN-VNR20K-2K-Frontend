@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import "./EnterpriseTable.scss";
 
-function EnterpriseTable({ enterprises, onEdit }) {
+
+function EnterpriseTable({ enterprises, industries = [], onEdit, onView }) {
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
 
   const requestSort = (key) => {
@@ -11,6 +12,14 @@ function EnterpriseTable({ enterprises, onEdit }) {
     }
     setSortConfig({ key, direction });
   };
+
+  const industryMap = useMemo(() => {
+    const map = {};
+    industries.forEach((i) => {
+      map[i.code] = i.name;
+    });
+    return map;
+  }, [industries]);
 
   const sortedData = useMemo(() => {
     let items = [...enterprises];
@@ -51,7 +60,10 @@ function EnterpriseTable({ enterprises, onEdit }) {
               <td>{e.id}</td>
               <td className="font-medium">{e.name}</td>
               <td>{e.taxCode}</td>
-              <td>{e.industry}</td>
+
+              {/* FIX Ở ĐÂY */}
+              <td>{industryMap[e.industry] || "-"}</td>
+
               <td>{e.employeeCount}</td>
               <td>{e.phone}</td>
               <td>{e.website}</td>
@@ -63,13 +75,22 @@ function EnterpriseTable({ enterprises, onEdit }) {
               </td>
 
               <td>
-                <button
-                  className="edit-btn"
-                  onClick={() => onEdit(e)}
-                >
-                  Sửa
-                </button>
-              </td>
+  <div className="action-btns">
+    <button
+      className="view-btn"
+      onClick={() => onView(e)}
+    >
+      Xem
+    </button>
+
+    <button
+      className="edit-btn"
+      onClick={() => onEdit(e)}
+    >
+      Sửa
+    </button>
+  </div>
+</td>
             </tr>
           ))}
         </tbody>

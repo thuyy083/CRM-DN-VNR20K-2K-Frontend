@@ -30,13 +30,17 @@ axiosClient.interceptors.response.use(
 
   (error) => {
 
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    const url = error.config?.url;
+
+    // ❗ BỎ QUA login API
+    if (status === 401 && !url.includes("/login")) {
 
       localStorage.removeItem("token");
 
       window.location.href = "/login";
-
     }
+
 
     return Promise.reject(error);
 
