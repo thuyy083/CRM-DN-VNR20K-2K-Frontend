@@ -3,57 +3,64 @@ import { toast } from "react-toastify";
 import { createService, updateService } from "../../services/servicesService";
 import "./ServiceModal.scss";
 
-function ServiceModal({ service, close, reload }) {
-  // Đã sửa lại để tương thích với cả 2 kiểu dữ liệu trả về từ Backend
+const generateBaseCode = (name) => {
+  if (!name) return "DV";
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "_");
+};
+
+function ServiceModal({ services, service, close, reload }) {
   const [form, setForm] = useState({
-    service_code: service?.serviceCode || service?.service_code || "",
-    service_name: service?.serviceName || service?.service_name || "",
-    category: service?.category || "Chứng thực số",
-    is_active: service ? (service.isActive ?? service.is_active ?? true) : true,
+    service_name: service?.service_name || service?.serviceName || "",
+    is_active: service ? (service.is_active ?? service.isActive ?? true) : true,
   });
 
   const [errors, setErrors] = useState({});
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
 
   const handleChange = (field, value) => {
     setForm({ ...form, [field]: value });
     if (errors[field]) setErrors({ ...errors, [field]: "" });
   };
 
-  const handleSubmit = async () => {
-    const newErrors = {};
-    let hasError = false;
-
-    if (!form.service_code.trim()) {
-      newErrors.service_code = "Vui lòng nhập mã dịch vụ";
-      hasError = true;
-    }
-    if (!form.service_name.trim()) {
-      newErrors.service_name = "Vui lòng nhập tên dịch vụ";
-      hasError = true;
-    }
-
-    if (hasError) {
-      setErrors(newErrors);
-      return;
-    }
-
+  const executeSave = async () => {
     try {
-      // ==========================================
-      // ĐOẠN "PHIÊN DỊCH" CHO BACKEND HIỂU
-      // ==========================================
+      let finalServiceCode = service?.service_code || service?.serviceCode;
+
+      if (!service) {
+        const baseCode = generateBaseCode(form.service_name);
+        const existingCodes = (services || []).map(
+          (s) => s.service_code || s.serviceCode,
+        );
+
+        let finalCode = baseCode;
+        let counter = 1;
+
+        while (existingCodes.includes(finalCode)) {
+          finalCode = `${baseCode}_${counter}`;
+          counter++;
+        }
+
+        finalServiceCode = finalCode;
+      }
+
       const payloadToSend = {
-        serviceCode: form.service_code,
+        serviceCode: finalServiceCode,
         serviceName: form.service_name,
-        category: form.category,
         isActive: form.is_active,
       };
 
       if (service) {
-        // Gửi cái payloadToSend đi thay vì gửi form
         await updateService(service.id, payloadToSend);
         toast.success("Cập nhật dịch vụ thành công!");
       } else {
-        // Gửi cái payloadToSend đi thay vì gửi form
         await createService(payloadToSend);
         toast.success("Thêm dịch vụ mới thành công!");
       }
@@ -63,99 +70,181 @@ function ServiceModal({ service, close, reload }) {
     } catch (error) {
       const errorMsg = error.response?.data?.message;
       if (Array.isArray(errorMsg)) {
-        toast.error(errorMsg[0]);
+        toast.error(errorMsg[0].message || errorMsg[0]);
       } else {
         toast.error(errorMsg || "Có lỗi xảy ra khi lưu dữ liệu!");
       }
     }
   };
 
-  return (
-    <div className="modal">
-      <div className="modal-box">
-        <h3>{service ? "Cập nhật dịch vụ" : "Thêm dịch vụ mới"}</h3>
+  const handleSubmitClick = () => {
+    if (!form.service_name.trim()) {
+      setErrors({ service_name: "Vui lòng nhập tên dịch vụ" });
+      return;
+    }
 
-        <div className="form-content">
-          <div className="form-row">
+    if (!service) {
+      const isDuplicateName = (services || []).some(
+        (s) =>
+          (s.service_name || s.serviceName || "").toLowerCase().trim() ===
+          form.service_name.toLowerCase().trim(),
+      );
+
+      if (isDuplicateName) {
+        setShowDuplicateWarning(true);
+        return;
+      }
+    }
+
+    executeSave();
+  };
+
+  return (
+    <>
+      <div className="modal">
+        <div className="modal-box">
+          <h3>{service ? "Cập nhật dịch vụ" : "Thêm dịch vụ mới"}</h3>
+
+          <div className="form-content">
             <div className="form-group">
               <label>
-                Mã dịch vụ <span className="required">*</span>
+                Tên đầy đủ dịch vụ <span className="required">*</span>
               </label>
               <input
-                className={errors.service_code ? "input-error" : ""}
-                placeholder="VD: V-CA, V-MYSIGN..."
-                value={form.service_code}
-                onChange={(e) => handleChange("service_code", e.target.value)}
-                disabled={!!service}
-                style={
-                  service
-                    ? {
-                        backgroundColor: "#f3f4f6",
-                        cursor: "not-allowed",
-                        color: "#6b7280",
-                      }
-                    : {}
-                }
+                className={errors.service_name ? "input-error" : ""}
+                placeholder="VD: Chữ ký số Viettel-CA"
+                value={form.service_name}
+                onChange={(e) => handleChange("service_name", e.target.value)}
               />
-              {errors.service_code && (
-                <span className="error-text">{errors.service_code}</span>
+              {errors.service_name && (
+                <span className="error-text">{errors.service_name}</span>
               )}
             </div>
 
             <div className="form-group">
-              <label>Nhóm dịch vụ (Category)</label>
+              <label>Tình trạng bán</label>
               <select
-                value={form.category}
-                onChange={(e) => handleChange("category", e.target.value)}
+                value={String(form.is_active)}
+                onChange={(e) =>
+                  handleChange("is_active", e.target.value === "true")
+                }
               >
-                <option value="Chứng thực số">Chứng thực số</option>
-                <option value="Cloud">Cloud</option>
-                <option value="Viễn thông">Viễn thông</option>
-                <option value="Khác">Khác</option>
+                <option value="true">Đang bán (Active)</option>
+                <option value="false">Đã ngừng cung cấp (Inactive)</option>
               </select>
             </div>
           </div>
 
-          <div className="form-group">
-            <label>
-              Tên đầy đủ dịch vụ <span className="required">*</span>
-            </label>
-            <input
-              className={errors.service_name ? "input-error" : ""}
-              placeholder="VD: Chữ ký số Viettel-CA"
-              value={form.service_name}
-              onChange={(e) => handleChange("service_name", e.target.value)}
-            />
-            {errors.service_name && (
-              <span className="error-text">{errors.service_name}</span>
-            )}
+          <div className="modal-actions">
+            <button className="cancel-btn" onClick={close}>
+              Hủy
+            </button>
+            <button className="save-btn" onClick={handleSubmitClick}>
+              Lưu cấu hình
+            </button>
           </div>
-
-          <div className="form-group">
-            <label>Tình trạng bán</label>
-            <select
-              // Đã đổi thành String() để chống crash
-              value={String(form.is_active)}
-              onChange={(e) =>
-                handleChange("is_active", e.target.value === "true")
-              }
-            >
-              <option value="true">Đang bán (Active)</option>
-              <option value="false">Đã ngừng cung cấp (Inactive)</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="modal-actions">
-          <button className="cancel-btn" onClick={close}>
-            Hủy
-          </button>
-          <button className="save-btn" onClick={handleSubmit}>
-            Lưu cấu hình
-          </button>
         </div>
       </div>
-    </div>
+
+      {/* DIALOG CẢNH BÁO TRÙNG TÊN DỊCH VỤ */}
+      {showDuplicateWarning && (
+        <div className="delete-modal-backdrop" style={{ zIndex: 1050 }}>
+          <div className="delete-modal-box">
+            {/* CONTAINER ICON CẢNH BÁO */}
+            <div
+              style={{
+                position: "relative",
+                display: "inline-flex",
+                justifyContent: "center",
+                alignItems: "center",
+                width: "60px",
+                height: "60px",
+                marginBottom: "16px",
+              }}
+            >
+              {/* Vòng sáng (Glow) phía sau */}
+              <div
+                style={{
+                  position: "absolute",
+                  width: "70px",
+                  height: "70px",
+                  borderRadius: "50%",
+                  backgroundColor: "#fef08a",
+                  opacity: 0.6,
+                  filter: "blur(8px)",
+                  zIndex: -1,
+                }}
+              ></div>
+
+              {/* ICON HÌNH TAM GIÁC (WARNING) */}
+              <svg
+                width="46"
+                height="46"
+                viewBox="0 0 24 24"
+                fill="#fef08a"
+                stroke="#eab308"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                <line
+                  x1="12"
+                  y1="9"
+                  x2="12"
+                  y2="13"
+                  stroke="#eab308"
+                  strokeWidth="3"
+                ></line>
+                <line
+                  x1="12"
+                  y1="17"
+                  x2="12.01"
+                  y2="17"
+                  stroke="#eab308"
+                  strokeWidth="3"
+                ></line>
+              </svg>
+            </div>
+
+            <div className="delete-modal-content">
+              <h2 className="delete-modal-title" style={{ marginTop: 0 }}>
+                Cảnh báo trùng lặp
+              </h2>
+              <p className="delete-modal-text" style={{ lineHeight: "1.6" }}>
+                Dịch vụ <strong>{form.service_name}</strong> đã tồn tại trong hệ
+                thống. <br />
+                Bạn có chắc chắn muốn tiếp tục tạo thêm một dịch vụ mới với tên
+                này không?
+              </p>
+            </div>
+
+            <div className="delete-modal-actions">
+              <button
+                className="delete-modal-btn cancel-btn"
+                onClick={() => setShowDuplicateWarning(false)}
+              >
+                Không, quay lại
+              </button>
+              <button
+                className="delete-modal-btn save-btn"
+                style={{
+                  backgroundColor: "#eab308",
+                  color: "#fff",
+                  borderColor: "#eab308",
+                }}
+                onClick={() => {
+                  setShowDuplicateWarning(false);
+                  executeSave();
+                }}
+              >
+                Có, tạo mới
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

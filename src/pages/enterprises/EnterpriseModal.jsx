@@ -18,6 +18,10 @@ function EnterpriseModal({ enterprise, close, reload }) {
     phone: enterprise?.phone || "",
     status: enterprise?.status || "ACTIVE",
     note: enterprise?.note || "",
+    contactFullName: "",
+    contactEmail: "",
+    contactPhone: "",
+    contactPosition: "",
   });
 
   const [industries, setIndustries] = useState([]);
@@ -69,7 +73,14 @@ function EnterpriseModal({ enterprise, close, reload }) {
   const handleSubmit = async () => {
     try {
       if (enterprise) {
-        await updateEnterprise(enterprise.id, form);
+        const {
+          contactFullName,
+          contactEmail,
+          contactPhone,
+          contactPosition,
+          ...updatePayload
+        } = form;
+        await updateEnterprise(enterprise.id, updatePayload);
         toast.success("Cập nhật doanh nghiệp thành công");
       } else {
         await createEnterprise(form);

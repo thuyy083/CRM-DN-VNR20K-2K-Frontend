@@ -8,6 +8,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import Profile from "../pages/profile/Profile";
 import Services from "../pages/service/Services";
 import Enterprises from "../pages/enterprises/Enterprises";
+import Users from "../pages/users/Users";
 
 function AppRoutes() {
   return (
@@ -23,15 +24,14 @@ function AppRoutes() {
               <MainLayout />
             </ProtectedRoute>
           }
-        ></Route>
-
-        {/* Protected routes dùng layout */}
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<Dashboard />} />
+        >
+          {/* Protected routes dùng layout */}
+          <Route index element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/employees" element={<Employees />} />
           <Route path="/services" element={<Services />} />
           <Route path="/enterprises" element={<Enterprises />} />
+          <Route path="/users" element={<Users />} />
         </Route>
       </Routes>
     </BrowserRouter>
