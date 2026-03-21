@@ -11,7 +11,6 @@ function Services() {
   const [selectedService, setSelectedService] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategory, setFilterCategory] = useState("ALL");
   const [filterStatus, setFilterStatus] = useState("ALL");
 
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -51,41 +50,41 @@ function Services() {
     setOpenModal(true);
   };
 
+  // ĐÃ SỬA: Xóa bỏ dòng `if (window.confirm(...))`
   const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa dịch vụ này không?")) {
-      try {
-        await deleteService(id);
-        toast.success("Đã xóa dịch vụ thành công!");
-        fetchServices();
-      } catch (error) {
-        toast.error("Lỗi khi xóa dịch vụ!");
-      }
+    try {
+      await deleteService(id);
+      toast.success("Đã xóa dịch vụ thành công!");
+      fetchServices();
+    } catch (error) {
+      toast.error("Lỗi khi xóa dịch vụ!");
     }
   };
 
+  // ĐÃ SỬA: Sửa lỗi lọc trạng thái và tối ưu tìm kiếm
   const filteredServices = services.filter((srv) => {
     const term = searchTerm.toLowerCase();
+
+    // 1. Lấy dữ liệu an toàn (hỗ trợ cả snake_case và camelCase từ API)
+    const code = srv.service_code || srv.serviceCode || "";
+    const name = srv.service_name || srv.serviceName || "";
+    const status = srv.is_active ?? srv.isActive ?? false;
+
+    // 2. Lọc theo text search
     const matchSearch =
-      (srv.service_code || "").toLowerCase().includes(term) ||
-      (srv.service_name || "").toLowerCase().includes(term);
+      code.toLowerCase().includes(term) || name.toLowerCase().includes(term);
 
-    const matchCategory =
-      filterCategory === "ALL" || srv.category === filterCategory;
-
+    // 3. Lọc theo trạng thái
     let matchStatus = true;
-    if (filterStatus === "ACTIVE") matchStatus = srv.is_active === true;
-    if (filterStatus === "INACTIVE") matchStatus = srv.is_active === false;
+    if (filterStatus === "ACTIVE") {
+      matchStatus = status === true || String(status) === "true";
+    }
+    if (filterStatus === "INACTIVE") {
+      matchStatus = status === false || String(status) === "false";
+    }
 
-    return matchSearch && matchCategory && matchStatus;
+    return matchSearch && matchStatus;
   });
-
-  const categoryOptions = [
-    { value: "ALL", label: "Tất cả nhóm" },
-    { value: "Chứng thực số", label: "Chứng thực số" },
-    { value: "Cloud", label: "Cloud" },
-    { value: "Viễn thông", label: "Viễn thông" },
-    { value: "Khác", label: "Khác" },
-  ];
 
   const statusOptions = [
     { value: "ALL", label: "Tất cả tình trạng" },
@@ -140,43 +139,7 @@ function Services() {
             )}
           </div>
 
-          <div className="custom-dropdown">
-            <div
-              className={`dropdown-trigger ${openDropdown === "category" ? "active" : ""}`}
-              onClick={() =>
-                setOpenDropdown(openDropdown === "category" ? null : "category")
-              }
-            >
-              <span>
-                {categoryOptions.find((o) => o.value === filterCategory)?.label}
-              </span>
-              <svg
-                className={`icon-chevron ${openDropdown === "category" ? "open" : ""}`}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </div>
-            {openDropdown === "category" && (
-              <div className="dropdown-menu">
-                {categoryOptions.map((o) => (
-                  <div
-                    key={o.value}
-                    className={`dropdown-item ${filterCategory === o.value ? "selected" : ""}`}
-                    onClick={() => {
-                      setFilterCategory(o.value);
-                      setOpenDropdown(null);
-                    }}
-                  >
-                    {o.label}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* ĐÃ SỬA: Xóa Dropdown Filter Category ở đây */}
 
           <div className="custom-dropdown">
             <div
@@ -235,6 +198,9 @@ function Services() {
 
       {openModal && (
         <ServiceModal
+          services={
+            services
+          } /* TRUYỀN DANH SÁCH DỊCH VỤ ĐỂ MODAL DÒ TRÙNG MÃ */
           service={selectedService}
           close={() => setOpenModal(false)}
           reload={fetchServices}
