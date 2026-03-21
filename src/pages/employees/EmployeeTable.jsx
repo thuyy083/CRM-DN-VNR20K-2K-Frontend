@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useSelector } from "react-redux";
+import { useState, useMemo, useEffect } from "react";
+
 import "./EmployeeTable.scss";
 
 function EmployeeTable({ users, onEdit, onView }) {
@@ -72,14 +72,29 @@ function EmployeeTable({ users, onEdit, onView }) {
     return sortableItems;
   }, [users, sortConfig]);
 
+  const totalPages = Math.ceil(sortedUsers.length / itemsPerPage);
+
+  // ==========================================
+  // LOGIC PHÂN TRANG THÔNG MINH
+  // Bảo vệ người dùng không bị "đá văng" về trang 1 nếu dữ liệu lọc xong vẫn đủ dài.
+  // Chỉ quay về khi dữ liệu lọc ít đi và làm mất cái trang hiện tại đang đứng.
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages); // Nếu lọc xong còn 2 trang mà đang đứng ở trang 3 thì lùi về trang 2
+    } else if (totalPages === 0 && currentPage !== 1) {
+      setCurrentPage(1); // Nếu rỗng ruột thì đưa về 1 tránh lỗi trắng bảng
+    }
+  }, [totalPages, currentPage]);
+  // ==========================================
+
   // Logic Phân trang
   const currentTableData = useMemo(() => {
-    const firstPageIndex = (currentPage - 1) * itemsPerPage;
+    // Đảm bảo an toàn không bị out of bound index
+    const safeCurrentPage = currentPage > totalPages && totalPages > 0 ? totalPages : (currentPage === 0 ? 1 : currentPage);
+    const firstPageIndex = (safeCurrentPage - 1) * itemsPerPage;
     const lastPageIndex = firstPageIndex + itemsPerPage;
     return sortedUsers.slice(firstPageIndex, lastPageIndex);
-  }, [currentPage, sortedUsers]);
-
-  const totalPages = Math.ceil(sortedUsers.length / itemsPerPage);
+  }, [currentPage, sortedUsers, totalPages, itemsPerPage]);
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -87,8 +102,19 @@ function EmployeeTable({ users, onEdit, onView }) {
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";
+
+    // detect format DD-MM-YYYY
+    if (dateString.includes("-") && dateString.split("-")[0].length === 2) {
+      const [day, month, year] = dateString.split("-");
+      return `${day}/${month}/${year}`;
+    }
+
     const date = new Date(dateString);
-    return date.toLocaleDateString("vi-VN");
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleDateString("vi-VN");
+    }
+
+    return "-";
   };
 
   const getSortIcon = (key) => {
@@ -131,7 +157,7 @@ function EmployeeTable({ users, onEdit, onView }) {
           {currentTableData.length === 0 ? (
             <tr>
               <td colSpan="9" className="empty-state">
-                Chưa có dữ liệu nhân viên nào
+                Chưa có dữ liệu nhân viên nào hoặc không tìm thấy kết quả phù hợp
               </td>
             </tr>
           ) : (

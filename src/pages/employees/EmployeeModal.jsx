@@ -30,6 +30,26 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
     return dateOnly;
   };
 
+  const calculateAge = (dateString) => {
+    if (!dateString) return null;
+
+    const today = new Date();
+    const birthDate = new Date(dateString);
+
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    // Nếu chưa tới sinh nhật năm nay thì trừ 1
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
+    }
+
+    return age;
+  };
+
   const [form, setForm] = useState({
     fullName: user?.fullName || "",
     email: user?.email || "",
@@ -123,6 +143,15 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
 
       if (form.newPassword !== form.confirmPassword) {
         newErrors.confirmPassword = "Xác nhận mật khẩu không khớp";
+        hasError = true;
+      }
+    }
+
+    // --- THÊM LOGIC KIỂM TRA TUỔI TẠI ĐÂY ---
+    if (form.dateOfBirth) {
+      const age = calculateAge(form.dateOfBirth);
+      if (age !== null && age < 18) {
+        newErrors.dateOfBirth = "Nhân viên phải đủ 18 tuổi trở lên";
         hasError = true;
       }
     }
@@ -244,10 +273,10 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
               style={
                 user
                   ? {
-                      backgroundColor: "#f3f4f6",
-                      cursor: "not-allowed",
-                      color: "#6b7280",
-                    }
+                    backgroundColor: "#f3f4f6",
+                    cursor: "not-allowed",
+                    color: "#6b7280",
+                  }
                   : {}
               }
             />
