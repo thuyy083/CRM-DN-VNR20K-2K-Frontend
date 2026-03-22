@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -15,7 +15,8 @@ import { getDashboardMetrics } from "../../services/dashboardService";
 import "./Dashboard.scss";
 
 function Dashboard() {
-  const [metrics, setMetrics] = useState(null);
+  const [rawMetrics, setRawMetrics] = useState(null);
+  const [displayMetrics, setDisplayMetrics] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const [filter, setFilter] = useState({
@@ -25,15 +26,13 @@ function Dashboard() {
 
   useEffect(() => {
     let isMounted = true;
-
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const res = await getDashboardMetrics(filter.month, filter.year);
+        const res = await getDashboardMetrics();
         const actualData = res.data?.data || res.data;
-
         if (isMounted) {
-          setMetrics(actualData);
+          setRawMetrics(actualData);
         }
       } catch (err) {
         console.error("Lỗi lấy dữ liệu dashboard:", err);
@@ -41,32 +40,54 @@ function Dashboard() {
         if (isMounted) setIsLoading(false);
       }
     };
-
     loadData();
-
     return () => {
       isMounted = false;
     };
-  }, [filter.month, filter.year]);
+  }, []);
 
-  if (isLoading || !metrics) {
+  useEffect(() => {
+    if (rawMetrics) {
+      const filteredStats = (rawMetrics.employeeStats || []).filter((item) => {
+        if (!item.interactionDate) return true;
+        const date = new Date(item.interactionDate);
+        return (
+          date.getMonth() + 1 === filter.month &&
+          date.getFullYear() === filter.year
+        );
+      });
+
+      setDisplayMetrics({
+        ...rawMetrics,
+        employeeStats: filteredStats,
+        totalActiveEmployees: filteredStats.length,
+      });
+    }
+  }, [filter, rawMetrics]);
+
+  const interactionPieData = useMemo(() => {
+    if (!displayMetrics) return [];
+    return [
+      {
+        name: "Đã tương tác",
+        value: displayMetrics.totalInteractedEnterprises || 0,
+      },
+      {
+        name: "Chưa tương tác",
+        value: Math.max(
+          0,
+          (displayMetrics.totalEnterprises || 0) -
+            (displayMetrics.totalInteractedEnterprises || 0),
+        ),
+      },
+    ];
+  }, [displayMetrics]);
+
+  if (isLoading || !displayMetrics) {
     return <div className="loading">Đang tải dữ liệu hệ thống...</div>;
   }
 
-  const interactionPieData = [
-    { name: "Đã tương tác", value: metrics.totalInteractedEnterprises || 0 },
-    {
-      name: "Chưa tương tác",
-      value: Math.max(
-        0,
-        (metrics.totalEnterprises || 0) -
-          (metrics.totalInteractedEnterprises || 0),
-      ),
-    },
-  ];
-
   const INTERACTION_COLORS = ["#ffffff", "rgba(255, 255, 255, 0.3)"];
-
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
   const years = [2023, 2024, 2025, 2026];
 
@@ -82,10 +103,10 @@ function Dashboard() {
           <div className="card-info">
             <label>Tỷ lệ tương tác doanh nghiệp</label>
             <div className="value">
-              {metrics.totalInteractedEnterprises || 0}
+              {displayMetrics.totalInteractedEnterprises || 0}
             </div>
             <div className="sub-label">
-              trên tổng số {metrics.totalEnterprises || 0} doanh nghiệp
+              trên tổng số {displayMetrics.totalEnterprises || 0} doanh nghiệp
             </div>
           </div>
           <div className="card-chart">
@@ -109,10 +130,10 @@ function Dashboard() {
               </PieChart>
             </ResponsiveContainer>
             <div className="chart-percentage">
-              {metrics.totalEnterprises > 0
+              {displayMetrics.totalEnterprises > 0
                 ? Math.round(
-                    (metrics.totalInteractedEnterprises /
-                      metrics.totalEnterprises) *
+                    (displayMetrics.totalInteractedEnterprises /
+                      displayMetrics.totalEnterprises) *
                       100,
                   )
                 : 0}
@@ -124,25 +145,24 @@ function Dashboard() {
         <div className="secondary-stats-grid">
           <div className="mini-card">
             <label>Tổng nhân sự</label>
-            <div className="mini-value">{metrics.totalUsers || 0}</div>
+            <div className="mini-value">{displayMetrics.totalUsers || 0}</div>
           </div>
-
           <div className="mini-card highlight">
             <label>Tổng nhân viên đã tiếp xúc (T.{filter.month})</label>
             <div className="mini-value">
-              {metrics.totalActiveEmployees || 0}
+              {displayMetrics.totalActiveEmployees || 0}
             </div>
           </div>
-
           <div className="mini-card">
             <label>Tổng doanh nghiệp</label>
-            <div className="mini-value">{metrics.totalEnterprises || 0}</div>
+            <div className="mini-value">
+              {displayMetrics.totalEnterprises || 0}
+            </div>
           </div>
-
           <div className="mini-card">
             <label>Dịch vụ hoạt động</label>
             <div className="mini-value status-active">
-              {metrics.activeServices || 0}
+              {displayMetrics.activeServices || 0}
             </div>
           </div>
         </div>
@@ -151,7 +171,6 @@ function Dashboard() {
       <div className="employee-chart-box">
         <div className="chart-header-row">
           <h3 className="section-title">Hiệu suất nhân viên tiếp xúc</h3>
-
           <div className="filter-group">
             <select
               value={filter.month}
@@ -166,7 +185,6 @@ function Dashboard() {
                 </option>
               ))}
             </select>
-
             <select
               value={filter.year}
               onChange={(e) =>
@@ -183,10 +201,11 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="chart-wrapper" style={{ width: "100%", height: 350 }}>
-          <ResponsiveContainer>
+        <div className="chart-wrapper">
+          <ResponsiveContainer width="100%" height={350} debounce={100}>
             <BarChart
-              data={metrics.employeeStats || []}
+              key={`chart-${displayMetrics.employeeStats?.length || 0}-${filter.month}-${filter.year}`}
+              data={displayMetrics.employeeStats || []}
               margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
             >
               <CartesianGrid
@@ -204,6 +223,7 @@ function Dashboard() {
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: "#666", fontSize: 12 }}
+                allowDecimals={false}
               />
               <Tooltip
                 cursor={{ fill: "#f5f5f5" }}
@@ -219,6 +239,7 @@ function Dashboard() {
                 fill="#c8102e"
                 radius={[6, 6, 0, 0]}
                 barSize={45}
+                isAnimationActive={true}
               />
             </BarChart>
           </ResponsiveContainer>
