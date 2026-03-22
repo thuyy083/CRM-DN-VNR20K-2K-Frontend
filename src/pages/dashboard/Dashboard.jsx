@@ -15,7 +15,6 @@ import { getDashboardMetrics } from "../../services/dashboardService";
 import "./Dashboard.scss";
 
 function Dashboard() {
-  const [rawMetrics, setRawMetrics] = useState(null);
   const [displayMetrics, setDisplayMetrics] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,44 +25,29 @@ function Dashboard() {
 
   useEffect(() => {
     let isMounted = true;
+
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const res = await getDashboardMetrics();
+        const res = await getDashboardMetrics(filter.month, filter.year);
         const actualData = res.data?.data || res.data;
+
         if (isMounted) {
-          setRawMetrics(actualData);
+          setDisplayMetrics(actualData);
         }
       } catch (err) {
-        console.error("Lỗi lấy dữ liệu dashboard:", err);
+        console.error("Lỗi:", err);
       } finally {
         if (isMounted) setIsLoading(false);
       }
     };
+
     loadData();
+
     return () => {
       isMounted = false;
     };
-  }, []);
-
-  useEffect(() => {
-    if (rawMetrics) {
-      const filteredStats = (rawMetrics.employeeStats || []).filter((item) => {
-        if (!item.interactionDate) return true;
-        const date = new Date(item.interactionDate);
-        return (
-          date.getMonth() + 1 === filter.month &&
-          date.getFullYear() === filter.year
-        );
-      });
-
-      setDisplayMetrics({
-        ...rawMetrics,
-        employeeStats: filteredStats,
-        totalActiveEmployees: filteredStats.length,
-      });
-    }
-  }, [filter, rawMetrics]);
+  }, [filter]);
 
   const interactionPieData = useMemo(() => {
     if (!displayMetrics) return [];
