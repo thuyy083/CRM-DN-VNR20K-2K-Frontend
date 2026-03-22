@@ -3,17 +3,17 @@ import Sidebar from "../../components/sidebar/Sidebar";
 import Header from "../../components/header/Header";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "./MainLayout.scss";
+import styles from "./MainLayout.module.scss";
 
 function MainLayout() {
   return (
-    <div className="main-layout">
+    <div className={styles.mainLayout}>
       <Sidebar />
 
-      <div className="main-content">
+      <div className={styles.mainContent}>
         <Header />
 
-        <div className="page-content">
+        <div className={styles.pageContent}>
           <Outlet />
         </div>
       </div>

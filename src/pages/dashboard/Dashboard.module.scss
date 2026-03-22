@@ -1,0 +1,147 @@
+.dashboardContainer {
+  padding: 24px;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* HEADER */
+.dashboardHeader {
+  margin-bottom: 32px;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.subtitle {
+  color: #6c757d;
+  font-size: 14px;
+}
+
+/* MAIN GRID */
+.mainStatsWrapper {
+  display: grid;
+  grid-template-columns: 1.2fr 2fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 1200px) {
+  .mainStatsWrapper {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* CARD CHÍNH */
+.interactionCard {
+  background: linear-gradient(135deg, #c8102e, #9b0c24);
+  color: #fff;
+  padding: 28px;
+  border-radius: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 12px 24px rgba(200, 16, 46, 0.2);
+}
+
+.cardInfo label {
+  font-size: 15px;
+}
+
+.value {
+  font-size: 48px;
+  font-weight: 800;
+  margin: 12px 0;
+}
+
+.subLabel {
+  font-size: 13px;
+}
+
+/* CHART */
+.cardChart {
+  position: relative;
+}
+
+.chartPercentage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: 700;
+}
+
+/* MINI CARD */
+.secondaryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.miniCard {
+  background: #fff;
+  padding: 24px;
+  border-radius: 20px;
+  border: 1px solid #edf2f7;
+  transition: all 0.3s;
+}
+
+.miniCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+}
+
+.highlight {
+  border-left: 4px solid #c8102e;
+  background: #fffafa;
+}
+
+.miniValue {
+  font-size: 28px;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.statusActive {
+  color: #38a169;
+}
+
+/* CHART BOX */
+.employeeChartBox {
+  background: #fff;
+  padding: 32px;
+  border-radius: 24px;
+}
+
+.chartHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.sectionTitle {
+  font-weight: 700;
+}
+
+.filterGroup {
+  display: flex;
+  gap: 10px;
+}
+
+.filterSelect {
+  height: 36px;
+  padding: 0px 12px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+/* LOADING */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80vh;
+  color: #c8102e;
+}

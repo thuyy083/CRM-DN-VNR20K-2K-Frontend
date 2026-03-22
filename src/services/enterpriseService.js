@@ -79,3 +79,16 @@ export const importEnterprises = (file) => {
     },
   });
 };
+
+export const downloadEnterpriseTemplate = () => {
+  return axios.get("/enterprises/import/template", {
+    responseType: "blob",
+  });
+};
+
+export const exportEnterprises = (params) => {
+  return axios.get("/enterprises/export", {
+    params,
+    responseType: "blob",
+  });
+};

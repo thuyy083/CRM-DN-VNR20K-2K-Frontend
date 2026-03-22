@@ -1,13 +1,14 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
+import Person from "@mui/icons-material/Person";
+import Logout from "@mui/icons-material/Logout";
 import { logout } from "../../redux/slices/authSlice";
 import { logoutApi } from "../../services/authService";
 
-import "./Header.scss";
+import styles from "./Header.module.scss";
 
 function Header() {
-
   const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -24,7 +25,9 @@ function Header() {
   const handleLogout = async () => {
     try {
       await logoutApi();
-    } catch (e) {console.log(e)}
+    } catch (e) {
+      console.log(e);
+    }
 
     dispatch(logout());
     localStorage.removeItem("token");
@@ -36,7 +39,6 @@ function Header() {
     navigate("/profile");
   };
 
-  // click ngoài menu sẽ đóng dropdown
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (!menuRef.current?.contains(e.target)) {
@@ -52,51 +54,49 @@ function Header() {
   }, []);
 
   return (
-    <div className="header">
-
+    <div className={styles.header}>
       <h3>HỆ THỐNG QUẢN LÝ TIẾP XÚC DOANH NGHIỆP</h3>
 
-      <div className="user-section" ref={menuRef}>
-
-        <div className="user-info" onClick={toggleMenu}>
-
-          <div className="avatar-header">
+      <div className={styles.userSection} ref={menuRef}>
+        <div className={styles.userInfo} onClick={toggleMenu}>
+          <div className={styles.avatarHeader}>
             {user?.fullName?.charAt(0)}
           </div>
 
-          <div className="user-text">
-            <span className="name">{user?.fullName}</span>
-            <span className="role">{role}</span>
+          <div className={styles.userText}>
+            <span className={styles.name}>{user?.fullName}</span>
+            <span className={styles.role}>{role}</span>
           </div>
 
-          <span className={`dropdown-icon ${open ? "rotate" : ""}`}>
+          <span
+            className={`${styles.dropdownIcon} ${
+              open ? styles.rotate : ""
+            }`}
+          >
             ▼
           </span>
-
         </div>
 
         {open && (
-          <div className="dropdown-menu">
-
+          <div className={styles.dropdownMenu}>
             <div
-              className="dropdown-item"
+              className={styles.dropdownItem}
               onClick={handleProfile}
             >
+              <Person fontSize="small" />
               Thông tin cá nhân
             </div>
 
             <div
-              className="dropdown-item logout"
+              className={`${styles.dropdownItem} ${styles.logout}`}
               onClick={handleLogout}
             >
+              <Logout fontSize="small" />
               Đăng xuất
             </div>
-
           </div>
         )}
-
       </div>
-
     </div>
   );
 }
