@@ -92,3 +92,31 @@ export const exportEnterprises = (params) => {
     responseType: "blob",
   });
 };
+
+// ===== SERVICE USAGES (CONTRACTS) =====
+
+// 1. Thêm dịch vụ cho doanh nghiệp (Add Service to Enterprise)
+export const addServiceToEnterprise = (enterpriseId, data) => {
+  return axios.post(`/enterprises/${enterpriseId}/services`, data);
+};
+
+// 2. Lấy danh sách dịch vụ (hợp đồng) của doanh nghiệp (Get Service Usages by Enterprise)
+export const getServiceUsagesByEnterprise = (enterpriseId, params) => {
+  // Có thể truyền thêm params nếu API có hỗ trợ phân trang/filter
+  return axios.get(`/enterprises/${enterpriseId}/services`, { params });
+};
+
+// 3. Lấy chi tiết một dịch vụ đang sử dụng theo ID (Get Service Usage By ID)
+export const getServiceUsageById = (enterpriseId, usageId) => {
+  return axios.get(`/enterprises/${enterpriseId}/services/${usageId}`);
+};
+
+// 4. Cập nhật thông tin sử dụng dịch vụ (Update Service Usage)
+export const updateServiceUsage = (enterpriseId, usageId, data) => {
+  return axios.put(`/enterprises/${enterpriseId}/services/${usageId}`, data);
+};
+
+// 5. Xóa dịch vụ đang sử dụng (Delete Service Usage - ADMIN ONLY)
+export const deleteServiceUsage = (enterpriseId, usageId) => {
+  return axios.delete(`/enterprises/${enterpriseId}/services/${usageId}`);
+};
