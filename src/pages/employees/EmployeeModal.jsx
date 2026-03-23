@@ -498,55 +498,59 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
             </div>
           </div>
 
-          <div className="form-row">
-            {/* DROPDOWN TRẠNG THÁI */}
-            <div className="form-group">
-              <label>Trạng thái</label>
-              <div className="custom-dropdown">
-                <div
-                  className={`dropdown-trigger ${openDropdown === "status" ? "active" : ""}`}
-                  onClick={() =>
-                    setOpenDropdown(openDropdown === "status" ? null : "status")
-                  }
-                >
-                  <span>
-                    {
-                      statusOptions.find((opt) => opt.value === form.status)
-                        ?.label
+          {/* KIỂM TRA: CHỈ HIỂN THỊ DÒNG NÀY NẾU CÓ TRUYỀN USER VÀO (CHẾ ĐỘ EDIT) */}
+          {user && (
+            <div className="form-row">
+              {/* DROPDOWN TRẠNG THÁI */}
+              <div className="form-group">
+                <label>Trạng thái</label>
+                <div className="custom-dropdown">
+                  <div
+                    className={`dropdown-trigger ${openDropdown === "status" ? "active" : ""}`}
+                    onClick={() =>
+                      setOpenDropdown(openDropdown === "status" ? null : "status")
                     }
-                  </span>
-                  <svg
-                    className={`icon-chevron ${openDropdown === "status" ? "open" : ""}`}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
                   >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </div>
-                {openDropdown === "status" && (
-                  <div className="dropdown-menu">
-                    {statusOptions.map((opt) => (
-                      <div
-                        key={opt.value}
-                        className={`dropdown-item ${form.status === opt.value ? "selected" : ""}`}
-                        onClick={() => {
-                          handleChange("status", opt.value);
-                          setOpenDropdown(null);
-                        }}
-                      >
-                        {opt.label}
-                      </div>
-                    ))}
+                    <span>
+                      {
+                        statusOptions.find((opt) => opt.value === form.status)
+                          ?.label
+                      }
+                    </span>
+                    <svg
+                      className={`icon-chevron ${openDropdown === "status" ? "open" : ""}`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
                   </div>
-                )}
+                  {openDropdown === "status" && (
+                    <div className="dropdown-menu">
+                      {statusOptions.map((opt) => (
+                        <div
+                          key={opt.value}
+                          className={`dropdown-item ${form.status === opt.value ? "selected" : ""}`}
+                          onClick={() => {
+                            handleChange("status", opt.value);
+                            setOpenDropdown(null);
+                          }}
+                        >
+                          {opt.label}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
+              {/* Cột trống để căn layout lưới 2 cột không bị vỡ */}
+              <div className="form-group"></div>
             </div>
-            <div className="form-group"></div>
-          </div>
+          )}
         </div>
 
         <div className="modal-actions">
