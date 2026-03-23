@@ -18,35 +18,7 @@ $shadow-md: 0 6px 20px rgba(238, 0, 51, 0.15);
     box-sizing: border-box;
 }
 
-/* =========================
-   HEADER & ACTIONS (CHỐNG VỠ BỐ CỤC)
-========================= */
-.header {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 25px;
-    border: none !important;
 
-    h2 {
-        font-size: 24px;
-        font-weight: 700;
-        color: $text-main;
-        margin: 0;
-        white-space: nowrap;
-        border: none !important;
-    }
-
-    .header-actions {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 12px;
-    }
-}
 
 /* =========================
    SEARCH BOX

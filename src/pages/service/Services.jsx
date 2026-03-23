@@ -56,6 +56,7 @@ function Services() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchServices();
   }, [fetchServices]);
 
@@ -75,6 +76,7 @@ function Services() {
       await deleteService(id);
       toast.success("Đã xóa dịch vụ thành công!");
       fetchServices();
+    // eslint-disable-next-line no-unused-vars
     } catch (error) {
       toast.error("Lỗi khi xóa dịch vụ!");
     }
