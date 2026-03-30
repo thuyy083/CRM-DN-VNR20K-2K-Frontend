@@ -6,9 +6,17 @@ import EnterpriseTable from "./EnterpriseTable";
 import EnterpriseModal from "./EnterpriseModal";
 import EnterpriseDetailModal from "./EnterpriseDetailModal";
 import ImportEnterpriseModal from "./ImportEnterpriseModal";
-import { downloadEnterpriseTemplate, exportEnterprises, getEnterprises, getIndustries } from "../../services/enterpriseService";
+import {
+  deleteEnterprise,
+  downloadEnterpriseTemplate,
+  exportEnterprises,
+  getEnterprises,
+  getIndustries,
+} from "../../services/enterpriseService";
 import "../employees/Employees.scss"
 import { toast } from "react-toastify";
+
+const POTENTIAL_STORAGE_KEY = "enterprise_potential_map";
 
 function Enterprises() {
   const [enterprises, setEnterprises] = useState([]);
@@ -23,24 +31,84 @@ function Enterprises() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [filterIndustry, setFilterIndustry] = useState("ALL");
+  const [filterPotential, setFilterPotential] = useState("ALL");
 
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
 
+  const getPotentialStorageMap = () => {
+    try {
+      const raw = localStorage.getItem(POTENTIAL_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (error) {
+      console.error("Cannot parse potential storage", error);
+      return {};
+    }
+  };
+
+  const isPotentialEnterprise = (item) => {
+    const raw =
+      item?.isPotential ??
+      item?.potential ??
+      item?.is_potential ??
+      item?.potentialFlag ??
+      item?.isPotentialCustomer ??
+      item?.potentialCustomer;
+
+    if (typeof raw === "boolean") return raw;
+    if (typeof raw === "number") return raw === 1;
+    if (typeof raw === "string") {
+      const normalized = raw.trim().toLowerCase();
+      return ["true", "1", "yes", "y", "potential", "tiem_nang"].includes(normalized);
+    }
+    return false;
+  };
+
   const fetchEnterprises = useCallback(async () => {
     try {
+      // Luôn tải nhiều bản ghi hơn để lọc tiềm năng phía client không bị thiếu dữ liệu trang đầu.
+      const fetchSize = 500;
       const res = await getEnterprises(
         0,
-        10,
+        fetchSize,
         searchTerm,
         filterStatus === "ALL" ? "" : filterStatus,
-        filterIndustry === "ALL" ? "" : filterIndustry
+        filterIndustry === "ALL" ? "" : filterIndustry,
+        ""
       );
-      setEnterprises(res.data?.data?.content || []);
+
+      const data = res.data?.data?.content || [];
+      const potentialStorageMap = getPotentialStorageMap();
+
+      const mergedData = data.map((item) => {
+        const enterpriseId = String(item?.id ?? "");
+        const hasStoragePotential = Object.prototype.hasOwnProperty.call(
+          potentialStorageMap,
+          enterpriseId
+        );
+
+        if (!hasStoragePotential) return item;
+
+        const potentialFlag = Boolean(potentialStorageMap[enterpriseId]);
+        return {
+          ...item,
+          isPotential: potentialFlag,
+          potential: potentialFlag,
+          is_potential: potentialFlag,
+        };
+      });
+
+      const filteredByPotential = mergedData.filter((item) => {
+        if (filterPotential === "ALL") return true;
+        const potential = isPotentialEnterprise(item);
+        return filterPotential === "POTENTIAL" ? potential : !potential;
+      });
+
+      setEnterprises(filteredByPotential);
     } catch (err) {
       console.error(err);
     }
-  }, [searchTerm, filterStatus, filterIndustry]);
+  }, [searchTerm, filterStatus, filterIndustry, filterPotential]);
 
   const fetchIndustries = useCallback(async () => {
     try {
@@ -105,6 +173,22 @@ function Enterprises() {
   }
 };
 
+  const handleDeleteEnterprise = async (enterprise) => {
+    const confirmDelete = window.confirm(
+      `Bạn có chắc muốn xóa doanh nghiệp ${enterprise?.name || "này"}?`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await deleteEnterprise(enterprise.id);
+      toast.success("Xóa doanh nghiệp thành công");
+      fetchEnterprises();
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Xóa doanh nghiệp thất bại");
+    }
+  };
+
   useEffect(() => {
     // eslint-disable-next-line
     fetchEnterprises();
@@ -114,7 +198,7 @@ function Enterprises() {
   useEffect(() => {
     const delay = setTimeout(fetchEnterprises, 400);
     return () => clearTimeout(delay);
-  }, [searchTerm, filterStatus, filterIndustry]);
+  }, [searchTerm, filterStatus, filterIndustry, filterPotential]);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -135,6 +219,12 @@ function Enterprises() {
   const industryOptions = [
     { value: "ALL", label: "Tất cả ngành" },
     ...industries.map((i) => ({ value: i.code, label: i.name })),
+  ];
+
+  const potentialOptions = [
+    { value: "ALL", label: "Tất cả loại" },
+    { value: "POTENTIAL", label: "Tiềm năng" },
+    { value: "NORMAL", label: "Thông thường" },
   ];
 
   return (
@@ -251,6 +341,39 @@ function Enterprises() {
             )}
           </div>
 
+          <div className="custom-dropdown">
+            <div
+              className={`dropdown-trigger ${openDropdown === "potential" ? "active" : ""}`}
+              onClick={() =>
+                setOpenDropdown(openDropdown === "potential" ? null : "potential")
+              }
+            >
+              <span>
+                {potentialOptions.find((o) => o.value === filterPotential)?.label}
+              </span>
+              <svg className={`icon-chevron ${openDropdown === "potential" ? "open" : ""}`} viewBox="0 0 24 24">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+
+            {openDropdown === "potential" && (
+              <div className="dropdown-menu">
+                {potentialOptions.map((opt) => (
+                  <div
+                    key={opt.value}
+                    className={`dropdown-item ${filterPotential === opt.value ? "selected" : ""}`}
+                    onClick={() => {
+                      setFilterPotential(opt.value);
+                      setOpenDropdown(null);
+                    }}
+                  >
+                    {opt.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* BUTTONS */}
 
 
@@ -266,7 +389,10 @@ function Enterprises() {
           <button className="add-btn" onClick={handleExport}>
   Xuất Excel
 </button>
-          <button className="add-btn" onClick={() => setOpenModal(true)}>
+          <button className="add-btn" onClick={() => {
+            setSelectedEnterprise(null);
+            setOpenModal(true);
+          }}>
             + Thêm doanh nghiệp
           </button>
         </div>
@@ -276,14 +402,11 @@ function Enterprises() {
         <EnterpriseTable
           enterprises={enterprises}
           industries={industries}
-          onEdit={(e) => {
-            setSelectedEnterprise(e);
-            setOpenModal(true);
-          }}
           onView={(e) => {
             setSelectedEnterprise(e);
             setOpenDetail(true);
           }}
+          onDelete={handleDeleteEnterprise}
         />
       </div>
 
@@ -300,6 +423,8 @@ function Enterprises() {
         <EnterpriseDetailModal
           enterprise={selectedEnterprise}
           industries={industries}
+          reloadEnterprises={fetchEnterprises}
+          onEnterpriseUpdated={setSelectedEnterprise}
           close={() => setOpenDetail(false)}
         />
       )}
