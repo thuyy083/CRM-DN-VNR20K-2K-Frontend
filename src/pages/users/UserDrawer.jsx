@@ -1,45 +1,216 @@
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
+import { updateInteraction } from "../../services/interactionService";
+import { getEnterpriseById } from "../../services/enterpriseService";
 import "./UserDrawer.scss";
 
-const typeMap = {
-  PHONE_CALL: "Gọi điện",
-  OFFLINE_MEETING: "Gặp mặt",
-  EMAIL_QUOTE: "Email",
-  DEMO: "Thăm quan",
-  ONLINE_MEETING: "Họp online",
-  CONTRACT_SIGNING: "Ký hợp đồng",
-  CUSTOMER_SUPPORT: "Hỗ trợ",
-  OTHER: "Khác",
-};
+const POTENTIAL_STORAGE_KEY = "enterprise_potential_map";
 
-const resultMap = {
-  PENDING: "Đang xử lý",
-  NEED_FOLLOW_UP: "Cần theo dõi",
-  SUCCESSFUL: "Thành công",
-  FAILED: "Thất bại",
-};
+const resultOptions = [
+  { value: "PENDING", label: "Đang xử lý" },
+  { value: "FAILED", label: "Hủy" },
+  { value: "SUCCESSFUL", label: "Thành công" },
+];
 
-const formatDate = (value) => {
-  // Dùng cho mốc thời gian có cả ngày + giờ.
+const sanitizeInteractionContent = (value) => {
   if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleString("vi-VN");
+  const cleaned = String(value).replace(/\s*Chức\s*vụ[^:]*:\s*.*$/iu, "").trim();
+  return cleaned || "-";
 };
 
 const formatDateOnly = (value) => {
-  // Dùng cho trường ngày tiếp xúc, chỉ cần phần ngày.
   if (!value) return "-";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleDateString("vi-VN");
 };
 
-function UserDrawer({ open, interaction, onClose }) {
+const getTimeValue = (value) => {
+  if (!value) return null;
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? null : timestamp;
+};
+
+const sortByDateDesc = (list) => {
+  return [...list].sort((a, b) => {
+    const first = getTimeValue(a.interactionTime) || 0;
+    const second = getTimeValue(b.interactionTime) || 0;
+    return second - first;
+  });
+};
+
+const isPotentialEnterprise = (item) => {
+  const raw =
+    item?.isPotential ??
+    item?.potential ??
+    item?.is_potential ??
+    item?.potentialFlag ??
+    item?.isPotentialCustomer ??
+    item?.potentialCustomer;
+
+  if (typeof raw === "boolean") return raw;
+  if (typeof raw === "number") return raw === 1;
+  if (typeof raw === "string") {
+    const normalized = raw.trim().toLowerCase();
+    return ["true", "1", "yes", "y", "potential", "tiem_nang"].includes(normalized);
+  }
+  return false;
+};
+
+function InteractionTable({
+  rows,
+  emptyText,
+  updatingStatusId,
+  onOpenStatusPopup,
+  onViewContent,
+}) {
+  if (!rows.length) {
+    return <div className="section-empty">{emptyText}</div>;
+  }
+
+  return (
+    <table className="history-table large-centered-table">
+      <thead>
+        <tr>
+          <th>STT</th>
+          <th>Ngày tiếp xúc</th>
+          <th>Người liên hệ</th>
+          <th>Nội dung</th>
+          <th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((item, index) => (
+          <tr key={`${item.id}-${item.interactionTime || "no-time"}`}>
+            <td>{index + 1}</td>
+            <td>{formatDateOnly(item.interactionTime)}</td>
+            <td>{item.contactName || "-"}</td>
+            <td>
+              <button className="view-content-btn" type="button" onClick={() => onViewContent(item)}>
+                Xem nội dung
+              </button>
+            </td>
+            <td>
+              <button
+                className="view-status-btn"
+                type="button"
+                disabled={updatingStatusId === item.id}
+                onClick={() => onOpenStatusPopup(item)}
+              >
+                {updatingStatusId === item.id
+                  ? "Đang cập nhật"
+                  : resultOptions.find((opt) => opt.value === (item.result || "PENDING"))?.label || "Trạng thái"}
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function UserDrawer({ open, interaction, onClose, onReload }) {
+  const [localInteractions, setLocalInteractions] = useState([]);
+  const [enterpriseInfo, setEnterpriseInfo] = useState(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState(null);
+  const [previewContent, setPreviewContent] = useState("");
+  const [statusPopup, setStatusPopup] = useState({ open: false, item: null, value: "PENDING" });
+
+  const detailRows = useMemo(() => sortByDateDesc(localInteractions), [localInteractions]);
+
+  const potentialFromStorage = useMemo(() => {
+    try {
+      const raw = localStorage.getItem(POTENTIAL_STORAGE_KEY);
+      const map = raw ? JSON.parse(raw) : {};
+      return Boolean(map[String(interaction?.enterpriseId)]);
+    } catch (error) {
+      console.error("Cannot parse potential storage", error);
+      return false;
+    }
+  }, [interaction?.enterpriseId]);
+
+  const isPotential =
+    isPotentialEnterprise(enterpriseInfo) ||
+    Boolean(interaction?.isPotential) ||
+    potentialFromStorage;
+
+  useEffect(() => {
+    setLocalInteractions(interaction?.allInteractions || []);
+    setEnterpriseInfo(null);
+    setUpdatingStatusId(null);
+    setPreviewContent("");
+    setStatusPopup({ open: false, item: null, value: "PENDING" });
+  }, [interaction]);
+
+  useEffect(() => {
+    const fetchEnterpriseInfo = async () => {
+      if (!open || !interaction?.enterpriseId) return;
+
+      try {
+        const res = await getEnterpriseById(interaction.enterpriseId);
+        setEnterpriseInfo(res?.data?.data || res?.data || null);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchEnterpriseInfo();
+  }, [open, interaction]);
+
+  const handleOpenStatusPopup = (item) => {
+    setStatusPopup({
+      open: true,
+      item,
+      value: item.result || "PENDING",
+    });
+  };
+
+  const handleStatusPopupChange = async (nextStatus) => {
+    const item = statusPopup.item;
+    if (!item) return;
+
+    if (nextStatus === item.result) {
+      setStatusPopup({ open: false, item: null, value: "PENDING" });
+      return;
+    }
+
+    const payload = {
+      interactionType: item.interactionType,
+      result: nextStatus,
+      interactionTime: item.interactionTime,
+      location: item.location || null,
+      description: item.description || null,
+    };
+
+    try {
+      setUpdatingStatusId(item.id);
+      await updateInteraction(item.id, payload);
+
+      setLocalInteractions((prev) =>
+        prev.map((it) => (it.id === item.id ? { ...it, result: nextStatus } : it))
+      );
+      setStatusPopup({ open: false, item: null, value: "PENDING" });
+
+      toast.success("Cập nhật trạng thái thành công");
+      if (onReload) {
+        await onReload();
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Không thể cập nhật trạng thái");
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  };
+
   return (
     <div className={`drawer-overlay ${open ? "open" : ""}`} onClick={onClose}>
       <aside className={`drawer-panel ${open ? "open" : ""}`} onClick={(e) => e.stopPropagation()}>
         <div className="drawer-header">
-          <h3>Chi tiết tiếp xúc</h3>
+          <h3 className="drawer-enterprise-title">
+            <span>{interaction?.enterpriseName || "Chi tiết tiếp xúc"}</span>
+            {isPotential && <span className="potential-star">★</span>}
+          </h3>
           <button className="close-btn" onClick={onClose}>
             ×
           </button>
@@ -48,19 +219,104 @@ function UserDrawer({ open, interaction, onClose }) {
         {!interaction ? (
           <div className="drawer-empty">Chưa có dữ liệu để hiển thị</div>
         ) : (
-          // Khu vực hiển thị toàn bộ thông tin chi tiết của một bản ghi tiếp xúc.
           <div className="drawer-body">
-            <div className="field"><span>ID:</span><strong>{interaction.id || "-"}</strong></div>
-            <div className="field"><span>Nhân viên:</span><strong>{interaction.consultantName || "-"}</strong></div>
-            <div className="field"><span>Doanh nghiệp:</span><strong>{interaction.enterpriseName || "-"}</strong></div>
-            <div className="field"><span>Người liên hệ:</span><strong>{interaction.contactName || "-"}</strong></div>
-            <div className="field"><span>Loại:</span><strong>{typeMap[interaction.interactionType] || interaction.interactionType || "-"}</strong></div>
-            <div className="field"><span>Trạng thái:</span><strong>{resultMap[interaction.result] || interaction.result || "-"}</strong></div>
-            <div className="field"><span>Ngày tiếp xúc:</span><strong>{formatDateOnly(interaction.interactionTime)}</strong></div>
-            <div className="field"><span>Địa điểm:</span><strong>{interaction.location || "-"}</strong></div>
-            <div className="field multiline"><span>Nội dung:</span><p>{interaction.description || "-"}</p></div>
-            <div className="field"><span>Tạo lúc:</span><strong>{formatDate(interaction.createdAt)}</strong></div>
-            <div className="field"><span>Cập nhật:</span><strong>{formatDate(interaction.updatedAt)}</strong></div>
+            <section className="enterprise-info-section">
+              <h4>Thông tin doanh nghiệp</h4>
+              <div className="enterprise-info-grid">
+                <div>
+                  <b>Tên</b>
+                  <span className="enterprise-name-cell">
+                    <span>{enterpriseInfo?.name || interaction?.enterpriseName || "-"}</span>
+                    {isPotential && <span className="potential-star">★</span>}
+                  </span>
+                </div>
+                <div>
+                  <b>MST:</b>
+                  <span>{enterpriseInfo?.taxCode || "-"}</span>
+                </div>
+                <div>
+                  <b>Ngành:</b>
+                  <span>{enterpriseInfo?.industry || "-"}</span>
+                </div>
+                <div>
+                  <b>Nhân viên:</b>
+                  <span>{enterpriseInfo?.employeeCount ?? "-"}</span>
+                </div>
+                <div>
+                  <b>Phone:</b>
+                  <span>{enterpriseInfo?.phone || "-"}</span>
+                </div>
+                <div>
+                  <b>Website:</b>
+                  <span>{enterpriseInfo?.website || "-"}</span>
+                </div>
+              </div>
+            </section>
+
+            <section className="history-section centered-detail-table">
+              <h4>Bảng Chi Tiết Tiếp Xúc</h4>
+              <InteractionTable
+                rows={detailRows}
+                emptyText="Chưa có tiếp xúc nào"
+                updatingStatusId={updatingStatusId}
+                onOpenStatusPopup={handleOpenStatusPopup}
+                onViewContent={(item) => setPreviewContent(sanitizeInteractionContent(item.description))}
+              />
+            </section>
+
+            {previewContent && (
+              <div className="content-preview-overlay" onClick={() => setPreviewContent("")}>
+                <div className="content-preview-dialog" onClick={(e) => e.stopPropagation()}>
+                  <div className="content-preview-header">
+                    <h5>Nội dung tiếp xúc</h5>
+                    <button
+                      type="button"
+                      className="content-close-btn"
+                      onClick={() => setPreviewContent("")}
+                      aria-label="Đóng"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <p>{previewContent}</p>
+                  <div className="content-preview-actions">
+                    <button type="button" onClick={() => setPreviewContent("")}>Đóng</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {statusPopup.open && statusPopup.item && (
+              <div className="content-preview-overlay" onClick={() => setStatusPopup({ open: false, item: null, value: "PENDING" })}>
+                <div className="content-preview-dialog" onClick={(e) => e.stopPropagation()}>
+                  <div className="content-preview-header">
+                    <h5>Cập nhật trạng thái</h5>
+                    <button
+                      type="button"
+                      className="content-close-btn"
+                      onClick={() => setStatusPopup({ open: false, item: null, value: "PENDING" })}
+                      aria-label="Đóng"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <select
+                    value={statusPopup.value}
+                    onChange={(e) => {
+                      const nextValue = e.target.value;
+                      setStatusPopup((prev) => ({ ...prev, value: nextValue }));
+                      handleStatusPopupChange(nextValue);
+                    }}
+                  >
+                    {resultOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </aside>
