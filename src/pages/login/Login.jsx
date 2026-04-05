@@ -25,37 +25,34 @@ function Login() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!form.username.trim()) {
-      toast.warning("Vui lòng nhập email");
-      return;
-    }
+  if (!form.username.trim()) {
+    toast.warning("Vui lòng nhập email");
+    return;
+  }
 
-    if (!form.password.trim()) {
-      toast.warning("Vui lòng nhập mật khẩu");
-      return;
-    }
+  if (!form.password.trim()) {
+    toast.warning("Vui lòng nhập mật khẩu");
+    return;
+  }
 
-    const result = await dispatch(login(form));
+  try {
+    await dispatch(login(form)).unwrap();
 
-    if (result.type === "auth/login/fulfilled") {
+    await dispatch(getMe());
 
-      await dispatch(getMe());
+    toast.success("Đăng nhập thành công");
 
-      toast.success("Đăng nhập thành công");
+    navigate("/");
+  } catch (err) {
+    // 👉 err chính là object BE trả về
+    const message =
+      err?.message || "Email hoặc mật khẩu không chính xác";
 
-      navigate("/");
-
-    }
-    else {
-
-      const message =
-        result.payload?.message || "Sai tài khoản hoặc mật khẩu";
-
-      toast.error(message);
-    }
-  };
+    toast.error(message);
+  }
+};
 
   return (
     <div className="login-page">

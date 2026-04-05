@@ -8,7 +8,9 @@ export const login = createAsyncThunk(
       const res = await loginApi(data);
       return res.data;
     } catch (err) {
-      return thunkAPI.rejectWithValue(err.response.data);
+      return thunkAPI.rejectWithValue(
+        err.response?.data || { message: "Lỗi kết nối server" }
+      );
     }
   }
 );
@@ -20,7 +22,9 @@ export const getMe = createAsyncThunk(
       const res = await getMeApi();
       return res.data.data;
     } catch (err) {
-      return thunkAPI.rejectWithValue(err.response.data);
+      return thunkAPI.rejectWithValue(
+        err.response?.data || { message: "Lỗi kết nối server" }
+      );
     }
   }
 );
