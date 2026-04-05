@@ -40,41 +40,34 @@ const authSlice = createSlice({
   initialState,
 
   reducers: {
-
     logout: (state) => {
-
       state.token = null;
       state.user = null;
-
       localStorage.removeItem("token");
-
     }
-
   },
 
   extraReducers: (builder) => {
-
     builder
-
       .addCase(login.fulfilled, (state, action) => {
-
         const token = action.payload.data.accessToken;
-
         state.token = token;
-
         localStorage.setItem("token", token);
-
       })
-
+      .addCase(getMe.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(getMe.fulfilled, (state, action) => {
-
         state.user = action.payload;
-
+        state.loading = false;
+      })
+      .addCase(getMe.rejected, (state) => {
+        state.loading = false;
+        state.token = null;
+        localStorage.removeItem("token");
       });
-
-  }
-
-});
+  }  // ← đóng extraReducers
+});   // ← đóng createSlice
 
 export const { logout } = authSlice.actions;
 

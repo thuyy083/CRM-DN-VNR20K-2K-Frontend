@@ -1,28 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import "./UserTable.scss";
 
-const typeMap = {
-  PHONE_CALL: "Gọi điện",
-  OFFLINE_MEETING: "Gặp mặt",
-  EMAIL_QUOTE: "Email",
-  DEMO: "Thăm quan",
-  ONLINE_MEETING: "Họp online",
-  CONTRACT_SIGNING: "Ký hợp đồng",
-  CUSTOMER_SUPPORT: "Hỗ trợ",
-  OTHER: "Khác",
-};
-
-const resultMap = {
-  PENDING: "Đang xử lý",
-  NEED_FOLLOW_UP: "Cần theo dõi",
-  SUCCESSFUL: "Thành công",
-  FAILED: "Thất bại",
-};
-
-function UserTable({ interactions, onView, onEdit, onDelete }) {
-  const [sortConfig, setSortConfig] = useState({ key: "id", direction: "desc" });
+function UserTable({ interactions, onView, onDeleteEnterprise }) {
+  const [sortConfig, setSortConfig] = useState({ key: "latestInteractionDate", direction: "desc" });
   const [currentPage, setCurrentPage] = useState(1);
-  const [deleteTarget, setDeleteTarget] = useState(null);
   const itemsPerPage = 8;
 
   const requestSort = (key) => {
@@ -71,7 +52,6 @@ function UserTable({ interactions, onView, onEdit, onDelete }) {
   };
 
   const formatDate = (value) => {
-    // Hiển thị ngày theo định dạng 
     if (!value) return "-";
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "-";
@@ -98,18 +78,11 @@ function UserTable({ interactions, onView, onEdit, onDelete }) {
               <th onClick={() => requestSort("enterpriseName")} className="sortable">
                 Doanh nghiệp {getSortIcon("enterpriseName")}
               </th>
-              <th onClick={() => requestSort("contactName")} className="sortable">
-                Người liên hệ {getSortIcon("contactName")}
+              <th onClick={() => requestSort("interactionCount")} className="sortable">
+                Số lần tiếp xúc {getSortIcon("interactionCount")}
               </th>
-              <th onClick={() => requestSort("interactionType")} className="sortable">
-                Loại {getSortIcon("interactionType")}
-              </th>
-              <th onClick={() => requestSort("interactionTime")} className="sortable">
-                Ngày {getSortIcon("interactionTime")}
-              </th>
-              <th>Nội dung</th>
-              <th onClick={() => requestSort("result")} className="sortable">
-                Trạng thái {getSortIcon("result")}
+              <th onClick={() => requestSort("latestInteractionDate")} className="sortable">
+                Ngày tiếp xúc gần nhất {getSortIcon("latestInteractionDate")}
               </th>
               <th className="text-center">Thao tác</th>
             </tr>
@@ -118,7 +91,7 @@ function UserTable({ interactions, onView, onEdit, onDelete }) {
           <tbody>
             {currentTableData.length === 0 ? (
               <tr>
-                <td colSpan="9" className="empty-state">
+                <td colSpan="6" className="empty-state">
                   Chưa có dữ liệu tiếp xúc
                 </td>
               </tr>
@@ -127,33 +100,25 @@ function UserTable({ interactions, onView, onEdit, onDelete }) {
                 <tr key={item.id}>
                   <td>{item.id}</td>
                   <td className="font-medium">{item.consultantName || "-"}</td>
-                  <td>{item.enterpriseName || "-"}</td>
-                  <td>{item.contactName || "-"}</td>
-                  <td>{typeMap[item.interactionType] || item.interactionType || "-"}</td>
-                  <td>{formatDate(item.interactionTime)}</td>
-                  <td className="content-col">{item.description || "-"}</td>
                   <td>
-                    <span className={`status-badge ${(item.result || "").toLowerCase()}`}>
-                      {resultMap[item.result] || item.result || "-"}
+                    <span className="enterprise-name-cell">
+                      <span>{item.enterpriseName || "-"}</span>
+                      {Boolean(item?.isPotential) && (
+                        <span className="potential-star" title="Doanh nghiệp tiềm năng">
+                          ★
+                        </span>
+                      )}
                     </span>
                   </td>
+                  <td>{item.interactionCount || 0}</td>
+                  <td>{formatDate(item.latestInteractionDate)}</td>
                   <td>
                     <div className="action-btns">
-                      <button className="view-btn" title="Xem chi tiết" onClick={() => onView(item)}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path>
-                          <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
+                      <button className="view-edit-btn" title="Xem chi tiết" onClick={() => onView(item)}>
+                        <span>Xem chi tiết</span>
                       </button>
 
-                      <button className="edit-btn" title="Sửa" onClick={() => onEdit(item)}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                      </button>
-
-                      <button className="delete-btn" title="Xóa" onClick={() => setDeleteTarget(item)}>
+                      <button className="delete-btn" title="Xóa doanh nghiệp" onClick={() => onDeleteEnterprise(item)}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="3 6 5 6 21 6"></polyline>
                           <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
@@ -197,29 +162,6 @@ function UserTable({ interactions, onView, onEdit, onDelete }) {
           </div>
         )}
       </div>
-
-      {deleteTarget && (
-        <div className="confirm-overlay">
-          <div className="confirm-dialog">
-            <h4>Xác nhận xóa</h4>
-            <p>Bạn có chắc muốn xóa tiếp xúc #{deleteTarget.id} không?</p>
-            <div className="confirm-actions">
-              <button className="cancel-btn" onClick={() => setDeleteTarget(null)}>
-                Hủy
-              </button>
-              <button
-                className="delete-confirm-btn"
-                onClick={async () => {
-                  await onDelete(deleteTarget);
-                  setDeleteTarget(null);
-                }}
-              >
-                Xóa
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
