@@ -6,14 +6,8 @@ import EnterpriseTable from "./EnterpriseTable";
 import EnterpriseModal from "./EnterpriseModal";
 import EnterpriseDetailModal from "./EnterpriseDetailModal";
 import ImportEnterpriseModal from "./ImportEnterpriseModal";
-import {
-  deleteEnterprise,
-  downloadEnterpriseTemplate,
-  exportEnterprises,
-  getEnterprises,
-  getIndustries,
-} from "../../services/enterpriseService";
-import "../employees/Employees.scss"
+import { downloadEnterpriseTemplate, exportEnterprises, getEnterprises, getIndustries } from "../../services/enterpriseService";
+// import "../employees/Employees.scss"
 import { toast } from "react-toastify";
 
 const POTENTIAL_STORAGE_KEY = "enterprise_potential_map";
@@ -21,6 +15,9 @@ const POTENTIAL_STORAGE_KEY = "enterprise_potential_map";
 function Enterprises() {
   const [enterprises, setEnterprises] = useState([]);
   const [industries, setIndustries] = useState([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [industrySearch, setIndustrySearch] = useState("");
 
   const [openModal, setOpenModal] = useState(false);
   const [openDetail, setOpenDetail] = useState(false);
@@ -36,6 +33,14 @@ function Enterprises() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
 
+    const industryOptions = [
+    { value: "ALL", label: "Tất cả ngành" },
+    ...industries.map((i) => ({ value: i.code, label: i.name })),
+  ];
+
+  const filteredIndustries = industryOptions.filter((i) =>
+    i.label.toLowerCase().includes(industrySearch.toLowerCase())
+  );
   const getPotentialStorageMap = () => {
     try {
       const raw = localStorage.getItem(POTENTIAL_STORAGE_KEY);
@@ -69,6 +74,8 @@ function Enterprises() {
       // Luôn tải nhiều bản ghi hơn để lọc tiềm năng phía client không bị thiếu dữ liệu trang đầu.
       const fetchSize = 500;
       const res = await getEnterprises(
+        currentPage,
+        10,
         0,
         fetchSize,
         searchTerm,
@@ -77,6 +84,12 @@ function Enterprises() {
         ""
       );
 
+      setEnterprises(res.data?.data?.content || []);
+      setTotalPages(res.data?.data?.totalPages || 0);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [currentPage, searchTerm, filterStatus, filterIndustry]);
       const data = res.data?.data?.content || [];
       const potentialStorageMap = getPotentialStorageMap();
 
@@ -145,33 +158,33 @@ function Enterprises() {
   };
 
   const handleExport = async () => {
-  try {
-    const res = await exportEnterprises({
-      keyword: searchTerm,
-      status: filterStatus === "ALL" ? "" : filterStatus,
-      industry: filterIndustry === "ALL" ? "" : filterIndustry,
-    });
+    try {
+      const res = await exportEnterprises({
+        keyword: searchTerm,
+        status: filterStatus === "ALL" ? "" : filterStatus,
+        industry: filterIndustry === "ALL" ? "" : filterIndustry,
+      });
 
-    const blob = new Blob([res.data], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
+      const blob = new Blob([res.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
 
-    const url = window.URL.createObjectURL(blob);
+      const url = window.URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "enterprises.xlsx";
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "enterprises.xlsx";
 
-    document.body.appendChild(link);
-    link.click();
+      document.body.appendChild(link);
+      link.click();
 
-    link.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error(err);
-    toast.error("Xuất file thất bại");
-  }
-};
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      toast.error("Xuất file thất bại");
+    }
+  };
 
   const handleDeleteEnterprise = async (enterprise) => {
     const confirmDelete = window.confirm(
@@ -196,6 +209,11 @@ function Enterprises() {
   }, [fetchEnterprises]);
 
   useEffect(() => {
+    // eslint-disable-next-line
+    setCurrentPage(0);
+  }, [searchTerm, filterStatus, filterIndustry]);
+
+  useEffect(() => {
     const delay = setTimeout(fetchEnterprises, 400);
     return () => clearTimeout(delay);
   }, [searchTerm, filterStatus, filterIndustry, filterPotential]);
@@ -216,10 +234,7 @@ function Enterprises() {
     { value: "INACTIVE", label: "Ngưng hoạt động" },
   ];
 
-  const industryOptions = [
-    { value: "ALL", label: "Tất cả ngành" },
-    ...industries.map((i) => ({ value: i.code, label: i.name })),
-  ];
+
 
   const potentialOptions = [
     { value: "ALL", label: "Tất cả loại" },
@@ -325,19 +340,35 @@ function Enterprises() {
 
             {openDropdown === "industry" && (
               <div className="dropdown-menu">
-                {industryOptions.map((opt) => (
-                  <div
-                    key={opt.value}
-                    className={`dropdown-item ${filterIndustry === opt.value ? "selected" : ""}`}
-                    onClick={() => {
-                      setFilterIndustry(opt.value);
-                      setOpenDropdown(null);
-                    }}
-                  >
-                    {opt.label}
-                  </div>
-                ))}
-              </div>
+
+  {/* SEARCH */}
+  <div className="dropdown-search">
+    <input
+      placeholder="Tìm ngành..."
+      value={industrySearch}
+      onChange={(e) => setIndustrySearch(e.target.value)}
+    />
+  </div>
+
+  {/* LIST PHẢI BỌC */}
+  <div className="dropdown-list">
+    {filteredIndustries.map((opt) => (
+      <div
+        key={opt.value}
+        className={`dropdown-item ${
+          filterIndustry === opt.value ? "selected" : ""
+        }`}
+        onClick={() => {
+          setFilterIndustry(opt.value);
+          setOpenDropdown(null);
+          setIndustrySearch("");
+        }}
+      >
+        {opt.label}
+      </div>
+    ))}
+  </div>
+</div>
             )}
           </div>
 
@@ -387,6 +418,9 @@ function Enterprises() {
             Tải file mẫu
           </button>
           <button className="add-btn" onClick={handleExport}>
+            Xuất Excel
+          </button>
+          <button className="add-btn" onClick={() => { setSelectedEnterprise(null); setOpenModal(true) }}>
   Xuất Excel
 </button>
           <button className="add-btn" onClick={() => {
@@ -402,6 +436,13 @@ function Enterprises() {
         <EnterpriseTable
           enterprises={enterprises}
           industries={industries}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          onEdit={(e) => {
+            setSelectedEnterprise(e);
+            setOpenModal(true);
+          }}
           onView={(e) => {
             setSelectedEnterprise(e);
             setOpenDetail(true);
@@ -414,7 +455,10 @@ function Enterprises() {
       {openModal && (
         <EnterpriseModal
           enterprise={selectedEnterprise}
-          close={() => setOpenModal(false)}
+          close={() => {
+            setOpenModal(false);
+            setSelectedEnterprise(null);
+          }}
           reload={fetchEnterprises}
         />
       )}
