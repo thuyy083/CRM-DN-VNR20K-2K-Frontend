@@ -8,7 +8,7 @@ function ServiceViewModal({ isOpen, onClose, service }) {
   const cleanHtmlContent = service.description
     ? service.description
       .replace(/style="[^"]*"/gi, "") // Xóa mọi inline-style ép buộc
-      .replace(/&nbsp;/gi, " ")       // 🔥 ĐÂY LÀ CHÌA KHÓA: Đổi khoảng-trắng-liền-khối thành khoảng trắng tự nhiên
+      .replace(/&nbsp;/gi, " ")       //  ĐÂY LÀ CHÌA KHÓA: Đổi khoảng-trắng-liền-khối thành khoảng trắng tự nhiên
     : "";
 
   return (
