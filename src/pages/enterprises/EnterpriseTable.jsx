@@ -2,7 +2,9 @@ import { useState, useMemo } from "react";
 import "./EnterpriseTable.scss";
 
 
-function EnterpriseTable({ enterprises, industries = [], onEdit, onView }) {
+function EnterpriseTable({ enterprises, industries = [], onEdit, onView, currentPage,
+  totalPages,
+  onPageChange, }) {
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
 
   const requestSort = (key) => {
@@ -36,12 +38,16 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView }) {
 
     return items;
   }, [enterprises, sortConfig]);
+  const handlePageChange = (pageNumber) => {
+  onPageChange(pageNumber - 1); // 👈 convert về 0-based
+};
 
   return (
     <div className="table-container">
       <table className="enterprise-table">
         <thead>
           <tr>
+            <th>STT</th>
             <th onClick={() => requestSort("id")}>ID</th>
             <th onClick={() => requestSort("name")}>Tên doanh nghiệp</th>
             <th>MST</th>
@@ -55,8 +61,11 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView }) {
         </thead>
 
         <tbody>
-          {sortedData.map((e) => (
+          {sortedData.map((e, index) => (
             <tr key={e.id}>
+              <td>
+        {currentPage * 10 + index + 1}
+      </td>
               <td>{e.id}</td>
               <td className="font-medium">{e.name}</td>
               <td>{e.taxCode}</td>
@@ -95,6 +104,43 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView }) {
           ))}
         </tbody>
       </table>
+     {totalPages > 1 && (
+  <div className="pagination">
+    <button
+      className="page-btn"
+      disabled={currentPage === 0}
+      onClick={() => onPageChange(currentPage - 1)}
+    >
+      &laquo; Trước
+    </button>
+
+    <div className="page-numbers">
+      {[...Array(totalPages)].map((_, index) => {
+        const pageNumber = index + 1;
+
+        return (
+          <button
+            key={pageNumber}
+            className={`page-num ${
+              currentPage === index ? "active" : ""
+            }`}
+            onClick={() => handlePageChange(pageNumber)}
+          >
+            {pageNumber}
+          </button>
+        );
+      })}
+    </div>
+
+    <button
+      className="page-btn"
+      disabled={currentPage === totalPages - 1}
+      onClick={() => onPageChange(currentPage + 1)}
+    >
+      Sau &raquo;
+    </button>
+  </div>
+)}
     </div>
   );
 }
