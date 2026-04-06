@@ -6,7 +6,7 @@ import EnterpriseTable from "./EnterpriseTable";
 import EnterpriseModal from "./EnterpriseModal";
 import EnterpriseDetailModal from "./EnterpriseDetailModal";
 import ImportEnterpriseModal from "./ImportEnterpriseModal";
-import { downloadEnterpriseTemplate, exportEnterprises, getEnterprises, getIndustries } from "../../services/enterpriseService";
+import { deleteEnterprise, downloadEnterpriseTemplate, exportEnterprises, getEnterprises, getIndustries } from "../../services/enterpriseService";
 // import "../employees/Employees.scss"
 import { toast } from "react-toastify";
 
@@ -33,7 +33,7 @@ function Enterprises() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
 
-    const industryOptions = [
+  const industryOptions = [
     { value: "ALL", label: "Tất cả ngành" },
     ...industries.map((i) => ({ value: i.code, label: i.name })),
   ];
@@ -71,26 +71,29 @@ function Enterprises() {
 
   const fetchEnterprises = useCallback(async () => {
     try {
-      // Luôn tải nhiều bản ghi hơn để lọc tiềm năng phía client không bị thiếu dữ liệu trang đầu.
-      const fetchSize = 500;
-      const res = await getEnterprises(
-        currentPage,
-        10,
-        0,
-        fetchSize,
-        searchTerm,
-        filterStatus === "ALL" ? "" : filterStatus,
-        filterIndustry === "ALL" ? "" : filterIndustry,
-        ""
-      );
+      const res = await getEnterprises({
+        page: 0,              // ⚠️ luôn page 0
+        size: 500,            // ⚠️ lấy nhiều data
+        keyword: "",          // ⚠️ KHÔNG dùng backend search
+        status: filterStatus === "ALL" ? "" : filterStatus,
+        industry: filterIndustry === "ALL" ? "" : filterIndustry,
+      });
 
-      setEnterprises(res.data?.data?.content || []);
-      setTotalPages(res.data?.data?.totalPages || 0);
-    } catch (err) {
-      console.error(err);
-    }
-  }, [currentPage, searchTerm, filterStatus, filterIndustry]);
-      const data = res.data?.data?.content || [];
+      let data = res.data?.data?.content || [];
+
+      // ✅ FILTER SEARCH TẠI FRONTEND
+      if (searchTerm.trim()) {
+        const keyword = searchTerm.toLowerCase();
+
+        data = data.filter((item) => {
+          return (
+            item?.name?.toLowerCase().includes(keyword) ||
+            item?.taxCode?.toLowerCase().includes(keyword)
+          );
+        });
+      }
+
+      // ===== POTENTIAL LOGIC =====
       const potentialStorageMap = getPotentialStorageMap();
 
       const mergedData = data.map((item) => {
@@ -106,8 +109,6 @@ function Enterprises() {
         return {
           ...item,
           isPotential: potentialFlag,
-          potential: potentialFlag,
-          is_potential: potentialFlag,
         };
       });
 
@@ -118,6 +119,8 @@ function Enterprises() {
       });
 
       setEnterprises(filteredByPotential);
+      setTotalPages(1); // ⚠️ vì đã filter client
+
     } catch (err) {
       console.error(err);
     }
@@ -204,19 +207,20 @@ function Enterprises() {
 
   useEffect(() => {
     // eslint-disable-next-line
-    fetchEnterprises();
     fetchIndustries();
-  }, [fetchEnterprises]);
+  }, []);
 
   useEffect(() => {
     // eslint-disable-next-line
-    setCurrentPage(0);
   }, [searchTerm, filterStatus, filterIndustry]);
 
   useEffect(() => {
-    const delay = setTimeout(fetchEnterprises, 400);
+    const delay = setTimeout(() => {
+      fetchEnterprises();
+    }, 300);
+
     return () => clearTimeout(delay);
-  }, [searchTerm, filterStatus, filterIndustry, filterPotential]);
+  }, [fetchEnterprises]);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -272,8 +276,6 @@ function Enterprises() {
               placeholder="Tìm tên doanh nghiệp, MST..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              readOnly
-              onFocus={(e) => e.target.removeAttribute("readonly")}
             />
 
             {searchTerm && (
@@ -341,34 +343,33 @@ function Enterprises() {
             {openDropdown === "industry" && (
               <div className="dropdown-menu">
 
-  {/* SEARCH */}
-  <div className="dropdown-search">
-    <input
-      placeholder="Tìm ngành..."
-      value={industrySearch}
-      onChange={(e) => setIndustrySearch(e.target.value)}
-    />
-  </div>
+                {/* SEARCH */}
+                <div className="dropdown-search">
+                  <input
+                    placeholder="Tìm ngành..."
+                    value={industrySearch}
+                    onChange={(e) => setIndustrySearch(e.target.value)}
+                  />
+                </div>
 
-  {/* LIST PHẢI BỌC */}
-  <div className="dropdown-list">
-    {filteredIndustries.map((opt) => (
-      <div
-        key={opt.value}
-        className={`dropdown-item ${
-          filterIndustry === opt.value ? "selected" : ""
-        }`}
-        onClick={() => {
-          setFilterIndustry(opt.value);
-          setOpenDropdown(null);
-          setIndustrySearch("");
-        }}
-      >
-        {opt.label}
-      </div>
-    ))}
-  </div>
-</div>
+                {/* LIST PHẢI BỌC */}
+                <div className="dropdown-list">
+                  {filteredIndustries.map((opt) => (
+                    <div
+                      key={opt.value}
+                      className={`dropdown-item ${filterIndustry === opt.value ? "selected" : ""
+                        }`}
+                      onClick={() => {
+                        setFilterIndustry(opt.value);
+                        setOpenDropdown(null);
+                        setIndustrySearch("");
+                      }}
+                    >
+                      {opt.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 
@@ -420,9 +421,6 @@ function Enterprises() {
           <button className="add-btn" onClick={handleExport}>
             Xuất Excel
           </button>
-          <button className="add-btn" onClick={() => { setSelectedEnterprise(null); setOpenModal(true) }}>
-  Xuất Excel
-</button>
           <button className="add-btn" onClick={() => {
             setSelectedEnterprise(null);
             setOpenModal(true);
