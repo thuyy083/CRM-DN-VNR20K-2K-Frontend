@@ -1,6 +1,15 @@
-.mainLayout {
-  display: flex;
+body {
+  margin: 0;
 }
+.mainLayout {
+  
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+
+  position: relative;
+}
+
 
 /* phần bên phải sidebar */
 .mainContent {
@@ -17,6 +26,8 @@
   padding: 20px;
   background: #f7f7f7;
   flex: 1;
+
+  margin-top: 64px;
 
   overflow-y: auto;
 }

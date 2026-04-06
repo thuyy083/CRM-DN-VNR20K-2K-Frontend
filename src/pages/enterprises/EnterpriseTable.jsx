@@ -2,9 +2,7 @@ import { useState, useMemo } from "react";
 import "./EnterpriseTable.scss";
 
 
-function EnterpriseTable({ enterprises, industries = [], onEdit, onView, currentPage,
-  totalPages,
-  onPageChange, }) {
+function EnterpriseTable({ enterprises, onEdit, onView, currentPage, totalPages, onPageChange, onDelete }) {
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
 
   const isPotentialEnterprise = (item) => {
@@ -33,14 +31,6 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView, current
     setSortConfig({ key, direction });
   };
 
-  const industryMap = useMemo(() => {
-    const map = {};
-    industries.forEach((i) => {
-      map[i.code] = i.name;
-    });
-    return map;
-  }, [industries]);
-
   const sortedData = useMemo(() => {
     let items = [...enterprises];
 
@@ -56,9 +46,9 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView, current
 
     return items;
   }, [enterprises, sortConfig]);
-  const handlePageChange = (pageNumber) => {
-  onPageChange(pageNumber - 1); // 👈 convert về 0-based
-};
+//   const handlePageChange = (pageNumber) => {
+//   onPageChange(pageNumber - 1); // 👈 convert về 0-based
+// };
 
   return (
     <div className="table-container">
