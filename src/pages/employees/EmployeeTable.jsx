@@ -23,6 +23,13 @@ function EmployeeTable({ users, onEdit, onView }) {
   // 1. STATE SẮP XẾP
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
 
+  const regionMap = {
+    CTO: "Cần Thơ",
+    HUG: "Huế",
+    STG: "Sóc Trăng",
+    NONE: "Chưa phân công",
+  };
+
   // 2. STATE PHÂN TRANG
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -81,8 +88,7 @@ function EmployeeTable({ users, onEdit, onView }) {
   useEffect(() => {
     if (totalPages > 0 && currentPage > totalPages) {
       setCurrentPage(totalPages); // Nếu lọc xong còn 2 trang mà đang đứng ở trang 3 thì lùi về trang 2
-          // eslint-disable-next-line react-hooks/exhaustive-deps
-
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     } else if (totalPages === 0 && currentPage !== 1) {
       setCurrentPage(1); // Nếu rỗng ruột thì đưa về 1 tránh lỗi trắng bảng
     }
@@ -92,7 +98,12 @@ function EmployeeTable({ users, onEdit, onView }) {
   // Logic Phân trang
   const currentTableData = useMemo(() => {
     // Đảm bảo an toàn không bị out of bound index
-    const safeCurrentPage = currentPage > totalPages && totalPages > 0 ? totalPages : (currentPage === 0 ? 1 : currentPage);
+    const safeCurrentPage =
+      currentPage > totalPages && totalPages > 0
+        ? totalPages
+        : currentPage === 0
+          ? 1
+          : currentPage;
     const firstPageIndex = (safeCurrentPage - 1) * itemsPerPage;
     const lastPageIndex = firstPageIndex + itemsPerPage;
     return sortedUsers.slice(firstPageIndex, lastPageIndex);
@@ -132,24 +143,29 @@ function EmployeeTable({ users, onEdit, onView }) {
             <th onClick={() => requestSort("id")} className="sortable">
               ID {getSortIcon("id")}
             </th>
-            <th onClick={() => requestSort("fullName")} className="sortable">
+            <th
+              onClick={() => requestSort("fullName")}
+              className="sortable text-left"
+            >
               Họ tên {getSortIcon("fullName")}
             </th>
-            <th onClick={() => requestSort("email")} className="sortable">
+            <th
+              onClick={() => requestSort("email")}
+              className="sortable text-left"
+            >
               Email {getSortIcon("email")}
             </th>
             <th onClick={() => requestSort("phone")} className="sortable">
               SĐT {getSortIcon("phone")}
             </th>
-            <th onClick={() => requestSort("gender")} className="sortable">
-              Giới tính {getSortIcon("gender")}
-            </th>
-            <th>Ngày sinh</th>
             <th onClick={() => requestSort("status")} className="sortable">
               Trạng thái {getSortIcon("status")}
             </th>
             <th onClick={() => requestSort("role")} className="sortable">
               Vai trò {getSortIcon("role")}
+            </th>
+            <th onClick={() => requestSort("region")} className="sortable">
+              Khu vực {getSortIcon("region")}
             </th>
             <th className="text-center">Hành động</th>
           </tr>
@@ -159,18 +175,19 @@ function EmployeeTable({ users, onEdit, onView }) {
           {currentTableData.length === 0 ? (
             <tr>
               <td colSpan="9" className="empty-state">
-                Chưa có dữ liệu nhân viên nào hoặc không tìm thấy kết quả phù hợp
+                Chưa có dữ liệu nhân viên nào hoặc không tìm thấy kết quả phù
+                hợp
               </td>
             </tr>
           ) : (
             currentTableData.map((user) => (
               <tr key={user.id}>
                 <td>{user.id}</td>
-                <td className="font-medium">{user.fullName || user.name}</td>
-                <td>{user.email}</td>
+                <td className="font-medium text-left">
+                  {user.fullName || user.name}
+                </td>
+                <td className="text-left">{user.email}</td>
                 <td>{user.phone || "-"}</td>
-                <td>{getGenderLabel(user.gender)}</td>
-                <td>{formatDate(user.dateOfBirth)}</td>
                 <td>
                   <span
                     className={`status-badge ${user.status?.toLowerCase()}`}
@@ -187,6 +204,7 @@ function EmployeeTable({ users, onEdit, onView }) {
                     {roleMap[user.role] || user.role}
                   </span>
                 </td>
+                <td>{regionMap[user.region] || user.region || "-"}</td>
                 <td>
                   {/* Chỉ ADMIN mới thấy toàn bộ các nút hành động */}
                   {canManageEmployees ? (

@@ -1,7 +1,7 @@
 /* =========================
    Variables (Giữ nguyên)
 ========================= */
-$primary: #EE0033;
+$primary: #ee0033;
 $primary-light: #fef2f2;
 $text-main: #111827;
 $text-muted: #6b7280;
@@ -14,10 +14,16 @@ $danger-light: #fef2f2;
 .table-container {
   background: $bg-table;
   border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
   border: 1px solid $border;
   overflow-x: auto;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
   margin-top: 20px;
 }
 
@@ -33,6 +39,15 @@ $danger-light: #fef2f2;
     vertical-align: middle;
     text-align: center;
     /* Luôn căn giữa dữ liệu */
+  }
+
+  .text-left {
+    text-align: left !important;
+    padding-left: 24px;
+
+    &.sortable {
+      display: table-cell;
+    }
   }
 
   /* Style cho cột có thể sắp xếp */
@@ -164,18 +179,18 @@ $danger-light: #fef2f2;
     }
   }
 
-    .view-btn {
-      background: #fef3c7;
-      /* Nền vàng nhạt tinh tế */
-      color: #d97706;
-      /* Chữ vàng đậm cam (tương phản tốt, dễ đọc) */
-  
-      &:hover {
-        background: #fde68a;
-        /* Nền đậm lên một chút khi di chuột vào */
-        transform: translateY(-1px);
-      }
+  .view-btn {
+    background: #fef3c7;
+    /* Nền vàng nhạt tinh tế */
+    color: #d97706;
+    /* Chữ vàng đậm cam (tương phản tốt, dễ đọc) */
+
+    &:hover {
+      background: #fde68a;
+      /* Nền đậm lên một chút khi di chuột vào */
+      transform: translateY(-1px);
     }
+  }
 }
 
 .empty-state {

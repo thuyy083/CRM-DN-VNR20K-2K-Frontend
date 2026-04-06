@@ -2,9 +2,7 @@ import { useState, useMemo } from "react";
 import "./EnterpriseTable.scss";
 
 
-function EnterpriseTable({ enterprises, industries = [], onEdit, onView, currentPage,
-  totalPages,
-  onPageChange, }) {
+function EnterpriseTable({ enterprises, onEdit, onView, currentPage, totalPages, onPageChange, onDelete }) {
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
 
   const isPotentialEnterprise = (item) => {
@@ -33,14 +31,6 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView, current
     setSortConfig({ key, direction });
   };
 
-  const industryMap = useMemo(() => {
-    const map = {};
-    industries.forEach((i) => {
-      map[i.code] = i.name;
-    });
-    return map;
-  }, [industries]);
-
   const sortedData = useMemo(() => {
     let items = [...enterprises];
 
@@ -56,9 +46,9 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView, current
 
     return items;
   }, [enterprises, sortConfig]);
-  const handlePageChange = (pageNumber) => {
-  onPageChange(pageNumber - 1); // 👈 convert về 0-based
-};
+//   const handlePageChange = (pageNumber) => {
+//   onPageChange(pageNumber - 1); // 👈 convert về 0-based
+// };
 
   return (
     <div className="table-container">
@@ -66,13 +56,12 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView, current
         <thead>
           <tr>
             <th>STT</th>
-            <th onClick={() => requestSort("id")}>ID</th>
             <th onClick={() => requestSort("name")}>Tên doanh nghiệp</th>
             <th>MST</th>
-            <th>Ngành</th>
+            <th>Khu vực</th>
+            <th>Loại</th>
             <th>Nhân viên</th>
             <th>Điện thoại</th>
-            <th>Website</th>
             <th>Trạng thái</th>
             <th></th>
           </tr>
@@ -84,7 +73,6 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView, current
               <td>
         {currentPage * 10 + index + 1}
       </td>
-              <td>{e.id}</td>
               <td className="font-medium">
                 <span className="enterprise-name-cell">
                   <span>{e.name}</span>
@@ -96,13 +84,10 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView, current
                 </span>
               </td>
               <td>{e.taxCode}</td>
-
-              {/* FIX Ở ĐÂY */}
-              <td>{industryMap[e.industry] || "-"}</td>
-
+              <td>{e.region}</td>
+              <td>{e.type}</td>
               <td>{e.employeeCount}</td>
               <td>{e.phone}</td>
-              <td>{e.website}</td>
 
               <td>
                 <span className={`status ${e.status?.toLowerCase()}`}>
@@ -135,7 +120,7 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView, current
       &laquo; Trước
     </button>
 
-    <div className="page-numbers">
+    {/* <div className="page-numbers">
       {[...Array(totalPages)].map((_, index) => {
         const pageNumber = index + 1;
 
@@ -151,6 +136,34 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView, current
           </button>
         );
       })}
+    </div> */}
+
+    <div className="page-numbers">
+      {(() => {
+        const pages = [];
+        const maxVisible = 5; 
+        
+        let startPage = Math.max(0, currentPage - Math.floor(maxVisible / 2));
+        let endPage = Math.min(totalPages - 1, startPage + maxVisible - 1);
+
+        if (endPage - startPage < maxVisible - 1) {
+          startPage = Math.max(0, endPage - maxVisible + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+          const pageNumber = i + 1;
+          pages.push(
+            <button
+              key={pageNumber}
+              className={`page-num ${currentPage === i ? "active" : ""}`}
+              onClick={() => onPageChange(i)}
+            >
+              {pageNumber}
+            </button>
+          );
+        }
+        return pages;
+      })()}
     </div>
 
     <button

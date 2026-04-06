@@ -7,12 +7,11 @@ import {
   updateEnterprise,
   addServiceToEnterprise,
 } from "../../services/enterpriseService";
-import { getServices } from "../../services/servicesService";
 
 const POTENTIAL_STORAGE_KEY = "enterprise_potential_map";
 
 function EnterpriseModal({ enterprise, close, reload }) {
-  const isCreateMode = !enterprise;
+  // const isCreateMode = !enterprise;
   const normalizePotentialValue = (value) => {
     if (typeof value === "boolean") return value;
     if (typeof value === "number") return value === 1;
@@ -31,7 +30,9 @@ function EnterpriseModal({ enterprise, close, reload }) {
     address: enterprise?.address || "",
     website: enterprise?.website || "",
     phone: enterprise?.phone || "",
-    status: enterprise?.status || "ACTIVE",
+    status: "ACTIVE",
+    region: enterprise?.region || "NONE",
+    type: enterprise?.type || "HKD",
     isPotential:
       normalizePotentialValue(
         enterprise?.isPotential ??
@@ -49,9 +50,8 @@ function EnterpriseModal({ enterprise, close, reload }) {
   const [searchIndustry, setSearchIndustry] = useState("");
   const [openDropdown, setOpenDropdown] = useState(false);
   const dropdownRef = useRef(null);
-  const [showServiceForm, setShowServiceForm] = useState(false);
-  const [services, setServices] = useState([]);
-  const [serviceForm, setServiceForm] = useState({
+  const [showServiceForm] = useState(false);
+  const [serviceForm] = useState({
     viettelServiceId: "",
     contractNumber: "",
     startDate: "",
@@ -73,7 +73,6 @@ function EnterpriseModal({ enterprise, close, reload }) {
 
   useEffect(() => {
     fetchIndustries();
-    fetchServices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -86,41 +85,12 @@ function EnterpriseModal({ enterprise, close, reload }) {
     }
   };
 
-  const fetchServices = async () => {
-    try {
-      const res = await getServices();
-      const raw = res.data;
-      const serviceList =
-        raw?.data?.content ||
-        raw?.content ||
-        raw?.data ||
-        (Array.isArray(raw) ? raw : []);
-      setServices(serviceList);
-    } catch (err) {
-      console.error(err);
-      toast.error("Không tải được danh sách dịch vụ Viettel");
-    }
-  };
 
   const handleChange = (field, value) => {
     setForm({
       ...form,
       [field]: value,
     });
-  };
-
-  const handleServiceChange = (field, value) => {
-    setServiceForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const getServiceLabel = (service) => {
-    const code = service?.serviceCode || service?.service_code || "";
-    const name = service?.serviceName || service?.service_name || "";
-    if (code && name) return `${code} - ${name}`;
-    return code || name || "Dịch vụ";
   };
 
   const validateServiceForm = () => {
@@ -169,6 +139,7 @@ function EnterpriseModal({ enterprise, close, reload }) {
       const potentialFlag = Boolean(form.isPotential);
       const payloadWithPotential = {
         ...form,
+        status: "ACTIVE",
         isPotential: potentialFlag,
         potential: potentialFlag,
         is_potential: potentialFlag,
@@ -176,10 +147,10 @@ function EnterpriseModal({ enterprise, close, reload }) {
 
       if (enterprise) {
         const {
-          contactFullName,
-          contactEmail,
-          contactPhone,
-          contactPosition,
+          // contactFullName,
+          // contactEmail,
+          // contactPhone,
+          // contactPosition,
           ...updatePayload
         } = payloadWithPotential;
         await updateEnterprise(enterprise.id, updatePayload);
@@ -250,6 +221,19 @@ function EnterpriseModal({ enterprise, close, reload }) {
                 onChange={(e) => handleChange("taxCode", e.target.value)}
               />
             </div>
+            <div className="form-group">
+              <label>Khu vực</label>
+              <select
+                value={form.region}
+                onChange={(e) => handleChange("region", e.target.value)}
+              >
+                <option value="NONE">Chưa xác định</option>
+                <option value="CTO">Cần Thơ</option>
+                <option value="HUG">Hậu Giang</option>
+                <option value="STG">Sóc Trăng</option>
+                <option value="ALL">Tất cả</option>
+              </select>
+            </div>
 
             {/* INDUSTRY */}
             <div className="form-group" ref={dropdownRef}>
@@ -310,35 +294,22 @@ function EnterpriseModal({ enterprise, close, reload }) {
               />
             </div>
 
-            <div className="form-group">
-              <label>Dịch vụ Viettel</label>
-              <select
-                value={serviceForm.viettelServiceId}
-                onChange={(e) => handleServiceChange("viettelServiceId", e.target.value)}
-              >
-                <option value="">Chọn dịch vụ</option>
-                {services.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {getServiceLabel(service)}
-                  </option>
-                ))}
-              </select>
-            </div>
 
-            <div className="form-group potential-checkbox-group">
-              <label className="potential-checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={Boolean(form.isPotential)}
-                  onChange={(e) => handleChange("isPotential", e.target.checked)}
-                />
-                <span>Doanh nghiệp tiềm năng</span>
-              </label>
-            </div>
           </div>
 
           {/* RIGHT */}
           <div className="form-col">
+            <div className="form-group">
+              <label>Loại doanh nghiệp</label>
+              <select
+                value={form.type}
+                onChange={(e) => handleChange("type", e.target.value)}
+              >
+                <option value="HKD">Hộ kinh doanh</option>
+                <option value="VNR20K">VNR20K</option>
+                <option value="VNR2K">VNR2K</option>
+              </select>
+            </div>
             <div className="form-group">
               <label>Địa chỉ</label>
               <input
@@ -361,17 +332,6 @@ function EnterpriseModal({ enterprise, close, reload }) {
                 value={form.phone}
                 onChange={(e) => handleChange("phone", e.target.value)}
               />
-            </div>
-
-            <div className="form-group">
-              <label>Trạng thái</label>
-              <select
-                value={form.status}
-                onChange={(e) => handleChange("status", e.target.value)}
-              >
-                <option value="ACTIVE">Hoạt động</option>
-                <option value="INACTIVE">Ngưng hoạt động</option>
-              </select>
             </div>
           </div>
         </div>
