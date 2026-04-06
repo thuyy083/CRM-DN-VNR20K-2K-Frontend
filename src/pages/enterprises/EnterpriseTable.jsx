@@ -135,7 +135,7 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView, current
       &laquo; Trước
     </button>
 
-    <div className="page-numbers">
+    {/* <div className="page-numbers">
       {[...Array(totalPages)].map((_, index) => {
         const pageNumber = index + 1;
 
@@ -151,6 +151,34 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView, current
           </button>
         );
       })}
+    </div> */}
+
+    <div className="page-numbers">
+      {(() => {
+        const pages = [];
+        const maxVisible = 5; 
+        
+        let startPage = Math.max(0, currentPage - Math.floor(maxVisible / 2));
+        let endPage = Math.min(totalPages - 1, startPage + maxVisible - 1);
+
+        if (endPage - startPage < maxVisible - 1) {
+          startPage = Math.max(0, endPage - maxVisible + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+          const pageNumber = i + 1;
+          pages.push(
+            <button
+              key={pageNumber}
+              className={`page-num ${currentPage === i ? "active" : ""}`}
+              onClick={() => onPageChange(i)}
+            >
+              {pageNumber}
+            </button>
+          );
+        }
+        return pages;
+      })()}
     </div>
 
     <button
