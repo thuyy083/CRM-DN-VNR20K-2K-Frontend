@@ -10,18 +10,13 @@ import "./EmployeeModal.scss";
 
 function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState(null); // Quản lý trạng thái dropdown
+  const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
 
-  // 1. Hàm chuyển từ API (DD-MM-YYYY) sang form (YYYY-MM-DD)
   const formatDateForInput = (date) => {
     if (!date) return "";
     const dateOnly = date.substring(0, 10);
-    // Nếu chuỗi đã có định dạng YYYY-MM-DD thì giữ nguyên
-    if (dateOnly.indexOf("-") === 4) {
-      return dateOnly;
-    }
-    // Chuyển DD-MM-YYYY thành YYYY-MM-DD
+    if (dateOnly.indexOf("-") === 4) return dateOnly;
     const parts = dateOnly.split("-");
     if (parts.length === 3) {
       const [day, month, year] = parts;
@@ -32,21 +27,15 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
 
   const calculateAge = (dateString) => {
     if (!dateString) return null;
-
     const today = new Date();
     const birthDate = new Date(dateString);
-
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-
-    // Nếu chưa tới sinh nhật năm nay thì trừ 1
     if (
       monthDiff < 0 ||
       (monthDiff === 0 && today.getDate() < birthDate.getDate())
-    ) {
+    )
       age--;
-    }
-
     return age;
   };
 
@@ -58,6 +47,7 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
     dateOfBirth: user?.dateOfBirth ? formatDateForInput(user.dateOfBirth) : "",
     status: user?.status || "ACTIVE",
     role: user?.role || "CONSULTANT",
+    region: user?.region || "",
     password: "",
     oldPassword: "",
     newPassword: "",
@@ -66,7 +56,6 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
 
   const [errors, setErrors] = useState({});
 
-  // Đóng dropdown khi click ra ngoài
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -78,24 +67,12 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
   }, []);
 
   const handleChange = (field, value) => {
-    setForm({
-      ...form,
-      [field]: value,
-    });
-    if (errors[field]) {
-      setErrors({
-        ...errors,
-        [field]: "",
-      });
-    }
+    setForm({ ...form, [field]: value });
+    if (errors[field]) setErrors({ ...errors, [field]: "" });
   };
 
-  const isValidEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  // 2. Hàm chuyển từ form (YYYY-MM-DD) ngược lại cho API (DD-MM-YYYY)
   const formatDateForSubmit = (date) => {
     if (!date) return null;
     const parts = date.split("-");
@@ -114,6 +91,11 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
       newErrors.fullName = "Vui lòng nhập họ tên";
       hasError = true;
     }
+    if (form.phone && !/^(0[3|5|7|8|9])+([0-9]{8})$/.test(form.phone)) {
+      newErrors.phone =
+        "Số điện thoại không hợp lệ (phải có 10 số, bắt đầu bằng 03/05/07/08/09)";
+      hasError = true;
+    }
 
     if (!user) {
       if (!form.email.trim()) {
@@ -123,7 +105,6 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
         newErrors.email = "Email không đúng định dạng";
         hasError = true;
       }
-
       if (!form.password || form.password.length < 6) {
         newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
         hasError = true;
@@ -139,19 +120,16 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
         newErrors.oldPassword = "Vui lòng nhập mật khẩu cũ";
         hasError = true;
       }
-
       if (!form.newPassword || form.newPassword.length < 6) {
         newErrors.newPassword = "Mật khẩu mới phải có ít nhất 6 ký tự";
         hasError = true;
       }
-
       if (form.newPassword !== form.confirmPassword) {
         newErrors.confirmPassword = "Xác nhận mật khẩu không khớp";
         hasError = true;
       }
     }
 
-    // --- THÊM LOGIC KIỂM TRA TUỔI TẠI ĐÂY ---
     if (form.dateOfBirth) {
       const age = calculateAge(form.dateOfBirth);
       if (age !== null && age < 18) {
@@ -172,15 +150,14 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
         email: form.email,
         phone: form.phone,
         gender: form.gender,
-        // Chuyển đổi ngày sinh trước khi gửi lên API
         dateOfBirth: formatDateForSubmit(form.dateOfBirth),
         role: form.role,
         status: form.status,
+        region: form.region || null,
       };
 
       if (user) {
         await updateUser(user.id, profileData);
-
         if (isChangingPassword) {
           if (currentUserRole === "ADMIN") {
             await resetUserPasswordByAdmin(user.id, {
@@ -195,11 +172,7 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
         }
         toast.success("Cập nhật nhân viên thành công");
       } else {
-        const newUserData = {
-          ...profileData,
-          password: form.password,
-        };
-        await createUser(newUserData);
+        await createUser({ ...profileData, password: form.password });
         toast.success("Thêm nhân viên thành công");
       }
 
@@ -208,13 +181,9 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
     } catch (error) {
       console.error("Submit error:", error.response?.data);
       const responseData = error.response?.data;
-      if (
-        responseData &&
-        responseData.errors &&
-        !Array.isArray(responseData.errors)
-      ) {
+      if (responseData?.errors && !Array.isArray(responseData.errors)) {
         setErrors(responseData.errors);
-      } else if (responseData && Array.isArray(responseData.errors)) {
+      } else if (Array.isArray(responseData?.errors)) {
         const backendErrors = {};
         responseData.errors.forEach((err) => {
           backendErrors[err.field] = err.message;
@@ -226,22 +195,70 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
     }
   };
 
-  // Các mảng dữ liệu cho Dropdown
   const genderOptions = [
     { value: "MALE", label: "Nam" },
     { value: "FEMALE", label: "Nữ" },
     { value: "OTHER", label: "Khác" },
   ];
-
   const roleOptions = [
     { value: "ADMIN", label: "Quản trị viên" },
     { value: "CONSULTANT", label: "Nhân viên tư vấn" },
   ];
-
   const statusOptions = [
     { value: "ACTIVE", label: "Đang hoạt động" },
     { value: "INACTIVE", label: "Ngưng hoạt động" },
   ];
+  const regionOptions = [
+    { value: "", label: "Chưa phân công" },
+    { value: "CTO", label: "Cần Thơ" },
+    { value: "HUG", label: "Huế" },
+    { value: "STG", label: "Sóc Trăng" },
+    { value: "NONE", label: "Không có" },
+  ];
+
+  const renderDropdown = (key, label, options, field) => (
+    <div className="form-group">
+      <label>{label}</label>
+      <div className="custom-dropdown">
+        <div
+          className={`dropdown-trigger ${openDropdown === key ? "active" : ""}`}
+          onClick={() => setOpenDropdown(openDropdown === key ? null : key)}
+        >
+          <span>
+            {options.find((opt) => opt.value === form[field])?.label ||
+              options[0].label}
+          </span>
+          <svg
+            className={`icon-chevron ${openDropdown === key ? "open" : ""}`}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+        {openDropdown === key && (
+          <div className="dropdown-menu">
+            {options.map((opt) => (
+              <div
+                key={opt.value}
+                className={`dropdown-item ${form[field] === opt.value ? "selected" : ""}`}
+                onClick={() => {
+                  handleChange(field, opt.value);
+                  setOpenDropdown(null);
+                }}
+              >
+                {opt.label}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="modal">
@@ -337,7 +354,6 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
               </label>
             </div>
           )}
-
           {user && isChangingPassword && (
             <div className="password-section">
               {currentUserRole !== "ADMIN" && (
@@ -359,7 +375,6 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
                   )}
                 </div>
               )}
-
               <div className="form-row">
                 <div className="form-group">
                   <label>
@@ -378,7 +393,6 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
                     <span className="error-text">{errors.newPassword}</span>
                   )}
                 </div>
-
                 <div className="form-group">
                   <label>
                     Xác nhận <span className="required">*</span>
@@ -413,7 +427,6 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
                 <span className="error-text">{errors.phone}</span>
               )}
             </div>
-
             <div className="form-group">
               <label>Ngày sinh</label>
               <input
@@ -429,153 +442,18 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
           </div>
 
           <div className="form-row">
-            {/* DROPDOWN GIỚI TÍNH */}
-            <div className="form-group">
-              <label>Giới tính</label>
-              <div className="custom-dropdown">
-                <div
-                  className={`dropdown-trigger ${openDropdown === "gender" ? "active" : ""}`}
-                  onClick={() =>
-                    setOpenDropdown(openDropdown === "gender" ? null : "gender")
-                  }
-                >
-                  <span>
-                    {
-                      genderOptions.find((opt) => opt.value === form.gender)
-                        ?.label
-                    }
-                  </span>
-                  <svg
-                    className={`icon-chevron ${openDropdown === "gender" ? "open" : ""}`}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </div>
-                {openDropdown === "gender" && (
-                  <div className="dropdown-menu">
-                    {genderOptions.map((opt) => (
-                      <div
-                        key={opt.value}
-                        className={`dropdown-item ${form.gender === opt.value ? "selected" : ""}`}
-                        onClick={() => {
-                          handleChange("gender", opt.value);
-                          setOpenDropdown(null);
-                        }}
-                      >
-                        {opt.label}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* DROPDOWN VAI TRÒ */}
-            <div className="form-group">
-              <label>Vai trò</label>
-              <div className="custom-dropdown">
-                <div
-                  className={`dropdown-trigger ${openDropdown === "role" ? "active" : ""}`}
-                  onClick={() =>
-                    setOpenDropdown(openDropdown === "role" ? null : "role")
-                  }
-                >
-                  <span>
-                    {roleOptions.find((opt) => opt.value === form.role)?.label}
-                  </span>
-                  <svg
-                    className={`icon-chevron ${openDropdown === "role" ? "open" : ""}`}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </div>
-                {openDropdown === "role" && (
-                  <div className="dropdown-menu">
-                    {roleOptions.map((opt) => (
-                      <div
-                        key={opt.value}
-                        className={`dropdown-item ${form.role === opt.value ? "selected" : ""}`}
-                        onClick={() => {
-                          handleChange("role", opt.value);
-                          setOpenDropdown(null);
-                        }}
-                      >
-                        {opt.label}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            {renderDropdown("gender", "Giới tính", genderOptions, "gender")}
+            {renderDropdown("role", "Vai trò", roleOptions, "role")}
           </div>
 
-          {/* KIỂM TRA: CHỈ HIỂN THỊ DÒNG NÀY NẾU CÓ TRUYỀN USER VÀO (CHẾ ĐỘ EDIT) */}
-          {user && (
-            <div className="form-row">
-              {/* DROPDOWN TRẠNG THÁI */}
-              <div className="form-group">
-                <label>Trạng thái</label>
-                <div className="custom-dropdown">
-                  <div
-                    className={`dropdown-trigger ${openDropdown === "status" ? "active" : ""}`}
-                    onClick={() =>
-                      setOpenDropdown(
-                        openDropdown === "status" ? null : "status",
-                      )
-                    }
-                  >
-                    <span>
-                      {
-                        statusOptions.find((opt) => opt.value === form.status)
-                          ?.label
-                      }
-                    </span>
-                    <svg
-                      className={`icon-chevron ${openDropdown === "status" ? "open" : ""}`}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                  </div>
-                  {openDropdown === "status" && (
-                    <div className="dropdown-menu">
-                      {statusOptions.map((opt) => (
-                        <div
-                          key={opt.value}
-                          className={`dropdown-item ${form.status === opt.value ? "selected" : ""}`}
-                          onClick={() => {
-                            handleChange("status", opt.value);
-                            setOpenDropdown(null);
-                          }}
-                        >
-                          {opt.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-              {/* Cột trống để căn layout lưới 2 cột không bị vỡ */}
+          <div className="form-row">
+            {renderDropdown("region", "Khu vực", regionOptions, "region")}
+            {user ? (
+              renderDropdown("status", "Trạng thái", statusOptions, "status")
+            ) : (
               <div className="form-group"></div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="modal-actions">
