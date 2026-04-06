@@ -69,12 +69,8 @@ function UserTable({ interactions, onView, onDeleteEnterprise }) {
         <table className="user-table">
           <thead>
             <tr>
-              <th onClick={() => requestSort("id")} className="sortable">
-                ID {getSortIcon("id")}
-              </th>
-              <th onClick={() => requestSort("consultantName")} className="sortable">
-                Nhân viên {getSortIcon("consultantName")}
-              </th>
+              <th>STT</th>
+
               <th onClick={() => requestSort("enterpriseName")} className="sortable">
                 Doanh nghiệp {getSortIcon("enterpriseName")}
               </th>
@@ -96,10 +92,9 @@ function UserTable({ interactions, onView, onDeleteEnterprise }) {
                 </td>
               </tr>
             ) : (
-              currentTableData.map((item) => (
+              currentTableData.map((item, index) => (
                 <tr key={item.id}>
-                  <td>{item.id}</td>
-                  <td className="font-medium">{item.consultantName || "-"}</td>
+                  <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                   <td>
                     <span className="enterprise-name-cell">
                       <span>{item.enterpriseName || "-"}</span>
