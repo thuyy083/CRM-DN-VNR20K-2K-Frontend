@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { updateInteraction } from "../../services/interactionService";
-import { getEnterpriseById } from "../../services/enterpriseService";
+import { getEnterpriseById, getIndustries } from "../../services/enterpriseService";
 import "./UserDrawer.scss";
 
 const POTENTIAL_STORAGE_KEY = "enterprise_potential_map";
@@ -64,6 +64,7 @@ function InteractionTable({
   onOpenStatusPopup,
   onViewContent,
 }) {
+
   if (!rows.length) {
     return <div className="section-empty">{emptyText}</div>;
   }
@@ -115,7 +116,28 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
   const [updatingStatusId, setUpdatingStatusId] = useState(null);
   const [previewContent, setPreviewContent] = useState("");
   const [statusPopup, setStatusPopup] = useState({ open: false, item: null, value: "PENDING" });
+  const [industries, setIndustries] = useState([]);
+  useEffect(() => {
+  const fetchIndustries = async () => {
+    try {
+      const res = await getIndustries();
+      setIndustries(res.data?.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
+  if (open) {
+    fetchIndustries();
+  }
+}, [open]);
+const getIndustryName = (code) => {
+  if (!code) return "-";
+  if (!industries.length) return code;
+
+  const found = industries.find((i) => i.code === code);
+  return found?.name || code;
+};
   const detailRows = useMemo(() => sortByDateDesc(localInteractions), [localInteractions]);
 
   const potentialFromStorage = useMemo(() => {
@@ -236,7 +258,7 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
                 </div>
                 <div>
                   <b>Ngành:</b>
-                  <span>{enterpriseInfo?.industry || "-"}</span>
+<span>{getIndustryName(enterpriseInfo?.industry)}</span>
                 </div>
                 <div>
                   <b>Nhân viên:</b>

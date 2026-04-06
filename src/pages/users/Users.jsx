@@ -71,6 +71,7 @@ function Users() {
 
   const [searchTerm, setSearchTerm] = useState("");
 
+
   const fetchInteractions = useCallback(async () => {
     try {
       // Tải danh sách tiếp xúc 
@@ -92,6 +93,8 @@ function Users() {
       toast.error("Không tải được danh sách doanh nghiệp");
     }
   }, []);
+
+
 
   useEffect(() => {
     fetchInteractions();
