@@ -19,25 +19,14 @@ const getNormalizedRole = (user) => {
 };
 
 function ProtectedRoute({ children, allowedRoles = [] }) {
-  // Lấy thêm isLoading nếu trong Redux auth slice của bạn có state này
-  const { token, user, isLoading } = useSelector((state) => state.auth);
+  const { token, user, loading } = useSelector((state) => state.auth);
   const role = getNormalizedRole(user);
 
-  // 1. NẾU REDUX CÓ STATE ISLOADING -> Đợi load xong
-  if (isLoading) {
+  // Chờ getMe() xong rồi mới kiểm tra quyền
+  if (loading || (token && !user)) {
     return (
       <div style={{ display: "flex", justifyContent: "center", padding: "50px" }}>
         Đang tải thông tin...
-      </div>
-    );
-  }
-
-  // 2. NẾU BẠN KHÔNG CÓ ISLOADING TRONG REDUX -> Dùng mẹo check token & user
-  // Có token nhưng chưa có user -> Hệ thống đang gọi API lấy user -> Phải đợi
-  if (token && !user) {
-    return (
-      <div style={{ display: "flex", justifyContent: "center", padding: "50px" }}>
-        Đang xác thực quyền truy cập...
       </div>
     );
   }
@@ -49,7 +38,7 @@ function ProtectedRoute({ children, allowedRoles = [] }) {
 
   // 4. Có token, ĐÃ CÓ user -> Bắt đầu check Role
   if (allowedRoles.length > 0 && (!role || !allowedRoles.includes(role))) {
-    return <Navigate to="/403" replace />;
+    return <Navigate to="/404" replace />;
   }
 
   // 5. Vượt qua mọi bài kiểm tra -> Cho phép vào trang

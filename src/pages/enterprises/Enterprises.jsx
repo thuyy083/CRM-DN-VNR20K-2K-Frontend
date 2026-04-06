@@ -7,12 +7,17 @@ import EnterpriseModal from "./EnterpriseModal";
 import EnterpriseDetailModal from "./EnterpriseDetailModal";
 import ImportEnterpriseModal from "./ImportEnterpriseModal";
 import { downloadEnterpriseTemplate, exportEnterprises, getEnterprises, getIndustries } from "../../services/enterpriseService";
-import "../employees/Employees.scss"
+// import "../employees/Employees.scss"
 import { toast } from "react-toastify";
+
+const POTENTIAL_STORAGE_KEY = "enterprise_potential_map";
 
 function Enterprises() {
   const [enterprises, setEnterprises] = useState([]);
   const [industries, setIndustries] = useState([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [industrySearch, setIndustrySearch] = useState("");
 
   const [openModal, setOpenModal] = useState(false);
   const [openDetail, setOpenDetail] = useState(false);
@@ -23,24 +28,100 @@ function Enterprises() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [filterIndustry, setFilterIndustry] = useState("ALL");
+  const [filterPotential, setFilterPotential] = useState("ALL");
 
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
 
+    const industryOptions = [
+    { value: "ALL", label: "Tất cả ngành" },
+    ...industries.map((i) => ({ value: i.code, label: i.name })),
+  ];
+
+  const filteredIndustries = industryOptions.filter((i) =>
+    i.label.toLowerCase().includes(industrySearch.toLowerCase())
+  );
+  const getPotentialStorageMap = () => {
+    try {
+      const raw = localStorage.getItem(POTENTIAL_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (error) {
+      console.error("Cannot parse potential storage", error);
+      return {};
+    }
+  };
+
+  const isPotentialEnterprise = (item) => {
+    const raw =
+      item?.isPotential ??
+      item?.potential ??
+      item?.is_potential ??
+      item?.potentialFlag ??
+      item?.isPotentialCustomer ??
+      item?.potentialCustomer;
+
+    if (typeof raw === "boolean") return raw;
+    if (typeof raw === "number") return raw === 1;
+    if (typeof raw === "string") {
+      const normalized = raw.trim().toLowerCase();
+      return ["true", "1", "yes", "y", "potential", "tiem_nang"].includes(normalized);
+    }
+    return false;
+  };
+
   const fetchEnterprises = useCallback(async () => {
     try {
+      // Luôn tải nhiều bản ghi hơn để lọc tiềm năng phía client không bị thiếu dữ liệu trang đầu.
+      const fetchSize = 500;
       const res = await getEnterprises(
-        0,
+        currentPage,
         10,
+        0,
+        fetchSize,
         searchTerm,
         filterStatus === "ALL" ? "" : filterStatus,
-        filterIndustry === "ALL" ? "" : filterIndustry
+        filterIndustry === "ALL" ? "" : filterIndustry,
+        ""
       );
+
       setEnterprises(res.data?.data?.content || []);
+      setTotalPages(res.data?.data?.totalPages || 0);
     } catch (err) {
       console.error(err);
     }
-  }, [searchTerm, filterStatus, filterIndustry]);
+  }, [currentPage, searchTerm, filterStatus, filterIndustry]);
+      const data = res.data?.data?.content || [];
+      const potentialStorageMap = getPotentialStorageMap();
+
+      const mergedData = data.map((item) => {
+        const enterpriseId = String(item?.id ?? "");
+        const hasStoragePotential = Object.prototype.hasOwnProperty.call(
+          potentialStorageMap,
+          enterpriseId
+        );
+
+        if (!hasStoragePotential) return item;
+
+        const potentialFlag = Boolean(potentialStorageMap[enterpriseId]);
+        return {
+          ...item,
+          isPotential: potentialFlag,
+          potential: potentialFlag,
+          is_potential: potentialFlag,
+        };
+      });
+
+      const filteredByPotential = mergedData.filter((item) => {
+        if (filterPotential === "ALL") return true;
+        const potential = isPotentialEnterprise(item);
+        return filterPotential === "POTENTIAL" ? potential : !potential;
+      });
+
+      setEnterprises(filteredByPotential);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [searchTerm, filterStatus, filterIndustry, filterPotential]);
 
   const fetchIndustries = useCallback(async () => {
     try {
@@ -77,33 +158,49 @@ function Enterprises() {
   };
 
   const handleExport = async () => {
-  try {
-    const res = await exportEnterprises({
-      keyword: searchTerm,
-      status: filterStatus === "ALL" ? "" : filterStatus,
-      industry: filterIndustry === "ALL" ? "" : filterIndustry,
-    });
+    try {
+      const res = await exportEnterprises({
+        keyword: searchTerm,
+        status: filterStatus === "ALL" ? "" : filterStatus,
+        industry: filterIndustry === "ALL" ? "" : filterIndustry,
+      });
 
-    const blob = new Blob([res.data], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
+      const blob = new Blob([res.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
 
-    const url = window.URL.createObjectURL(blob);
+      const url = window.URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "enterprises.xlsx";
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "enterprises.xlsx";
 
-    document.body.appendChild(link);
-    link.click();
+      document.body.appendChild(link);
+      link.click();
 
-    link.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error(err);
-    toast.error("Xuất file thất bại");
-  }
-};
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      toast.error("Xuất file thất bại");
+    }
+  };
+
+  const handleDeleteEnterprise = async (enterprise) => {
+    const confirmDelete = window.confirm(
+      `Bạn có chắc muốn xóa doanh nghiệp ${enterprise?.name || "này"}?`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await deleteEnterprise(enterprise.id);
+      toast.success("Xóa doanh nghiệp thành công");
+      fetchEnterprises();
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Xóa doanh nghiệp thất bại");
+    }
+  };
 
   useEffect(() => {
     // eslint-disable-next-line
@@ -112,9 +209,14 @@ function Enterprises() {
   }, [fetchEnterprises]);
 
   useEffect(() => {
+    // eslint-disable-next-line
+    setCurrentPage(0);
+  }, [searchTerm, filterStatus, filterIndustry]);
+
+  useEffect(() => {
     const delay = setTimeout(fetchEnterprises, 400);
     return () => clearTimeout(delay);
-  }, [searchTerm, filterStatus, filterIndustry]);
+  }, [searchTerm, filterStatus, filterIndustry, filterPotential]);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -132,9 +234,12 @@ function Enterprises() {
     { value: "INACTIVE", label: "Ngưng hoạt động" },
   ];
 
-  const industryOptions = [
-    { value: "ALL", label: "Tất cả ngành" },
-    ...industries.map((i) => ({ value: i.code, label: i.name })),
+
+
+  const potentialOptions = [
+    { value: "ALL", label: "Tất cả loại" },
+    { value: "POTENTIAL", label: "Tiềm năng" },
+    { value: "NORMAL", label: "Thông thường" },
   ];
 
   return (
@@ -235,12 +340,61 @@ function Enterprises() {
 
             {openDropdown === "industry" && (
               <div className="dropdown-menu">
-                {industryOptions.map((opt) => (
+
+  {/* SEARCH */}
+  <div className="dropdown-search">
+    <input
+      placeholder="Tìm ngành..."
+      value={industrySearch}
+      onChange={(e) => setIndustrySearch(e.target.value)}
+    />
+  </div>
+
+  {/* LIST PHẢI BỌC */}
+  <div className="dropdown-list">
+    {filteredIndustries.map((opt) => (
+      <div
+        key={opt.value}
+        className={`dropdown-item ${
+          filterIndustry === opt.value ? "selected" : ""
+        }`}
+        onClick={() => {
+          setFilterIndustry(opt.value);
+          setOpenDropdown(null);
+          setIndustrySearch("");
+        }}
+      >
+        {opt.label}
+      </div>
+    ))}
+  </div>
+</div>
+            )}
+          </div>
+
+          <div className="custom-dropdown">
+            <div
+              className={`dropdown-trigger ${openDropdown === "potential" ? "active" : ""}`}
+              onClick={() =>
+                setOpenDropdown(openDropdown === "potential" ? null : "potential")
+              }
+            >
+              <span>
+                {potentialOptions.find((o) => o.value === filterPotential)?.label}
+              </span>
+              <svg className={`icon-chevron ${openDropdown === "potential" ? "open" : ""}`} viewBox="0 0 24 24">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+
+            {openDropdown === "potential" && (
+              <div className="dropdown-menu">
+                {potentialOptions.map((opt) => (
                   <div
                     key={opt.value}
-                    className={`dropdown-item ${filterIndustry === opt.value ? "selected" : ""}`}
+                    className={`dropdown-item ${filterPotential === opt.value ? "selected" : ""}`}
                     onClick={() => {
-                      setFilterIndustry(opt.value);
+                      setFilterPotential(opt.value);
                       setOpenDropdown(null);
                     }}
                   >
@@ -264,9 +418,15 @@ function Enterprises() {
             Tải file mẫu
           </button>
           <button className="add-btn" onClick={handleExport}>
+            Xuất Excel
+          </button>
+          <button className="add-btn" onClick={() => { setSelectedEnterprise(null); setOpenModal(true) }}>
   Xuất Excel
 </button>
-          <button className="add-btn" onClick={() => setOpenModal(true)}>
+          <button className="add-btn" onClick={() => {
+            setSelectedEnterprise(null);
+            setOpenModal(true);
+          }}>
             + Thêm doanh nghiệp
           </button>
         </div>
@@ -276,6 +436,9 @@ function Enterprises() {
         <EnterpriseTable
           enterprises={enterprises}
           industries={industries}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
           onEdit={(e) => {
             setSelectedEnterprise(e);
             setOpenModal(true);
@@ -284,6 +447,7 @@ function Enterprises() {
             setSelectedEnterprise(e);
             setOpenDetail(true);
           }}
+          onDelete={handleDeleteEnterprise}
         />
       </div>
 
@@ -291,7 +455,10 @@ function Enterprises() {
       {openModal && (
         <EnterpriseModal
           enterprise={selectedEnterprise}
-          close={() => setOpenModal(false)}
+          close={() => {
+            setOpenModal(false);
+            setSelectedEnterprise(null);
+          }}
           reload={fetchEnterprises}
         />
       )}
@@ -300,6 +467,8 @@ function Enterprises() {
         <EnterpriseDetailModal
           enterprise={selectedEnterprise}
           industries={industries}
+          reloadEnterprises={fetchEnterprises}
+          onEnterpriseUpdated={setSelectedEnterprise}
           close={() => setOpenDetail(false)}
         />
       )}
