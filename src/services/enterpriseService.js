@@ -6,8 +6,8 @@ export const getEnterprises = (
   size = 10,
   keyword = "",
   status = "",
-  industry = "",
-  isPotential = ""
+  region = "",
+  type = "" 
 ) => {
   return axios.get("/enterprises", {
     params: {
@@ -15,8 +15,8 @@ export const getEnterprises = (
       size,
       keyword,
       status,
-      industry,
-      isPotential,
+      region,
+      type,
     },
   });
 };

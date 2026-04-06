@@ -1,4 +1,4 @@
-import "./EmployeeViewModal.scss"; // Tạo một file SCSS mới riêng cho nó
+import "./EmployeeViewModal.scss";
 
 function EmployeeViewModal({ user, close }) {
   if (!user) return null;
@@ -9,24 +9,60 @@ function EmployeeViewModal({ user, close }) {
     STAFF: "Nhân viên",
   };
 
+  const regionMap = {
+    CTO: "Cần Thơ",
+    HUG: "Huế",
+    STG: "Sóc Trăng",
+    NONE: "Chưa phân công",
+  };
+
   const getGenderLabel = (gender) => {
     if (!gender) return "-";
-    const genderUpper = gender.toUpperCase();
-    if (genderUpper === "MALE") return "Nam";
-    if (genderUpper === "FEMALE") return "Nữ";
-    if (genderUpper === "OTHER") return "Khác";
+    const g = gender.toUpperCase();
+    if (g === "MALE") return "Nam";
+    if (g === "FEMALE") return "Nữ";
+    if (g === "OTHER") return "Khác";
     return gender;
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";
+
+    if (
+      typeof dateString === "string" &&
+      /^\d{2}-\d{2}-\d{4}$/.test(dateString)
+    ) {
+      const [day, month, year] = dateString.split("-");
+      return `${day}/${month}/${year}`;
+    }
+
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "-";
     return date.toLocaleDateString("vi-VN");
   };
 
+  const formatInstant = (instantStr) => {
+    if (!instantStr) return "-";
+    const date = new Date(instantStr);
+    if (isNaN(date.getTime())) return "-";
+    return date.toLocaleString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getInitials = (name) => {
+    if (!name) return "?";
+    const parts = name.trim().split(" ");
+    return parts[parts.length - 1]?.[0]?.toUpperCase() || "?";
+  };
+
   return (
-    <div className="view-modal-overlay">
-      <div className="view-modal-box">
+    <div className="view-modal-overlay" onClick={close}>
+      <div className="view-modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>Hồ sơ nhân viên</h3>
           <button className="close-icon-btn" onClick={close}>
@@ -45,25 +81,40 @@ function EmployeeViewModal({ user, close }) {
         </div>
 
         <div className="view-content">
-          {/* KHỐI 1: THÔNG TIN CƠ BẢN */}
+          <div className="avatar-section">
+            <div className="avatar-circle">
+              {getInitials(user.fullName || user.name)}
+            </div>
+            <div className="avatar-info">
+              <div className="avatar-name">
+                {user.fullName || user.name || "-"}
+              </div>
+              <div className="avatar-role">
+                {roleMap[user.role] || user.role || "-"}
+              </div>
+              <span
+                className={`status-badge ${user.status === "ACTIVE" ? "active" : "inactive"}`}
+              >
+                {user.status === "ACTIVE"
+                  ? "Đang hoạt động"
+                  : "Ngưng hoạt động"}
+              </span>
+            </div>
+          </div>
+
           <div className="info-card">
             <h4 className="card-title">Thông tin cơ bản</h4>
 
             <div className="info-row">
-              <span className="info-label">ID Nhân viên:</span>
-              <span className="info-value highlight">#{user.id}</span>
-            </div>
-
-            <div className="info-row">
               <span className="info-label">Họ và tên:</span>
-              <span className="info-value">{user.fullName || user.name}</span>
+              <span className="info-value">
+                {user.fullName || user.name || "-"}
+              </span>
             </div>
-
             <div className="info-row">
               <span className="info-label">Email liên hệ:</span>
-              <span className="info-value">{user.email}</span>
+              <span className="info-value">{user.email || "-"}</span>
             </div>
-
             <div className="info-row no-border">
               <span className="info-label">Số điện thoại:</span>
               <span className="info-value">
@@ -71,8 +122,6 @@ function EmployeeViewModal({ user, close }) {
               </span>
             </div>
           </div>
-
-          {/* KHỐI 2: CHIA CỘT */}
           <div className="info-grid">
             {/* Cột Trái: Cá nhân */}
             <div className="info-card half">
@@ -91,33 +140,44 @@ function EmployeeViewModal({ user, close }) {
               </div>
             </div>
 
-            {/* Cột Phải: Công việc */}
             <div className="info-card half">
               <h4 className="card-title">Công việc</h4>
               <div className="info-block">
                 <span className="info-label">Vai trò:</span>
                 <span className="info-value">
-                  {roleMap[user.role] || user.role}
+                  {roleMap[user.role] || user.role || "-"}
                 </span>
               </div>
               <div className="info-block">
-                <span className="info-label">Trạng thái:</span>
-                <span
-                  className={`status-text ${user.status === "ACTIVE" ? "active" : "inactive"}`}
-                >
-                  {user.status === "ACTIVE"
-                    ? "Đang hoạt động"
-                    : "Ngưng hoạt động"}
+                <span className="info-label">Khu vực:</span>
+                <span className="info-value">
+                  {user.region
+                    ? regionMap[user.region] || user.region
+                    : "Chưa phân công"}
                 </span>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="modal-footer">
-          <button className="btn-close-full" onClick={close}>
-            Đóng cửa sổ
-          </button>
+          <div className="info-card">
+            <h4 className="card-title">Thông tin hệ thống</h4>
+            {/* <div className="info-row">
+              <span className="info-label">ID nhân viên:</span>
+              <span className="info-value">#{user.id}</span>
+            </div> */}
+            <div className="info-row">
+              <span className="info-label">Ngày tạo:</span>
+              <span className="info-value">
+                {formatInstant(user.createdAt)}
+              </span>
+            </div>
+            <div className="info-row no-border">
+              <span className="info-label">Cập nhật lần cuối:</span>
+              <span className="info-value">
+                {formatInstant(user.updatedAt)}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

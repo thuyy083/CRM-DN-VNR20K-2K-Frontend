@@ -5,27 +5,63 @@ import "./ImportEnterpriseModal.scss"
 
 function ImportEnterpriseModal({ close, reload }) {
   const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleImport = async () => {
-    if (!file) {
-      toast.error("Vui lòng chọn file Excel");
-      return;
+const handleImport = async () => {
+  if (!file) {
+    toast.error("Vui lòng chọn file Excel");
+    return;
+  }
+
+  try {
+    setLoading(true); // ✅ bắt đầu loading
+
+    const res = await importEnterprises(file);
+
+    const data = res.data?.data || {};
+    const successCount = data.successCount || 0;
+    const failCount = data.failCount || 0;
+    const errors = data.errors || [];
+
+    if (successCount > 0) {
+      toast.success(`Import thành công ${successCount} doanh nghiệp`);
     }
 
-    try {
-      await importEnterprises(file);
-      toast.success("Import thành công");
+    if (failCount > 0 && errors.length > 0) {
+      setTimeout(() => {
+        toast.error(
+          <div style={{ maxHeight: 250, overflowY: "auto" }}>
+            {errors.map((e, i) => (
+              <div key={i}>
+                Dòng {e.rowNumber}: {e.errorMessage}
+              </div>
+            ))}
+          </div>
+        );
+      }, 500);
+    }
 
+    if (successCount > 0) {
       reload();
       close();
-    } catch (err) {
-      console.error(err);
-      toast.error("Import thất bại");
     }
-  };
+
+  } catch (err) {
+    console.error(err);
+    toast.error("Import thất bại");
+  } finally {
+    setLoading(false); // ✅ kết thúc loading
+  }
+};
 
   return (
     <div className="modal">
+      {loading && (
+      <div className="loading-overlay">
+        <div className="spinner"></div>
+        <p>Đang import dữ liệu, vui lòng chờ...</p>
+      </div>
+    )}
       <div className="modal-box">
         <h3>Import doanh nghiệp</h3>
 
@@ -40,9 +76,13 @@ function ImportEnterpriseModal({ close, reload }) {
             Hủy
           </button>
 
-          <button className="save-btn" onClick={handleImport}>
-            Import
-          </button>
+         <button 
+  className="save-btn" 
+  onClick={handleImport}
+  disabled={loading}
+>
+  {loading ? "Đang import..." : "Import"}
+</button>
         </div>
       </div>
     </div>
