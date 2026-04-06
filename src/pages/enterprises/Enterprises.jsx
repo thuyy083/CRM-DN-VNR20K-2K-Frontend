@@ -6,12 +6,7 @@ import EnterpriseTable from "./EnterpriseTable";
 import EnterpriseModal from "./EnterpriseModal";
 import EnterpriseDetailModal from "./EnterpriseDetailModal";
 import ImportEnterpriseModal from "./ImportEnterpriseModal";
-import {
-  downloadEnterpriseTemplate,
-  exportEnterprises,
-  getEnterprises,
-  getIndustries,
-} from "../../services/enterpriseService";
+import { deleteEnterprise, downloadEnterpriseTemplate, exportEnterprises, getEnterprises, getIndustries } from "../../services/enterpriseService";
 // import "../employees/Employees.scss"
 import { toast } from "react-toastify";
 
@@ -106,8 +101,6 @@ function Enterprises() {
         return {
           ...item,
           isPotential: potentialFlag,
-          potential: potentialFlag,
-          is_potential: potentialFlag,
         };
       });
 
@@ -205,19 +198,20 @@ function Enterprises() {
 
   useEffect(() => {
     // eslint-disable-next-line
-    fetchEnterprises();
     fetchIndustries();
-  }, [fetchEnterprises]);
+  }, []);
 
   useEffect(() => {
     // eslint-disable-next-line
-    setCurrentPage(0);
   }, [searchTerm, filterStatus, filterIndustry]);
 
   useEffect(() => {
-    const delay = setTimeout(fetchEnterprises, 400);
+    const delay = setTimeout(() => {
+      fetchEnterprises();
+    }, 300);
+
     return () => clearTimeout(delay);
-  }, [searchTerm, filterStatus, filterIndustry, filterPotential]);
+  }, [fetchEnterprises]);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -277,8 +271,6 @@ function Enterprises() {
               placeholder="Tìm tên doanh nghiệp, MST..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              readOnly
-              onFocus={(e) => e.target.removeAttribute("readonly")}
             />
 
             {searchTerm && (
@@ -434,22 +426,10 @@ function Enterprises() {
           <button className="add-btn" onClick={handleExport}>
             Xuất Excel
           </button>
-          <button
-            className="add-btn"
-            onClick={() => {
-              setSelectedEnterprise(null);
-              setOpenModal(true);
-            }}
-          >
-            Xuất Excel
-          </button>
-          <button
-            className="add-btn"
-            onClick={() => {
-              setSelectedEnterprise(null);
-              setOpenModal(true);
-            }}
-          >
+          <button className="add-btn" onClick={() => {
+            setSelectedEnterprise(null);
+            setOpenModal(true);
+          }}>
             + Thêm doanh nghiệp
           </button>
         </div>
