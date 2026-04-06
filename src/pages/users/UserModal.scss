@@ -241,6 +241,13 @@ $bg-overlay: rgba(17, 24, 39, 0.42);
   }
 }
 
+.timeline-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 16px;
+  align-items: start;
+}
+
 .modal-actions {
   margin-top: 16px;
   display: flex;
@@ -278,6 +285,10 @@ $bg-overlay: rgba(17, 24, 39, 0.42);
   }
 
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .timeline-row {
     grid-template-columns: 1fr;
   }
 

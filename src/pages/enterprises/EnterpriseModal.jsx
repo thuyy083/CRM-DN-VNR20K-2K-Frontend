@@ -5,18 +5,39 @@ import {
   createEnterprise,
   getIndustries,
   updateEnterprise,
+  addServiceToEnterprise,
 } from "../../services/enterpriseService";
+import { getServices } from "../../services/servicesService";
+
+const POTENTIAL_STORAGE_KEY = "enterprise_potential_map";
 
 function EnterpriseModal({ enterprise, close, reload }) {
+  const isCreateMode = !enterprise;
+  const normalizePotentialValue = (value) => {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") return value === 1;
+    if (typeof value === "string") {
+      const normalized = value.trim().toLowerCase();
+      return ["true", "1", "yes", "y", "potential", "tiem_nang"].includes(normalized);
+    }
+    return false;
+  };
+
   const [form, setForm] = useState({
     name: enterprise?.name || "",
     taxCode: enterprise?.taxCode || "",
-    industry: enterprise?.industry || "", // lưu CODE
+    industry: enterprise?.industry || "",
     employeeCount: enterprise?.employeeCount || "",
     address: enterprise?.address || "",
     website: enterprise?.website || "",
     phone: enterprise?.phone || "",
     status: enterprise?.status || "ACTIVE",
+    isPotential:
+      normalizePotentialValue(
+        enterprise?.isPotential ??
+        enterprise?.potential ??
+        enterprise?.is_potential
+      ),
     note: enterprise?.note || "",
     contactFullName: "",
     contactEmail: "",
@@ -28,9 +49,31 @@ function EnterpriseModal({ enterprise, close, reload }) {
   const [searchIndustry, setSearchIndustry] = useState("");
   const [openDropdown, setOpenDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const [showServiceForm, setShowServiceForm] = useState(false);
+  const [services, setServices] = useState([]);
+  const [serviceForm, setServiceForm] = useState({
+    viettelServiceId: "",
+    contractNumber: "",
+    startDate: "",
+    endDate: "",
+    status: "ACTIVE",
+  });
+
+  const savePotentialToStorage = (enterpriseId, isPotential) => {
+    if (!enterpriseId) return;
+    try {
+      const raw = localStorage.getItem(POTENTIAL_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      parsed[String(enterpriseId)] = Boolean(isPotential);
+      localStorage.setItem(POTENTIAL_STORAGE_KEY, JSON.stringify(parsed));
+    } catch (error) {
+      console.error("Cannot persist potential flag", error);
+    }
+  };
 
   useEffect(() => {
     fetchIndustries();
+    fetchServices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -43,11 +86,62 @@ function EnterpriseModal({ enterprise, close, reload }) {
     }
   };
 
+  const fetchServices = async () => {
+    try {
+      const res = await getServices();
+      const raw = res.data;
+      const serviceList =
+        raw?.data?.content ||
+        raw?.content ||
+        raw?.data ||
+        (Array.isArray(raw) ? raw : []);
+      setServices(serviceList);
+    } catch (err) {
+      console.error(err);
+      toast.error("Không tải được danh sách dịch vụ Viettel");
+    }
+  };
+
   const handleChange = (field, value) => {
     setForm({
       ...form,
       [field]: value,
     });
+  };
+
+  const handleServiceChange = (field, value) => {
+    setServiceForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const getServiceLabel = (service) => {
+    const code = service?.serviceCode || service?.service_code || "";
+    const name = service?.serviceName || service?.service_name || "";
+    if (code && name) return `${code} - ${name}`;
+    return code || name || "Dịch vụ";
+  };
+
+  const validateServiceForm = () => {
+    if (!showServiceForm) return true;
+    if (!serviceForm.viettelServiceId) {
+      toast.error("Vui lòng chọn dịch vụ");
+      return false;
+    }
+    if (!serviceForm.contractNumber.trim()) {
+      toast.error("Vui lòng nhập số hợp đồng");
+      return false;
+    }
+    if (!serviceForm.startDate) {
+      toast.error("Vui lòng chọn ngày bắt đầu");
+      return false;
+    }
+    if (serviceForm.endDate && serviceForm.endDate < serviceForm.startDate) {
+      toast.error("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu");
+      return false;
+    }
+    return true;
   };
 
   // đóng dropdown khi click ngoài
@@ -72,6 +166,14 @@ function EnterpriseModal({ enterprise, close, reload }) {
 
   const handleSubmit = async () => {
     try {
+      const potentialFlag = Boolean(form.isPotential);
+      const payloadWithPotential = {
+        ...form,
+        isPotential: potentialFlag,
+        potential: potentialFlag,
+        is_potential: potentialFlag,
+      };
+
       if (enterprise) {
         const {
           contactFullName,
@@ -79,11 +181,36 @@ function EnterpriseModal({ enterprise, close, reload }) {
           contactPhone,
           contactPosition,
           ...updatePayload
-        } = form;
+        } = payloadWithPotential;
         await updateEnterprise(enterprise.id, updatePayload);
+        savePotentialToStorage(enterprise.id, potentialFlag);
         toast.success("Cập nhật doanh nghiệp thành công");
       } else {
-        await createEnterprise(form);
+        if (!validateServiceForm()) {
+          return;
+        }
+
+        const createRes = await createEnterprise(payloadWithPotential);
+        const createdEnterpriseId =
+          createRes?.data?.data?.id ||
+          createRes?.data?.id;
+
+        savePotentialToStorage(createdEnterpriseId, potentialFlag);
+
+        if (showServiceForm) {
+          if (!createdEnterpriseId) {
+            toast.warning("Đã tạo doanh nghiệp nhưng không lấy được ID để gắn dịch vụ");
+          } else {
+            await addServiceToEnterprise(createdEnterpriseId, {
+              viettelServiceId: Number(serviceForm.viettelServiceId),
+              contractNumber: serviceForm.contractNumber.trim(),
+              startDate: serviceForm.startDate,
+              endDate: serviceForm.endDate || null,
+              status: serviceForm.status,
+            });
+          }
+        }
+
         toast.success("Thêm doanh nghiệp thành công");
       }
 
@@ -98,7 +225,12 @@ function EnterpriseModal({ enterprise, close, reload }) {
   return (
     <div className="modal">
       <div className="modal-box">
-        <h3>{enterprise ? "Cập nhật doanh nghiệp" : "Thêm doanh nghiệp"}</h3>
+        <div className="modal-title-row">
+          <h3>{enterprise ? "Cập nhật doanh nghiệp" : "Thêm doanh nghiệp"}</h3>
+          <button type="button" className="modal-close-btn" onClick={close}>
+            ×
+          </button>
+        </div>
 
         <div className="form-grid">
           {/* LEFT */}
@@ -177,6 +309,32 @@ function EnterpriseModal({ enterprise, close, reload }) {
                 }
               />
             </div>
+
+            <div className="form-group">
+              <label>Dịch vụ Viettel</label>
+              <select
+                value={serviceForm.viettelServiceId}
+                onChange={(e) => handleServiceChange("viettelServiceId", e.target.value)}
+              >
+                <option value="">Chọn dịch vụ</option>
+                {services.map((service) => (
+                  <option key={service.id} value={service.id}>
+                    {getServiceLabel(service)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group potential-checkbox-group">
+              <label className="potential-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={Boolean(form.isPotential)}
+                  onChange={(e) => handleChange("isPotential", e.target.checked)}
+                />
+                <span>Doanh nghiệp tiềm năng</span>
+              </label>
+            </div>
           </div>
 
           {/* RIGHT */}
@@ -218,11 +376,12 @@ function EnterpriseModal({ enterprise, close, reload }) {
           </div>
         </div>
 
+
+
         <div className="modal-actions">
           <button className="cancel-btn" onClick={close}>
             Hủy
           </button>
-
           <button className="save-btn" onClick={handleSubmit}>
             Lưu
           </button>

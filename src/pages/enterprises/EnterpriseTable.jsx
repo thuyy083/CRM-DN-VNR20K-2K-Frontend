@@ -2,8 +2,28 @@ import { useState, useMemo } from "react";
 import "./EnterpriseTable.scss";
 
 
-function EnterpriseTable({ enterprises, industries = [], onEdit, onView }) {
+function EnterpriseTable({ enterprises, industries = [], onEdit, onView, currentPage,
+  totalPages,
+  onPageChange, }) {
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
+
+  const isPotentialEnterprise = (item) => {
+    const raw =
+      item?.isPotential ??
+      item?.potential ??
+      item?.is_potential ??
+      item?.potentialFlag ??
+      item?.isPotentialCustomer ??
+      item?.potentialCustomer;
+
+    if (typeof raw === "boolean") return raw;
+    if (typeof raw === "number") return raw === 1;
+    if (typeof raw === "string") {
+      const normalized = raw.trim().toLowerCase();
+      return ["true", "1", "yes", "y", "potential", "tiem_nang"].includes(normalized);
+    }
+    return false;
+  };
 
   const requestSort = (key) => {
     let direction = "asc";
@@ -36,12 +56,16 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView }) {
 
     return items;
   }, [enterprises, sortConfig]);
+  const handlePageChange = (pageNumber) => {
+  onPageChange(pageNumber - 1); // 👈 convert về 0-based
+};
 
   return (
     <div className="table-container">
       <table className="enterprise-table">
         <thead>
           <tr>
+            <th>STT</th>
             <th onClick={() => requestSort("id")}>ID</th>
             <th onClick={() => requestSort("name")}>Tên doanh nghiệp</th>
             <th>MST</th>
@@ -55,10 +79,22 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView }) {
         </thead>
 
         <tbody>
-          {sortedData.map((e) => (
+          {sortedData.map((e, index) => (
             <tr key={e.id}>
+              <td>
+        {currentPage * 10 + index + 1}
+      </td>
               <td>{e.id}</td>
-              <td className="font-medium">{e.name}</td>
+              <td className="font-medium">
+                <span className="enterprise-name-cell">
+                  <span>{e.name}</span>
+                  {isPotentialEnterprise(e) && (
+                    <span className="potential-star" title="Doanh nghiệp tiềm năng">
+                      ★
+                    </span>
+                  )}
+                </span>
+              </td>
               <td>{e.taxCode}</td>
 
               {/* FIX Ở ĐÂY */}
@@ -75,26 +111,57 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView }) {
               </td>
 
               <td>
-  <div className="action-btns">
-    <button
-      className="view-btn"
-      onClick={() => onView(e)}
-    >
-      Xem
-    </button>
+                <div className="action-btns">
+                  <button className="view-btn" onClick={() => onView(e)}>
+                    Xem
+                  </button>
 
-    <button
-      className="edit-btn"
-      onClick={() => onEdit(e)}
-    >
-      Sửa
-    </button>
-  </div>
-</td>
+                  <button className="delete-btn" onClick={() => onDelete(e)}>
+                    Xóa
+                  </button>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+     {totalPages > 1 && (
+  <div className="pagination">
+    <button
+      className="page-btn"
+      disabled={currentPage === 0}
+      onClick={() => onPageChange(currentPage - 1)}
+    >
+      &laquo; Trước
+    </button>
+
+    <div className="page-numbers">
+      {[...Array(totalPages)].map((_, index) => {
+        const pageNumber = index + 1;
+
+        return (
+          <button
+            key={pageNumber}
+            className={`page-num ${
+              currentPage === index ? "active" : ""
+            }`}
+            onClick={() => handlePageChange(pageNumber)}
+          >
+            {pageNumber}
+          </button>
+        );
+      })}
+    </div>
+
+    <button
+      className="page-btn"
+      disabled={currentPage === totalPages - 1}
+      onClick={() => onPageChange(currentPage + 1)}
+    >
+      Sau &raquo;
+    </button>
+  </div>
+)}
     </div>
   );
 }

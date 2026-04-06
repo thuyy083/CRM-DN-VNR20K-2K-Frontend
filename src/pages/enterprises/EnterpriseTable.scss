@@ -7,6 +7,10 @@
     border-bottom: 1px solid #eee;
   }
 
+  td:last-child {
+    min-width: 150px;
+  }
+
   th {
     cursor: pointer;
     text-align: left;
@@ -28,11 +32,96 @@
     }
   }
 
-  .edit-btn {
-    background: #f59e0b;
+  .enterprise-name-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .potential-star {
+    color: #facc15;
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .action-btns {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .view-btn,
+  .delete-btn {
     border: none;
     padding: 6px 10px;
-    border-radius: 5px;
+    border-radius: 8px;
     cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: 56px;
+  }
+
+  .view-btn {
+    background: #e0f2fe;
+    color: #0369a1;
+  }
+
+  .delete-btn {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+}
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 15px;
+
+  .page-btn {
+    padding: 6px 12px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+
+    &:hover:not(:disabled) {
+      border-color: #EE0033;
+      color: #EE0033;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  .page-numbers {
+    display: flex;
+    gap: 6px;
+  }
+
+  .page-num {
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    cursor: pointer;
+
+    &:hover {
+      border-color: #EE0033;
+      color: #EE0033;
+    }
+
+    &.active {
+      background: #EE0033;
+      color: white;
+      border-color: #EE0033;
+      font-weight: 600;
+    }
   }
 }
