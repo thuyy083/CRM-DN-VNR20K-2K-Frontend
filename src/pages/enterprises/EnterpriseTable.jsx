@@ -66,13 +66,12 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView, current
         <thead>
           <tr>
             <th>STT</th>
-            <th onClick={() => requestSort("id")}>ID</th>
             <th onClick={() => requestSort("name")}>Tên doanh nghiệp</th>
             <th>MST</th>
-            <th>Ngành</th>
+            <th>Khu vực</th>
+            <th>Loại</th>
             <th>Nhân viên</th>
             <th>Điện thoại</th>
-            <th>Website</th>
             <th>Trạng thái</th>
             <th></th>
           </tr>
@@ -84,7 +83,6 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView, current
               <td>
         {currentPage * 10 + index + 1}
       </td>
-              <td>{e.id}</td>
               <td className="font-medium">
                 <span className="enterprise-name-cell">
                   <span>{e.name}</span>
@@ -96,13 +94,10 @@ function EnterpriseTable({ enterprises, industries = [], onEdit, onView, current
                 </span>
               </td>
               <td>{e.taxCode}</td>
-
-              {/* FIX Ở ĐÂY */}
-              <td>{industryMap[e.industry] || "-"}</td>
-
+              <td>{e.region}</td>
+              <td>{e.type}</td>
               <td>{e.employeeCount}</td>
               <td>{e.phone}</td>
-              <td>{e.website}</td>
 
               <td>
                 <span className={`status ${e.status?.toLowerCase()}`}>
