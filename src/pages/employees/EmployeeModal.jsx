@@ -128,6 +128,10 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
         newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
         hasError = true;
       }
+      if (form.password !== form.confirmPassword) {
+        newErrors.confirmPassword = "Mật khẩu nhập lại không khớp";
+        hasError = true;
+      }
     }
 
     if (user && isChangingPassword) {
@@ -273,10 +277,10 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
               style={
                 user
                   ? {
-                    backgroundColor: "#f3f4f6",
-                    cursor: "not-allowed",
-                    color: "#6b7280",
-                  }
+                      backgroundColor: "#f3f4f6",
+                      cursor: "not-allowed",
+                      color: "#6b7280",
+                    }
                   : {}
               }
             />
@@ -284,21 +288,40 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
           </div>
 
           {!user && (
-            <div className="form-group">
-              <label>
-                Mật khẩu <span className="required">*</span>
-              </label>
-              <input
-                className={errors.password ? "input-error" : ""}
-                type="password"
-                placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)"
-                value={form.password}
-                onChange={(e) => handleChange("password", e.target.value)}
-              />
-              {errors.password && (
-                <span className="error-text">{errors.password}</span>
-              )}
-            </div>
+            <>
+              <div className="form-group">
+                <label>
+                  Mật khẩu <span className="required">*</span>
+                </label>
+                <input
+                  className={errors.password ? "input-error" : ""}
+                  type="password"
+                  placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)"
+                  value={form.password}
+                  onChange={(e) => handleChange("password", e.target.value)}
+                />
+                {errors.password && (
+                  <span className="error-text">{errors.password}</span>
+                )}
+              </div>
+              <div className="form-group">
+                <label>
+                  Nhập lại mật khẩu <span className="required">*</span>
+                </label>
+                <input
+                  className={errors.confirmPassword ? "input-error" : ""}
+                  type="password"
+                  placeholder="Xác nhận lại mật khẩu"
+                  value={form.confirmPassword}
+                  onChange={(e) =>
+                    handleChange("confirmPassword", e.target.value)
+                  }
+                />
+                {errors.confirmPassword && (
+                  <span className="error-text">{errors.confirmPassword}</span>
+                )}
+              </div>
+            </>
           )}
 
           {user && (
@@ -508,7 +531,9 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
                   <div
                     className={`dropdown-trigger ${openDropdown === "status" ? "active" : ""}`}
                     onClick={() =>
-                      setOpenDropdown(openDropdown === "status" ? null : "status")
+                      setOpenDropdown(
+                        openDropdown === "status" ? null : "status",
+                      )
                     }
                   >
                     <span>
