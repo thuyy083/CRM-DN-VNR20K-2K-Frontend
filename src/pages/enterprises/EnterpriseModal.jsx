@@ -12,7 +12,7 @@ import { getServices } from "../../services/servicesService";
 const POTENTIAL_STORAGE_KEY = "enterprise_potential_map";
 
 function EnterpriseModal({ enterprise, close, reload }) {
-  const isCreateMode = !enterprise;
+  // const isCreateMode = !enterprise;
   const normalizePotentialValue = (value) => {
     if (typeof value === "boolean") return value;
     if (typeof value === "number") return value === 1;
@@ -176,10 +176,10 @@ function EnterpriseModal({ enterprise, close, reload }) {
 
       if (enterprise) {
         const {
-          contactFullName,
-          contactEmail,
-          contactPhone,
-          contactPosition,
+          // contactFullName,
+          // contactEmail,
+          // contactPhone,
+          // contactPosition,
           ...updatePayload
         } = payloadWithPotential;
         await updateEnterprise(enterprise.id, updatePayload);

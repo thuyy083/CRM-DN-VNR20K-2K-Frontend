@@ -6,23 +6,41 @@ import "./ImportEnterpriseModal.scss"
 function ImportEnterpriseModal({ close, reload }) {
   const [file, setFile] = useState(null);
 
-  const handleImport = async () => {
-    if (!file) {
-      toast.error("Vui lòng chọn file Excel");
+const handleImport = async () => {
+  if (!file) {
+    toast.error("Vui lòng chọn file Excel");
+    return;
+  }
+
+  try {
+    const res = await importEnterprises(file);
+
+    const errors = res.data?.data?.errors || [];
+
+    if (errors.length > 0) {
+      toast.error(
+  <div style={{ maxHeight: 250, overflowY: "auto", lineHeight: "1.6" }}>
+    {errors.map((e, i) => (
+      <div key={i}>
+        <strong>Dòng {e.rowNumber}:</strong> {e.errorMessage}
+      </div>
+    ))}
+  </div>
+);
+
       return;
     }
 
-    try {
-      await importEnterprises(file);
-      toast.success("Import thành công");
+    toast.success("Import doanh nghiệp thành công");
 
-      reload();
-      close();
-    } catch (err) {
-      console.error(err);
-      toast.error("Import thất bại");
-    }
-  };
+    reload();
+    close();
+
+  } catch (err) {
+    console.error(err);
+    toast.error("Import thất bại");
+  }
+};
 
   return (
     <div className="modal">
