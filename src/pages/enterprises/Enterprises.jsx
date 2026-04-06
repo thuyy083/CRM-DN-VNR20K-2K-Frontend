@@ -39,7 +39,7 @@ function Enterprises() {
   ];
 
   const filteredIndustries = industryOptions.filter((i) =>
-    i.label.toLowerCase().includes(industrySearch.toLowerCase())
+    i.label.toLowerCase().includes(industrySearch.toLowerCase()),
   );
   const getPotentialStorageMap = () => {
     try {
@@ -64,43 +64,35 @@ function Enterprises() {
     if (typeof raw === "number") return raw === 1;
     if (typeof raw === "string") {
       const normalized = raw.trim().toLowerCase();
-      return ["true", "1", "yes", "y", "potential", "tiem_nang"].includes(normalized);
+      return ["true", "1", "yes", "y", "potential", "tiem_nang"].includes(
+        normalized,
+      );
     }
     return false;
   };
 
   const fetchEnterprises = useCallback(async () => {
     try {
-      const res = await getEnterprises({
-        page: 0,              // ⚠️ luôn page 0
-        size: 500,            // ⚠️ lấy nhiều data
-        keyword: "",          // ⚠️ KHÔNG dùng backend search
-        status: filterStatus === "ALL" ? "" : filterStatus,
-        industry: filterIndustry === "ALL" ? "" : filterIndustry,
-      });
+      const fetchSize = 500;
+      const res = await getEnterprises(
+        currentPage,
+        10,
+        0,
+        fetchSize,
+        searchTerm,
+        filterStatus === "ALL" ? "" : filterStatus,
+        filterIndustry === "ALL" ? "" : filterIndustry,
+        "",
+      );
 
-      let data = res.data?.data?.content || [];
-
-      // ✅ FILTER SEARCH TẠI FRONTEND
-      if (searchTerm.trim()) {
-        const keyword = searchTerm.toLowerCase();
-
-        data = data.filter((item) => {
-          return (
-            item?.name?.toLowerCase().includes(keyword) ||
-            item?.taxCode?.toLowerCase().includes(keyword)
-          );
-        });
-      }
-
-      // ===== POTENTIAL LOGIC =====
+      const data = res.data?.data?.content || [];
       const potentialStorageMap = getPotentialStorageMap();
 
       const mergedData = data.map((item) => {
         const enterpriseId = String(item?.id ?? "");
         const hasStoragePotential = Object.prototype.hasOwnProperty.call(
           potentialStorageMap,
-          enterpriseId
+          enterpriseId,
         );
 
         if (!hasStoragePotential) return item;
@@ -119,12 +111,11 @@ function Enterprises() {
       });
 
       setEnterprises(filteredByPotential);
-      setTotalPages(1); // ⚠️ vì đã filter client
-
+      setTotalPages(res.data?.data?.totalPages || 0);
     } catch (err) {
       console.error(err);
     }
-  }, [searchTerm, filterStatus, filterIndustry, filterPotential]);
+  }, [currentPage, searchTerm, filterStatus, filterIndustry, filterPotential]); // Thêm filterPotential vào dependency
 
   const fetchIndustries = useCallback(async () => {
     try {
@@ -191,7 +182,7 @@ function Enterprises() {
 
   const handleDeleteEnterprise = async (enterprise) => {
     const confirmDelete = window.confirm(
-      `Bạn có chắc muốn xóa doanh nghiệp ${enterprise?.name || "này"}?`
+      `Bạn có chắc muốn xóa doanh nghiệp ${enterprise?.name || "này"}?`,
     );
     if (!confirmDelete) return;
 
@@ -238,8 +229,6 @@ function Enterprises() {
     { value: "INACTIVE", label: "Ngưng hoạt động" },
   ];
 
-
-
   const potentialOptions = [
     { value: "ALL", label: "Tất cả loại" },
     { value: "POTENTIAL", label: "Tiềm năng" },
@@ -247,16 +236,22 @@ function Enterprises() {
   ];
 
   return (
-    <div className="employees-page"> {/* ✅ dùng chung class */}
-
+    <div className="employees-page">
+      {" "}
+      {/* ✅ dùng chung class */}
       <div className="header">
         <h2>Quản lý doanh nghiệp</h2>
 
         <div className="header-actions" ref={dropdownRef}>
-
           {/* Autofill fix giống Employee */}
-          <input type="text" style={{ position: "absolute", opacity: 0, width: 0 }} />
-          <input type="password" style={{ position: "absolute", opacity: 0, width: 0 }} />
+          <input
+            type="text"
+            style={{ position: "absolute", opacity: 0, width: 0 }}
+          />
+          <input
+            type="password"
+            style={{ position: "absolute", opacity: 0, width: 0 }}
+          />
 
           {/* SEARCH */}
           <div className="search-box">
@@ -301,7 +296,10 @@ function Enterprises() {
               <span>
                 {statusOptions.find((o) => o.value === filterStatus)?.label}
               </span>
-              <svg className={`icon-chevron ${openDropdown === "status" ? "open" : ""}`} viewBox="0 0 24 24">
+              <svg
+                className={`icon-chevron ${openDropdown === "status" ? "open" : ""}`}
+                viewBox="0 0 24 24"
+              >
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
             </div>
@@ -335,14 +333,16 @@ function Enterprises() {
               <span>
                 {industryOptions.find((o) => o.value === filterIndustry)?.label}
               </span>
-              <svg className={`icon-chevron ${openDropdown === "industry" ? "open" : ""}`} viewBox="0 0 24 24">
+              <svg
+                className={`icon-chevron ${openDropdown === "industry" ? "open" : ""}`}
+                viewBox="0 0 24 24"
+              >
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
             </div>
 
             {openDropdown === "industry" && (
               <div className="dropdown-menu">
-
                 {/* SEARCH */}
                 <div className="dropdown-search">
                   <input
@@ -357,8 +357,9 @@ function Enterprises() {
                   {filteredIndustries.map((opt) => (
                     <div
                       key={opt.value}
-                      className={`dropdown-item ${filterIndustry === opt.value ? "selected" : ""
-                        }`}
+                      className={`dropdown-item ${
+                        filterIndustry === opt.value ? "selected" : ""
+                      }`}
                       onClick={() => {
                         setFilterIndustry(opt.value);
                         setOpenDropdown(null);
@@ -377,13 +378,21 @@ function Enterprises() {
             <div
               className={`dropdown-trigger ${openDropdown === "potential" ? "active" : ""}`}
               onClick={() =>
-                setOpenDropdown(openDropdown === "potential" ? null : "potential")
+                setOpenDropdown(
+                  openDropdown === "potential" ? null : "potential",
+                )
               }
             >
               <span>
-                {potentialOptions.find((o) => o.value === filterPotential)?.label}
+                {
+                  potentialOptions.find((o) => o.value === filterPotential)
+                    ?.label
+                }
               </span>
-              <svg className={`icon-chevron ${openDropdown === "potential" ? "open" : ""}`} viewBox="0 0 24 24">
+              <svg
+                className={`icon-chevron ${openDropdown === "potential" ? "open" : ""}`}
+                viewBox="0 0 24 24"
+              >
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
             </div>
@@ -408,14 +417,10 @@ function Enterprises() {
 
           {/* BUTTONS */}
 
-
           <button className="add-btn" onClick={() => setOpenImport(true)}>
             Import Excel
           </button>
-          <button
-            className="add-btn"
-            onClick={handleDownloadTemplate}
-          >
+          <button className="add-btn" onClick={handleDownloadTemplate}>
             Tải file mẫu
           </button>
           <button className="add-btn" onClick={handleExport}>
@@ -429,7 +434,6 @@ function Enterprises() {
           </button>
         </div>
       </div>
-
       <div className="table-card">
         <EnterpriseTable
           enterprises={enterprises}
@@ -448,8 +452,6 @@ function Enterprises() {
           onDelete={handleDeleteEnterprise}
         />
       </div>
-
-
       {openModal && (
         <EnterpriseModal
           enterprise={selectedEnterprise}
@@ -460,7 +462,6 @@ function Enterprises() {
           reload={fetchEnterprises}
         />
       )}
-
       {openDetail && (
         <EnterpriseDetailModal
           enterprise={selectedEnterprise}
@@ -470,7 +471,6 @@ function Enterprises() {
           close={() => setOpenDetail(false)}
         />
       )}
-
       {openImport && (
         <ImportEnterpriseModal
           close={() => setOpenImport(false)}
