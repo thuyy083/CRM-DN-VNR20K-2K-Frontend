@@ -47,3 +47,4 @@ export const createContact = async (enterpriseId, contactData) => {
   const res = await axios.post(`/enterprises/${enterpriseId}/contacts`, contactData);
   return normalizeContact(extractItemFromResponse(res));
 };
+

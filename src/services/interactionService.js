@@ -41,3 +41,9 @@ export const updateInteraction = (id, data) => {
 export const deleteInteraction = (id) => {
   return axios.delete(`/interactions/${id}`);
 };
+
+export const updateInteractionDescription = async (id, description) => {
+  return axios.put(`/interactions/${id}`, {
+    description,
+  });
+};
