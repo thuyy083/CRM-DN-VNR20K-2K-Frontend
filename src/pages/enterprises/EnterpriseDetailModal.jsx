@@ -111,7 +111,7 @@ function EnterpriseDetailModal({
       setContacts(res.data?.data || []);
     } catch (err) {
       console.error(err);
-      toast.error("Không tải được danh sách người liên hệ");
+      toast.error("Không tải được danh sách người đại diện");
     }
   };
 
@@ -142,12 +142,12 @@ function EnterpriseDetailModal({
   };
 
   const handleDelete = async (contactId) => {
-    const confirmDelete = window.confirm("Bạn có chắc muốn xóa người liên hệ này?");
+    const confirmDelete = window.confirm("Bạn có chắc muốn xóa người đại diện này?");
     if (!confirmDelete) return;
 
     try {
       await deleteContact(enterprise.id, contactId);
-      toast.success("Xóa người liên hệ thành công");
+      toast.success("Xóa người đại diện thành công");
 
       fetchContacts();
     } catch (err) {
@@ -312,7 +312,7 @@ function EnterpriseDetailModal({
 
         {/* CONTACT */}
         <div className="contact-header">
-          <h4>Người liên hệ</h4>
+          <h4>Người đại diện</h4>
           <button
             onClick={() => {
               setEditingContact(null);
@@ -364,7 +364,7 @@ function EnterpriseDetailModal({
             ))}
             {contacts.length === 0 && (
               <tr>
-                <td colSpan="5" className="empty-cell">Doanh nghiệp chưa có người liên hệ</td>
+                <td colSpan="5" className="empty-cell">Doanh nghiệp chưa có người đại diện</td>
               </tr>
             )}
           </tbody>
@@ -375,20 +375,7 @@ function EnterpriseDetailModal({
             <h4>Thông tin sử dụng dịch vụ Viettel</h4>
           </div>
 
-          <div className={`usage-state ${serviceUsages.length > 0 ? "used" : "unused"}`}>
-            {serviceUsages.length > 0
-              ? "Doanh nghiệp đã từng sử dụng dịch vụ Viettel"
-              : "Doanh nghiệp chưa từng sử dụng dịch vụ Viettel"}
-          </div>
-
           <div className="usage-header">
-            <button
-              type="button"
-              className="toggle-add-usage-btn"
-              onClick={() => setShowAddServiceForm((prev) => !prev)}
-            >
-              + Thêm dịch vụ
-            </button>
             <input
               type="text"
               className="usage-search-input"
@@ -396,6 +383,13 @@ function EnterpriseDetailModal({
               value={usageKeyword}
               onChange={(e) => setUsageKeyword(e.target.value)}
             />
+            <button
+              type="button"
+              className="toggle-add-usage-btn"
+              onClick={() => setShowAddServiceForm((prev) => !prev)}
+            >
+              + Thêm dịch vụ
+            </button>
           </div>
 
           <table className="usage-table">
