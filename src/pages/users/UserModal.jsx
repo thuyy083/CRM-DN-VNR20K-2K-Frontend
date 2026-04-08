@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import "./UserModal.scss";
 
@@ -19,19 +19,15 @@ const getContactName = (contact) =>
 
 const typeOptions = [
   { value: "PHONE_CALL", label: "Gọi điện" },
-  { value: "OFFLINE_MEETING", label: "Gặp mặt" },
-  { value: "EMAIL_QUOTE", label: "Email" },
-  { value: "DEMO", label: "Thăm quan" },
+  { value: "EMAIL_QUOTE", label: "Gửi báo giá" },
   { value: "ONLINE_MEETING", label: "Họp online" },
+  { value: "OFFLINE_MEETING", label: "Gặp trực tiếp" },
+  { value: "DEMO", label: "Demo sản phẩm" },
   { value: "CONTRACT_SIGNING", label: "Ký hợp đồng" },
   { value: "CUSTOMER_SUPPORT", label: "Hỗ trợ khách hàng" },
   { value: "OTHER", label: "Khác" },
 ];
 
-const resultOptions = [
-  { value: "PENDING", label: "Đang xử lý" },
-  { value: "SUCCESSFUL", label: "Thành công" },
-];
 
 const sanitizeInteractionContent = (value) => {
   if (!value) return "";
@@ -48,10 +44,16 @@ const toDateOnly = (value) => {
   return `${year}-${month}-${day}`;
 };
 
+// const toIsoDate = (value) => {
+//   if (!value) return null;
+//   const date = new Date(`${value}T00:00:00`);
+//   if (Number.isNaN(date.getTime())) return null;
+//   return date.toISOString();
+// };
+
 const toIsoDate = (value) => {
   if (!value) return null;
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return null;
+  const date = new Date(value);
   return date.toISOString();
 };
 
@@ -62,6 +64,11 @@ function UserModal({ interaction, enterprises, close, reload }) {
   const [creatingContact, setCreatingContact] = useState(false);
   const [createContactErrors, setCreateContactErrors] = useState({});
   const [errors, setErrors] = useState({});
+
+  const [openEnterpriseDropdown, setOpenEnterpriseDropdown] = useState(false);
+  const [searchEnterprise, setSearchEnterprise] = useState("");
+  const enterpriseDropdownRef = useRef(null);
+
   const noContactToastEnterpriseRef = useRef("");
 
   const [contactForm, setContactForm] = useState({
@@ -77,19 +84,29 @@ function UserModal({ interaction, enterprises, close, reload }) {
     contactId: interaction?.contactId ? String(interaction.contactId) : "",
     contactPosition: "",
     interactionType: interaction?.interactionType || "PHONE_CALL",
-    result: interaction?.result || "PENDING",
     interactionTime: toDateOnly(interaction?.interactionTime),
     futureInteractionDate: "",
     location: interaction?.location || "",
     description: sanitizeInteractionContent(interaction?.description || ""),
   });
 
-  const selectedEnterprise = enterprises.find(
-    (enterprise) => String(getEnterpriseId(enterprise)) === String(form.enterpriseId)
-  );
+  const selectedEnterprise = useMemo(() => {
+    return enterprises.find(
+      (e) => getEnterpriseId(e) === form.enterpriseId
+    );
+  }, [enterprises, form.enterpriseId]);
   const selectedEnterpriseName = (getEnterpriseName(selectedEnterprise) || "").trim().toLowerCase();
   const isViettelEnterprise =
     selectedEnterpriseName === "vt" || selectedEnterpriseName.includes("viettel");
+  const filteredEnterprises = useMemo(() => {
+    return enterprises.filter((e) =>
+      (getEnterpriseName(e) || "")
+        .toLowerCase()
+        .includes(searchEnterprise.toLowerCase())
+    );
+  }, [enterprises, searchEnterprise]);
+
+
 
   useEffect(() => {
     const run = async () => {
@@ -101,7 +118,7 @@ function UserModal({ interaction, enterprises, close, reload }) {
 
       setLoadingContacts(true);
       try {
-        
+
         const list = await getContactsByEnterprise(form.enterpriseId);
         setContacts(list);
 
@@ -133,6 +150,20 @@ function UserModal({ interaction, enterprises, close, reload }) {
 
     run();
   }, [form.enterpriseId]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        enterpriseDropdownRef.current &&
+        !enterpriseDropdownRef.current.contains(event.target)
+      ) {
+        setOpenEnterpriseDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (
@@ -247,17 +278,14 @@ function UserModal({ interaction, enterprises, close, reload }) {
   };
 
   const validate = () => {
-    
+
     const nextErrors = {};
 
     if (!form.enterpriseId) nextErrors.enterpriseId = "Vui lòng chọn doanh nghiệp";
     if (!form.interactionType) nextErrors.interactionType = "Vui lòng chọn loại tiếp xúc";
-    if (!form.result) nextErrors.result = "Vui lòng chọn trạng thái";
     if (!form.interactionTime) nextErrors.interactionTime = "Vui lòng chọn ngày tiếp xúc";
-    if (interaction && form.result === "PENDING" && !form.futureInteractionDate) {
-      nextErrors.futureInteractionDate = "Vui lòng chọn ngày tiếp xúc trong tương lai";
-    }
-    if (interaction && form.result === "PENDING" && form.futureInteractionDate && form.interactionTime) {
+
+    if (interaction && form.futureInteractionDate && form.interactionTime) {
       const currentDate = new Date(`${form.interactionTime}T00:00:00`).getTime();
       const futureDate = new Date(`${form.futureInteractionDate}T00:00:00`).getTime();
       if (!Number.isNaN(currentDate) && !Number.isNaN(futureDate) && futureDate <= currentDate) {
@@ -281,6 +309,8 @@ function UserModal({ interaction, enterprises, close, reload }) {
     };
   };
 
+
+
   const handleSubmit = async () => {
     const { isValid, nextErrors } = validate();
     if (!isValid) {
@@ -289,9 +319,6 @@ function UserModal({ interaction, enterprises, close, reload }) {
       }
       if (nextErrors.interactionType) {
         toast.error(nextErrors.interactionType);
-      }
-      if (nextErrors.result) {
-        toast.error(nextErrors.result);
       }
       if (nextErrors.interactionTime) {
         toast.error(nextErrors.interactionTime);
@@ -310,10 +337,11 @@ function UserModal({ interaction, enterprises, close, reload }) {
 
     //  tạo mới và cập nhật.
     const basePayload = {
+      enterpriseId: Number(form.enterpriseId),
+      contactId: form.contactId ? Number(form.contactId) : null,
       interactionType: form.interactionType,
-      result: form.result,
       interactionTime: toIsoDate(form.interactionTime),
-      location: form.location.trim() || null,
+      location: form.location?.trim() || null,
       description: sanitizeInteractionContent(form.description) || null,
     };
 
@@ -321,12 +349,11 @@ function UserModal({ interaction, enterprises, close, reload }) {
       if (interaction) {
         await updateInteraction(interaction.id, basePayload);
 
-        if (form.result === "PENDING" && form.futureInteractionDate) {
+        if (form.futureInteractionDate) {
           await createInteraction({
             enterpriseId: Number(interaction.enterpriseId || form.enterpriseId),
             contactId: form.contactId ? Number(form.contactId) : interaction.contactId ?? null,
             interactionType: form.interactionType,
-            result: "PENDING",
             interactionTime: toIsoDate(form.futureInteractionDate),
             location: form.location.trim() || null,
             description: sanitizeInteractionContent(form.description) || null,
@@ -335,12 +362,8 @@ function UserModal({ interaction, enterprises, close, reload }) {
 
         toast.success("Cập nhật tiếp xúc thành công");
       } else {
-        
-        await createInteraction({
-          ...basePayload,
-          enterpriseId: Number(form.enterpriseId),
-          contactId: form.contactId ? Number(form.contactId) : null,
-        });
+
+        await createInteraction(basePayload);
         toast.success("Thêm tiếp xúc thành công");
       }
 
@@ -380,43 +403,86 @@ function UserModal({ interaction, enterprises, close, reload }) {
         )}
 
         <div className="form-grid">
-          <div className="form-group">
+          <div className="form-group" ref={enterpriseDropdownRef}>
             <label>
               Doanh nghiệp <span className="required">*</span>
             </label>
-            <select
-              className={errors.enterpriseId ? "input-error" : ""}
-              value={form.enterpriseId}
-              onChange={(e) => {
-                handleChange("enterpriseId", e.target.value);
-                handleChange("contactId", "");
-                handleChange("contactPosition", "");
-                noContactToastEnterpriseRef.current = "";
-                setShowCreateContactForm(false);
-                setContactForm({
-                  fullName: "",
-                  position: "",
-                  email: "",
-                  phone: "",
-                  isPrimary: false,
-                });
-                setCreateContactErrors({});
-              }}
-              disabled={!!interaction}
+
+            <div
+              className={`select-box ${openEnterpriseDropdown ? "active" : ""} ${errors.enterpriseId ? "input-error" : ""
+                }`}
+              onClick={() => !interaction && setOpenEnterpriseDropdown(!openEnterpriseDropdown)}
             >
-              <option value="">Chọn doanh nghiệp</option>
-              {enterprises.map((enterprise) => (
-                <option key={getEnterpriseId(enterprise)} value={getEnterpriseId(enterprise)}>
-                  {getEnterpriseName(enterprise)}
-                </option>
-              ))}
-            </select>
-            {errors.enterpriseId && <span className="error-text">{errors.enterpriseId}</span>}
-            {form.enterpriseId && !loadingContacts && contacts.length === 0 && isViettelEnterprise && (
-              <span className="error-text">
-                Doanh nghiệp này chưa có người liên hệ. Hãy tạo liên hệ trước khi gắn vào tiếp xúc.
+              <span className={form.enterpriseId ? "selected" : "placeholder"}>
+                {selectedEnterprise
+                  ? getEnterpriseName(selectedEnterprise)
+                  : "Chọn doanh nghiệp"}
               </span>
+
+              <svg
+                className={`icon ${openEnterpriseDropdown ? "open" : ""}`}
+                viewBox="0 0 24 24"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </div>
+
+            {openEnterpriseDropdown && !interaction && (
+              <div className="select-dropdown">
+                <input
+                  className="search"
+                  placeholder="Tìm doanh nghiệp..."
+                  value={searchEnterprise}
+                  onChange={(e) => setSearchEnterprise(e.target.value)}
+                />
+
+                <div className="options">
+                  {filteredEnterprises.map((enterprise) => (
+                    <div
+                      key={getEnterpriseId(enterprise)}
+                      className={`option ${String(form.enterpriseId) === String(getEnterpriseId(enterprise))
+                        ? "selected"
+                        : ""
+                        }`}
+                      onClick={() => {
+                        handleChange("enterpriseId", getEnterpriseId(enterprise));
+
+                        // reset giống code cũ
+                        handleChange("contactId", "");
+                        handleChange("contactPosition", "");
+                        noContactToastEnterpriseRef.current = "";
+                        setShowCreateContactForm(false);
+                        setContactForm({
+                          fullName: "",
+                          position: "",
+                          email: "",
+                          phone: "",
+                          isPrimary: false,
+                        });
+                        setCreateContactErrors({});
+
+                        setOpenEnterpriseDropdown(false);
+                      }}
+                    >
+                      {getEnterpriseName(enterprise)}
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
+
+            {errors.enterpriseId && (
+              <span className="error-text">{errors.enterpriseId}</span>
+            )}
+
+            {form.enterpriseId &&
+              !loadingContacts &&
+              contacts.length === 0 &&
+              isViettelEnterprise && (
+                <span className="error-text">
+                  Doanh nghiệp này chưa có người liên hệ. Hãy tạo liên hệ trước khi gắn vào tiếp xúc.
+                </span>
+              )}
           </div>
 
           <div className="form-group">
@@ -559,97 +625,44 @@ function UserModal({ interaction, enterprises, close, reload }) {
           <div className="form-group">
             <label>Chức vụ người liên hệ</label>
             <input
+              readOnly
               value={form.contactPosition}
-              onChange={(e) => handleChange("contactPosition", e.target.value)}
+              // onChange={(e) => handleChange("contactPosition", e.target.value)}
               placeholder="VD: Giám đốc, Kế toán..."
             />
           </div>
 
-          {interaction ? (
-            <div className="timeline-row full-width">
-              <div className="form-group">
-                <label>
-                  Loại tiếp xúc <span className="required">*</span>
-                </label>
-                <select
-                  className={errors.interactionType ? "input-error" : ""}
-                  value={form.interactionType}
-                  onChange={(e) => handleChange("interactionType", e.target.value)}
-                >
-                  {typeOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.interactionType && <span className="error-text">{errors.interactionType}</span>}
-              </div>
-
-              <div className="form-group">
-                <label>
-                  Ngày tiếp xúc <span className="required">*</span>
-                </label>
-                <input
-                  type="date"
-                  className={errors.interactionTime ? "input-error" : ""}
-                  value={form.interactionTime}
-                  onChange={(e) => handleChange("interactionTime", e.target.value)}
-                />
-                {errors.interactionTime && <span className="error-text">{errors.interactionTime}</span>}
-              </div>
-
-              {form.result === "PENDING" && (
-                <div className="form-group">
-                  <label>
-                    Ngày tiếp xúc trong tương lai <span className="required">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    className={errors.futureInteractionDate ? "input-error" : ""}
-                    value={form.futureInteractionDate}
-                    onChange={(e) => handleChange("futureInteractionDate", e.target.value)}
-                  />
-                  {errors.futureInteractionDate && (
-                    <span className="error-text">{errors.futureInteractionDate}</span>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="form-group">
-              <label>
-                Ngày tiếp xúc <span className="required">*</span>
-              </label>
-              <input
-                type="date"
-                className={errors.interactionTime ? "input-error" : ""}
-                value={form.interactionTime}
-                onChange={(e) => handleChange("interactionTime", e.target.value)}
-              />
-              {errors.interactionTime && <span className="error-text">{errors.interactionTime}</span>}
-            </div>
-          )}
-
           <div className="form-group">
-            <label>Trạng thái</label>
+            <label>
+              Loại tiếp xúc <span className="required">*</span>
+            </label>
             <select
-              value={form.result}
-              onChange={(e) => {
-                const nextResult = e.target.value;
-                handleChange("result", nextResult);
-                if (nextResult !== "PENDING") {
-                  handleChange("futureInteractionDate", "");
-                }
-              }}
+              className={errors.interactionType ? "input-error" : ""}
+              value={form.interactionType}
+              onChange={(e) => handleChange("interactionType", e.target.value)}
             >
-              {resultOptions.map((opt) => (
+              {typeOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
               ))}
             </select>
+            {errors.interactionType && (
+              <span className="error-text">{errors.interactionType}</span>
+            )}
           </div>
-
+          <div className="form-group">
+            <label>
+              Ngày tiếp xúc <span className="required">*</span>
+            </label>
+            <input
+              type="datetime-local"
+              className={errors.interactionTime ? "input-error" : ""}
+              value={form.interactionTime}
+              onChange={(e) => handleChange("interactionTime", e.target.value)}
+            />
+            {errors.interactionTime && <span className="error-text">{errors.interactionTime}</span>}
+          </div>
           <div className="form-group">
             <label>Địa điểm</label>
             <input
