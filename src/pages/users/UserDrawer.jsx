@@ -1,22 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { toast } from "react-toastify";
-import { updateInteraction } from "../../services/interactionService";
-import { getEnterpriseById } from "../../services/enterpriseService";
+import { getEnterpriseById, getIndustries } from "../../services/enterpriseService";
 import "./UserDrawer.scss";
+import { toast } from "react-toastify";
+import { updateInteractionDescription } from "../../services/interactionService";
 
 const POTENTIAL_STORAGE_KEY = "enterprise_potential_map";
 
-const resultOptions = [
-  { value: "PENDING", label: "Đang xử lý" },
-  { value: "FAILED", label: "Hủy" },
-  { value: "SUCCESSFUL", label: "Thành công" },
-];
-
-const sanitizeInteractionContent = (value) => {
-  if (!value) return "-";
-  const cleaned = String(value).replace(/\s*Chức\s*vụ[^:]*:\s*.*$/iu, "").trim();
-  return cleaned || "-";
-};
 
 const formatDateOnly = (value) => {
   if (!value) return "-";
@@ -60,10 +49,9 @@ const isPotentialEnterprise = (item) => {
 function InteractionTable({
   rows,
   emptyText,
-  updatingStatusId,
-  onOpenStatusPopup,
-  onViewContent,
+  onEdit,
 }) {
+
   if (!rows.length) {
     return <div className="section-empty">{emptyText}</div>;
   }
@@ -76,7 +64,7 @@ function InteractionTable({
           <th>Ngày tiếp xúc</th>
           <th>Người liên hệ</th>
           <th>Nội dung</th>
-          <th>Trạng thái</th>
+          <th>Hình ảnh</th>
         </tr>
       </thead>
       <tbody>
@@ -86,20 +74,16 @@ function InteractionTable({
             <td>{formatDateOnly(item.interactionTime)}</td>
             <td>{item.contactName || "-"}</td>
             <td>
-              <button className="view-content-btn" type="button" onClick={() => onViewContent(item)}>
+              <button className="view-content-btn" type="button" onClick={() => onEdit(item)}>
                 Xem nội dung
               </button>
             </td>
             <td>
               <button
-                className="view-status-btn"
-                type="button"
-                disabled={updatingStatusId === item.id}
-                onClick={() => onOpenStatusPopup(item)}
+                className="view-content-btn"
+                onClick={() => alert("API hình ảnh chưa có 😄")}
               >
-                {updatingStatusId === item.id
-                  ? "Đang cập nhật"
-                  : resultOptions.find((opt) => opt.value === (item.result || "PENDING"))?.label || "Trạng thái"}
+                Xem ảnh
               </button>
             </td>
           </tr>
@@ -112,10 +96,30 @@ function InteractionTable({
 function UserDrawer({ open, interaction, onClose, onReload }) {
   const [localInteractions, setLocalInteractions] = useState([]);
   const [enterpriseInfo, setEnterpriseInfo] = useState(null);
-  const [updatingStatusId, setUpdatingStatusId] = useState(null);
-  const [previewContent, setPreviewContent] = useState("");
-  const [statusPopup, setStatusPopup] = useState({ open: false, item: null, value: "PENDING" });
+  const [industries, setIndustries] = useState([]);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editingDescription, setEditingDescription] = useState("");
+  useEffect(() => {
+    const fetchIndustries = async () => {
+      try {
+        const res = await getIndustries();
+        setIndustries(res.data?.data || []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
 
+    if (open) {
+      fetchIndustries();
+    }
+  }, [open]);
+  const getIndustryName = (code) => {
+    if (!code) return "-";
+    if (!industries.length) return code;
+
+    const found = industries.find((i) => i.code === code);
+    return found?.name || code;
+  };
   const detailRows = useMemo(() => sortByDateDesc(localInteractions), [localInteractions]);
 
   const potentialFromStorage = useMemo(() => {
@@ -135,11 +139,9 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
     potentialFromStorage;
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     setLocalInteractions(interaction?.allInteractions || []);
     setEnterpriseInfo(null);
-    setUpdatingStatusId(null);
-    setPreviewContent("");
-    setStatusPopup({ open: false, item: null, value: "PENDING" });
   }, [interaction]);
 
   useEffect(() => {
@@ -157,51 +159,6 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
     fetchEnterpriseInfo();
   }, [open, interaction]);
 
-  const handleOpenStatusPopup = (item) => {
-    setStatusPopup({
-      open: true,
-      item,
-      value: item.result || "PENDING",
-    });
-  };
-
-  const handleStatusPopupChange = async (nextStatus) => {
-    const item = statusPopup.item;
-    if (!item) return;
-
-    if (nextStatus === item.result) {
-      setStatusPopup({ open: false, item: null, value: "PENDING" });
-      return;
-    }
-
-    const payload = {
-      interactionType: item.interactionType,
-      result: nextStatus,
-      interactionTime: item.interactionTime,
-      location: item.location || null,
-      description: item.description || null,
-    };
-
-    try {
-      setUpdatingStatusId(item.id);
-      await updateInteraction(item.id, payload);
-
-      setLocalInteractions((prev) =>
-        prev.map((it) => (it.id === item.id ? { ...it, result: nextStatus } : it))
-      );
-      setStatusPopup({ open: false, item: null, value: "PENDING" });
-
-      toast.success("Cập nhật trạng thái thành công");
-      if (onReload) {
-        await onReload();
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Không thể cập nhật trạng thái");
-    } finally {
-      setUpdatingStatusId(null);
-    }
-  };
 
   return (
     <div className={`drawer-overlay ${open ? "open" : ""}`} onClick={onClose}>
@@ -236,7 +193,7 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
                 </div>
                 <div>
                   <b>Ngành:</b>
-                  <span>{enterpriseInfo?.industry || "-"}</span>
+                  <span>{getIndustryName(enterpriseInfo?.industry)}</span>
                 </div>
                 <div>
                   <b>Nhân viên:</b>
@@ -258,62 +215,67 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
               <InteractionTable
                 rows={detailRows}
                 emptyText="Chưa có tiếp xúc nào"
-                updatingStatusId={updatingStatusId}
-                onOpenStatusPopup={handleOpenStatusPopup}
-                onViewContent={(item) => setPreviewContent(sanitizeInteractionContent(item.description))}
+                onEdit={(item) => {
+                  setEditingItem(item);
+                  setEditingDescription(item.description || "");
+                }}
               />
             </section>
 
-            {previewContent && (
-              <div className="content-preview-overlay" onClick={() => setPreviewContent("")}>
+            {editingItem && (
+              <div className="content-preview-overlay" onClick={() => setEditingItem(null)}>
                 <div className="content-preview-dialog" onClick={(e) => e.stopPropagation()}>
-                  <div className="content-preview-header">
-                    <h5>Nội dung tiếp xúc</h5>
-                    <button
-                      type="button"
-                      className="content-close-btn"
-                      onClick={() => setPreviewContent("")}
-                      aria-label="Đóng"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <p>{previewContent}</p>
-                  <div className="content-preview-actions">
-                    <button type="button" onClick={() => setPreviewContent("")}>Đóng</button>
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {statusPopup.open && statusPopup.item && (
-              <div className="content-preview-overlay" onClick={() => setStatusPopup({ open: false, item: null, value: "PENDING" })}>
-                <div className="content-preview-dialog" onClick={(e) => e.stopPropagation()}>
                   <div className="content-preview-header">
-                    <h5>Cập nhật trạng thái</h5>
+                    <h5>Sửa nội dung tiếp xúc</h5>
                     <button
-                      type="button"
                       className="content-close-btn"
-                      onClick={() => setStatusPopup({ open: false, item: null, value: "PENDING" })}
-                      aria-label="Đóng"
+                      onClick={() => setEditingItem(null)}
                     >
                       ×
                     </button>
                   </div>
-                  <select
-                    value={statusPopup.value}
-                    onChange={(e) => {
-                      const nextValue = e.target.value;
-                      setStatusPopup((prev) => ({ ...prev, value: nextValue }));
-                      handleStatusPopupChange(nextValue);
-                    }}
-                  >
-                    {resultOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+
+                  <textarea
+                    className="edit-textarea"
+                    value={editingDescription}
+                    onChange={(e) => setEditingDescription(e.target.value)}
+                    placeholder="Nhập nội dung..."
+                    autoFocus
+                  />
+
+                  <div className="content-preview-actions">
+                    <button onClick={() => setEditingItem(null)}>Hủy</button>
+
+                    <button
+                      disabled={!editingDescription.trim()}
+                      onClick={async () => {
+                        try {
+                          const value = editingDescription.trim();
+
+                          await updateInteractionDescription(editingItem.id, value);
+
+                          setLocalInteractions((prev) =>
+                            prev.map((it) =>
+                              it.id === editingItem.id
+                                ? { ...it, description: value }
+                                : it
+                            )
+                          );
+
+                          toast.success("Cập nhật thành công");
+                          setEditingItem(null);
+
+                          if (onReload) await onReload();
+                        } catch (err) {
+                          console.error(err);
+                          toast.error("Lỗi cập nhật");
+                        }
+                      }}
+                    >
+                      Lưu
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
