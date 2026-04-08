@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import "./EnterpriseTable.scss";
 
 
-function EnterpriseTable({ enterprises, onEdit, onView, currentPage, totalPages, onPageChange, onDelete }) {
+function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageChange, onDelete }) {
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
 
   const isPotentialEnterprise = (item) => {
@@ -29,6 +29,11 @@ function EnterpriseTable({ enterprises, onEdit, onView, currentPage, totalPages,
       direction = "desc";
     }
     setSortConfig({ key, direction });
+  };
+
+  const isInactiveEnterprise = (item) => {
+    const normalized = String(item?.status || "").trim().toUpperCase();
+    return normalized === "INACTIVE";
   };
 
   const sortedData = useMemo(() => {
@@ -62,7 +67,6 @@ function EnterpriseTable({ enterprises, onEdit, onView, currentPage, totalPages,
             <th>Loại</th>
             <th>Nhân viên</th>
             <th>Điện thoại</th>
-            <th>Trạng thái</th>
             <th></th>
           </tr>
         </thead>
@@ -74,26 +78,25 @@ function EnterpriseTable({ enterprises, onEdit, onView, currentPage, totalPages,
         {currentPage * 10 + index + 1}
       </td>
               <td className="font-medium">
-                <span className="enterprise-name-cell">
-                  <span>{e.name}</span>
-                  {isPotentialEnterprise(e) && (
-                    <span className="potential-star" title="Doanh nghiệp tiềm năng">
-                      ★
-                    </span>
+                <div className="enterprise-name-wrapper">
+                  <span className="enterprise-name-cell">
+                    <span>{e.name}</span>
+                    {isPotentialEnterprise(e) && (
+                      <span className="potential-star" title="Doanh nghiệp tiềm năng">
+                        ★
+                      </span>
+                    )}
+                  </span>
+                  {isInactiveEnterprise(e) && (
+                    <span className="enterprise-inactive-text">Ngừng hoạt động</span>
                   )}
-                </span>
+                </div>
               </td>
               <td>{e.taxCode}</td>
               <td>{e.region}</td>
               <td>{e.type}</td>
               <td>{e.employeeCount}</td>
               <td>{e.phone}</td>
-
-              <td>
-                <span className={`status ${e.status?.toLowerCase()}`}>
-                  {e.status}
-                </span>
-              </td>
 
               <td>
                 <div className="action-btns">
