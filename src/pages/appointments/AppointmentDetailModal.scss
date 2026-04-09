@@ -1,0 +1,134 @@
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-box {
+  background: #fff;
+  width: 600px;
+  max-width: 95%;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 16px;
+
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+  }
+
+  .modal-close-btn {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    color: #6b7280;
+    cursor: pointer;
+    line-height: 1;
+
+    &:hover {
+      color: #EE0033;
+    }
+  }
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+
+  .label {
+    min-width: 160px;
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  .value {
+    font-size: 14px;
+    color: #111827;
+  }
+
+  .font-medium {
+    font-weight: 600;
+  }
+
+  .status {
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    
+    &.scheduled { background: #e0f2fe; color: #0284c7; }
+    &.reminded { background: #fef3c7; color: #d97706; }
+    &.completed { background: #dcfce7; color: #16a34a; }
+    &.cancelled { background: #fee2e2; color: #dc2626; }
+    &.need_follow_up { background: #ffedd5; color: #ea580c; }
+  }
+}
+
+.full-row {
+  flex-direction: column;
+  gap: 8px;
+
+  .label {
+    min-width: auto;
+  }
+
+  .description-box {
+    background: #f9fafb;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    width: 100%;
+    min-height: 80px;
+    white-space: pre-wrap;
+  }
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+
+  .cancel-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: #f3f4f6;
+    color: #374151;
+
+    &:hover {
+      background: #e5e7eb;
+    }
+  }
+}
