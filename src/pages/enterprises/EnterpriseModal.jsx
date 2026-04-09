@@ -30,7 +30,7 @@ function EnterpriseModal({ enterprise, close, reload }) {
     address: enterprise?.address || "",
     website: enterprise?.website || "",
     phone: enterprise?.phone || "",
-    status: "ACTIVE",
+    status: enterprise?.status || "ACTIVE",
     region: enterprise?.region || "NONE",
     type: enterprise?.type || "HKD",
     isPotential:
@@ -139,7 +139,6 @@ function EnterpriseModal({ enterprise, close, reload }) {
       const potentialFlag = Boolean(form.isPotential);
       const payloadWithPotential = {
         ...form,
-        status: "ACTIVE",
         isPotential: potentialFlag,
         potential: potentialFlag,
         is_potential: potentialFlag,
@@ -161,7 +160,12 @@ function EnterpriseModal({ enterprise, close, reload }) {
           return;
         }
 
-        const createRes = await createEnterprise(payloadWithPotential);
+        const createPayload = {
+          ...payloadWithPotential,
+          status: "ACTIVE",
+        };
+
+        const createRes = await createEnterprise(createPayload);
         const createdEnterpriseId =
           createRes?.data?.data?.id ||
           createRes?.data?.id;
@@ -310,6 +314,7 @@ function EnterpriseModal({ enterprise, close, reload }) {
                 <option value="VNR2K">VNR2K</option>
               </select>
             </div>
+
             <div className="form-group">
               <label>Địa chỉ</label>
               <input
@@ -333,6 +338,19 @@ function EnterpriseModal({ enterprise, close, reload }) {
                 onChange={(e) => handleChange("phone", e.target.value)}
               />
             </div>
+
+            {enterprise && (
+              <div className="form-group">
+                <label>Trạng thái doanh nghiệp</label>
+                <select
+                  value={form.status}
+                  onChange={(e) => handleChange("status", e.target.value)}
+                >
+                  <option value="ACTIVE">Đang hoạt động</option>
+                  <option value="INACTIVE">Ngưng hoạt động</option>
+                </select>
+              </div>
+            )}
           </div>
         </div>
 
