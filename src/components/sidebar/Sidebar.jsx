@@ -48,6 +48,10 @@ function Sidebar() {
           Quản lý doanh nghiệp
         </NavLink>
 
+        <NavLink to="/appointments" className={({ isActive }) => isActive ? styles.active : ""}>
+          Quản lý lịch hẹn
+        </NavLink>
+
         <NavLink to="/users" className={({ isActive }) => isActive ? styles.active : ""}>
           Quản lý tiếp xúc
         </NavLink>
