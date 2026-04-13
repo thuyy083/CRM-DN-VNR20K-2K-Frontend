@@ -8,7 +8,7 @@ function AppointmentModal({ appointment, close, reload }) {
   const [form, setForm] = useState({
     enterpriseId: appointment?.enterpriseId || "",
     contactId: appointment?.contactId || "",
-    appointmentType: appointment?.appointmentType || "ONLINE",
+    appointmentType: appointment?.appointmentType || "ONLINE_MEETING",
     scheduledTime: appointment?.scheduledTime || "", 
     location: appointment?.location || "",
     purpose: appointment?.purpose || "",
@@ -126,8 +126,8 @@ function AppointmentModal({ appointment, close, reload }) {
             <div className="form-group">
               <label>Hình thức *</label>
               <select value={form.appointmentType} onChange={e => handleChange("appointmentType", e.target.value)}>
-                <option value="ONLINE">Online</option>
-                <option value="OFFLINE">Offline (Gặp gỡ trực tiếp)</option>
+                <option value="ONLINE_MEETING">Online</option>
+                <option value="OFFLINE_MEETING">Offline (Gặp gỡ trực tiếp)</option>
                 <option value="PHONE_CALL">Gọi điện thoại</option>
               </select>
             </div>
