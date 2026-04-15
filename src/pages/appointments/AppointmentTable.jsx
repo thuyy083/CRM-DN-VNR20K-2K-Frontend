@@ -1,8 +1,41 @@
 import { useState, useMemo } from "react";
 import "./AppointmentTable.scss";
 
-function AppointmentTable({ appointments, onEdit, onView, currentPage, totalPages, onPageChange, onDelete, onConfirm }) {
-  const [sortConfig, setSortConfig] = useState({ key: "id", direction: "desc" });
+function AppointmentTable({
+  appointments,
+  onEdit,
+  onView,
+  currentPage,
+  totalPages,
+  onPageChange,
+  onDelete,
+  onConfirm,
+}) {
+  const [sortConfig, setSortConfig] = useState({
+    key: "id",
+    direction: "desc",
+  });
+
+  const statusLabels = {
+    PENDING: "Đang chờ",
+    CONFIRMED: "Đã xác nhận",
+    COMPLETED: "Hoàn thành",
+    CANCELLED: "Đã hủy",
+    REJECTED: "Từ chối",
+    SCHEDULED: "Lên lịch",
+    REMINDED: "Đã nhắc nhở",
+    IN_PROGRESS: "Đang thực hiện",
+  };
+
+  const typeLabels = {
+    ONLINE_MEETING: "Trực tuyến",
+    OFFLINE_MEETING: "Trực tiếp",
+    PHONE_CALL: "Gọi điện",
+    EMAIL_QUOTE: "Gửi báo giá",
+    CONTRACT_SIGNING: "Ký hợp đồng",
+    CUSTOMER_SUPPORT: "Hỗ trợ",
+    OTHER: "Khác",
+  };
 
   const requestSort = (key) => {
     let direction = "asc";
@@ -25,7 +58,9 @@ function AppointmentTable({ appointments, onEdit, onView, currentPage, totalPage
   }, [appointments, sortConfig]);
 
   const canEditOrAction = (status) => {
-    return status !== "COMPLETED" && status !== "CANCELLED";
+    return (
+      status !== "COMPLETED" && status !== "CANCELLED" && status !== "REJECTED"
+    );
   };
 
   return (
@@ -34,7 +69,6 @@ function AppointmentTable({ appointments, onEdit, onView, currentPage, totalPage
         <thead>
           <tr>
             <th>STT</th>
-            <th onClick={() => requestSort("id")}>ID</th>
             <th onClick={() => requestSort("enterpriseName")}>Doanh nghiệp</th>
             <th>Người liên hệ</th>
             <th onClick={() => requestSort("scheduledTime")}>Thời gian</th>
@@ -48,25 +82,42 @@ function AppointmentTable({ appointments, onEdit, onView, currentPage, totalPage
           {sortedData.map((e, index) => (
             <tr key={e.id}>
               <td>{currentPage * 10 + index + 1}</td>
-              <td>{e.id}</td>
               <td className="font-medium">{e.enterpriseName}</td>
               <td>{e.contactName}</td>
               <td>{e.scheduledTime}</td>
-              <td>{e.appointmentType}</td>
+              <td>
+                {/* 3. Dịch Hình thức ở đây */}
+                {typeLabels[e.appointmentType] || e.appointmentType}
+              </td>
               <td>{e.location}</td>
               <td>
                 <span className={`status ${e.status?.toLowerCase()}`}>
-                  {e.status}
+                  {/* 4. Dịch Trạng thái ở đây */}
+                  {statusLabels[e.status] || e.status}
                 </span>
               </td>
               <td>
                 <div className="action-btns">
-                  <button className="view-btn" onClick={() => onView(e)}>Xem</button>
+                  <button className="view-btn" onClick={() => onView(e)}>
+                    Xem
+                  </button>
                   {canEditOrAction(e.status) && (
                     <>
-                      <button className="edit-btn" onClick={() => onEdit(e)}>Sửa</button>
-                      <button className="confirm-btn" onClick={() => onConfirm(e)}>Xác nhận</button>
-                      <button className="delete-btn" onClick={() => onDelete(e)}>Huỷ</button>
+                      <button className="edit-btn" onClick={() => onEdit(e)}>
+                        Sửa
+                      </button>
+                      <button
+                        className="confirm-btn"
+                        onClick={() => onConfirm(e)}
+                      >
+                        Xác nhận
+                      </button>
+                      <button
+                        className="delete-btn"
+                        onClick={() => onDelete(e)}
+                      >
+                        Huỷ
+                      </button>
                     </>
                   )}
                 </div>
@@ -87,9 +138,15 @@ function AppointmentTable({ appointments, onEdit, onView, currentPage, totalPage
           <div className="page-numbers">
             {(() => {
               const pages = [];
-              const maxVisible = 5; 
-              let startPage = Math.max(0, currentPage - Math.floor(maxVisible / 2));
-              let endPage = Math.min(totalPages - 1, startPage + maxVisible - 1);
+              const maxVisible = 5;
+              let startPage = Math.max(
+                0,
+                currentPage - Math.floor(maxVisible / 2),
+              );
+              let endPage = Math.min(
+                totalPages - 1,
+                startPage + maxVisible - 1,
+              );
 
               if (endPage - startPage < maxVisible - 1) {
                 startPage = Math.max(0, endPage - maxVisible + 1);
@@ -104,7 +161,7 @@ function AppointmentTable({ appointments, onEdit, onView, currentPage, totalPage
                     onClick={() => onPageChange(i)}
                   >
                     {pageNumber}
-                  </button>
+                  </button>,
                 );
               }
               return pages;
