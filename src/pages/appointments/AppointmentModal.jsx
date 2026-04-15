@@ -1,15 +1,21 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import "./AppointmentModal.scss";
-import { createAppointment, updateAppointment } from "../../services/appointmentService";
-import { getEnterprises, getContactsByEnterprise } from "../../services/enterpriseService";
+import {
+  createAppointment,
+  updateAppointment,
+} from "../../services/appointmentService";
+import {
+  getEnterprises,
+  getContactsByEnterprise,
+} from "../../services/enterpriseService";
 
 function AppointmentModal({ appointment, close, reload }) {
   const [form, setForm] = useState({
     enterpriseId: appointment?.enterpriseId || "",
     contactId: appointment?.contactId || "",
     appointmentType: appointment?.appointmentType || "ONLINE_MEETING",
-    scheduledTime: appointment?.scheduledTime || "", 
+    scheduledTime: appointment?.scheduledTime || "",
     location: appointment?.location || "",
     purpose: appointment?.purpose || "",
   });
@@ -20,16 +26,20 @@ function AppointmentModal({ appointment, close, reload }) {
   useEffect(() => {
     // Load enterprises list (for select dropdown)
     // Could fetch a larger amount to show in select or search in select, using page=0, size=1000 for simplicity
-    getEnterprises(0, 1000).then(res => {
-      setEnterprises(res.data?.data?.content || res.data?.content || []);
-    }).catch(err => console.error(err));
+    getEnterprises(0, 1000)
+      .then((res) => {
+        setEnterprises(res.data?.data?.content || res.data?.content || []);
+      })
+      .catch((err) => console.error(err));
   }, []);
 
   useEffect(() => {
     if (form.enterpriseId) {
-      getContactsByEnterprise(form.enterpriseId).then(res => {
-        setContacts(res.data?.data || res.data || []);
-      }).catch(err => console.error(err));
+      getContactsByEnterprise(form.enterpriseId)
+        .then((res) => {
+          setContacts(res.data?.data || res.data || []);
+        })
+        .catch((err) => console.error(err));
     } else {
       setContacts([]);
     }
@@ -49,7 +59,9 @@ function AppointmentModal({ appointment, close, reload }) {
     return str; // fallback
   };
 
-  const [dtLocal, setDtLocal] = useState(parseInitDateTime(appointment?.scheduledTime) || "");
+  const [dtLocal, setDtLocal] = useState(
+    parseInitDateTime(appointment?.scheduledTime) || "",
+  );
 
   const handleChange = (field, value) => {
     setForm({ ...form, [field]: value });
@@ -98,37 +110,60 @@ function AppointmentModal({ appointment, close, reload }) {
       <div className="modal-box">
         <div className="modal-title-row">
           <h3>{appointment ? "Cập nhật lịch hẹn" : "Thêm lịch hẹn mới"}</h3>
-          <button type="button" className="modal-close-btn" onClick={close}>×</button>
+          <button type="button" className="modal-close-btn" onClick={close}>
+            ×
+          </button>
         </div>
 
         <div className="form-grid">
           <div className="form-col">
             <div className="form-group">
               <label>Doanh nghiệp *</label>
-              <select value={form.enterpriseId} onChange={e => handleChange("enterpriseId", e.target.value)}>
+              <select
+                value={form.enterpriseId}
+                onChange={(e) => handleChange("enterpriseId", e.target.value)}
+              >
                 <option value="">-- Chọn doanh nghiệp --</option>
-                {enterprises.map(ent => (
-                  <option key={ent.id} value={ent.id}>{ent.name}</option>
+                {enterprises.map((ent) => (
+                  <option key={ent.id} value={ent.id}>
+                    {ent.name}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div className="form-group">
               <label>Người liên hệ</label>
-              <select value={form.contactId} onChange={e => handleChange("contactId", e.target.value)}>
+              <select
+                value={form.contactId}
+                onChange={(e) => handleChange("contactId", e.target.value)}
+              >
                 <option value="">-- Chọn người liên hệ --</option>
-                {contacts.map(c => (
-                  <option key={c.id} value={c.id}>{c.fullName} - {c.position}</option>
+                {contacts.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.fullName} - {c.position}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div className="form-group">
               <label>Hình thức *</label>
-              <select value={form.appointmentType} onChange={e => handleChange("appointmentType", e.target.value)}>
+              <select
+                value={form.appointmentType}
+                onChange={(e) =>
+                  handleChange("appointmentType", e.target.value)
+                }
+              >
                 <option value="ONLINE_MEETING">Online</option>
-                <option value="OFFLINE_MEETING">Offline (Gặp gỡ trực tiếp)</option>
+                <option value="OFFLINE_MEETING">
+                  Offline (Gặp gỡ trực tiếp)
+                </option>
                 <option value="PHONE_CALL">Gọi điện thoại</option>
+                <option value="EMAIL_QUOTE">Gửi báo giá</option>
+                <option value="CONTRACT_SIGNING">Ký hợp đồng</option>
+                <option value="CUSTOMER_SUPPORT">Hỗ trợ khách hàng</option>
+                <option value="OTHER"></option>
               </select>
             </div>
           </div>
@@ -136,20 +171,20 @@ function AppointmentModal({ appointment, close, reload }) {
           <div className="form-col">
             <div className="form-group">
               <label>Thời gian (Bắt buộc) *</label>
-              <input 
-                type="datetime-local" 
-                value={dtLocal} 
-                onChange={e => handleDtChange(e.target.value)} 
+              <input
+                type="datetime-local"
+                value={dtLocal}
+                onChange={(e) => handleDtChange(e.target.value)}
               />
             </div>
 
             <div className="form-group">
               <label>Địa điểm</label>
-              <input 
-                type="text" 
-                value={form.location} 
+              <input
+                type="text"
+                value={form.location}
                 placeholder="Nhập địa điểm (vd: Văn phòng, Link Google Meet,...)"
-                onChange={e => handleChange("location", e.target.value)} 
+                onChange={(e) => handleChange("location", e.target.value)}
               />
             </div>
           </div>
@@ -157,17 +192,21 @@ function AppointmentModal({ appointment, close, reload }) {
 
         <div className="form-group full-width">
           <label>Mục đích / Ghi chú</label>
-          <textarea 
-            rows="4" 
-            value={form.purpose} 
-            onChange={e => handleChange("purpose", e.target.value)}
+          <textarea
+            rows="4"
+            value={form.purpose}
+            onChange={(e) => handleChange("purpose", e.target.value)}
             placeholder="Mô tả mục đích lịch hẹn..."
           ></textarea>
         </div>
 
         <div className="modal-actions">
-          <button className="cancel-btn" onClick={close}>Hủy</button>
-          <button className="save-btn" onClick={handleSubmit}>Lưu</button>
+          <button className="cancel-btn" onClick={close}>
+            Hủy
+          </button>
+          <button className="save-btn" onClick={handleSubmit}>
+            Lưu
+          </button>
         </div>
       </div>
     </div>
