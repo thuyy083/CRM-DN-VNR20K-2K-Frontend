@@ -6,7 +6,10 @@ import AppointmentModal from "./AppointmentModal";
 import AppointmentDetailModal from "./AppointmentDetailModal";
 import AppointmentConfirmModal from "./AppointmentConfirmModal";
 
-import { getAppointments, cancelAppointment } from "../../services/appointmentService";
+import {
+  getAppointments,
+  cancelAppointment,
+} from "../../services/appointmentService";
 import { toast } from "react-toastify";
 
 function Appointments() {
@@ -28,34 +31,34 @@ function Appointments() {
 
   const fetchAppointments = useCallback(async () => {
     try {
-      // API hiện tại /appointments có tham số: enterpriseId, consultantId, status, page, size.
-      // Search term từ UI chưa được ánh xạ thẳng vào API, nên mình gọi API kèm filterStatus 
-      // rồi dùng Javascript lọc theo keyword phụ, hoặc có thể điều chỉnh sau nếu API update.
       const res = await getAppointments(
         currentPage,
         10,
-        "", // enterpriseId
-        "", // consultantId
-        filterStatus === "ALL" ? "" : filterStatus
+        "",
+        "",
+        filterStatus === "ALL" ? "" : filterStatus,
       );
 
       const data = res.data?.data?.content || res.data?.content || [];
-      
-      // Filter Local bằng searchTerm cho tên doanh nghiệp, người liên hệ, hoặc hình thức
+
       let filteredData = data;
+
       if (searchTerm) {
         const lowerTerm = searchTerm.toLowerCase();
-        filteredData = data.filter((item) => 
-          (item.enterpriseName && item.enterpriseName.toLowerCase().includes(lowerTerm)) ||
-          (item.contactName && item.contactName.toLowerCase().includes(lowerTerm)) ||
-          (item.purpose && item.purpose.toLowerCase().includes(lowerTerm))
+        filteredData = data.filter(
+          (item) =>
+            item.enterpriseName?.toLowerCase().includes(lowerTerm) ||
+            item.contactName?.toLowerCase().includes(lowerTerm) ||
+            item.purpose?.toLowerCase().includes(lowerTerm) ||
+            item.appointmentType?.toLowerCase().includes(lowerTerm) ||
+            item.location?.toLowerCase().includes(lowerTerm),
         );
       }
 
       setAppointments(filteredData);
       setTotalPages(res.data?.data?.totalPages || res.data?.totalPages || 0);
     } catch (err) {
-      console.error(err);
+      console.error("Fetch Error:", err);
       toast.error("Lỗi khi tải danh sách lịch hẹn");
     }
   }, [currentPage, filterStatus, searchTerm]);
@@ -95,8 +98,10 @@ function Appointments() {
     { value: "ALL", label: "Tất cả trạng thái" },
     { value: "SCHEDULED", label: "Lên lịch" },
     { value: "REMINDED", label: "Đã nhắc" },
+    { value: "CONFIRMED", label: "Đã xác nhận" },
     { value: "COMPLETED", label: "Hoàn thành" },
     { value: "CANCELLED", label: "Huỷ" },
+    { value: "REJECTED", label: "Từ chối" },
   ];
 
   return (
