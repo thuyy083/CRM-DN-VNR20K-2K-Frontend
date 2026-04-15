@@ -9,6 +9,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import Profile from "../pages/profile/Profile";
 import Services from "../pages/service/Services";
 import Enterprises from "../pages/enterprises/Enterprises";
+import Appointments from "../pages/appointments/Appointments";
 import Users from "../pages/users/Users";
 // import Forbidden from "../pages/Forbidden";
 import NotFound from "../pages/NotFound";
@@ -85,6 +86,14 @@ function AppRoutes() {
             element={
               <ProtectedRoute allowedRoles={["ADMIN", "USER", "CONSULTANT"]}>
                 <Enterprises />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/appointments"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN", "USER", "CONSULTANT"]}>
+                <Appointments />
               </ProtectedRoute>
             }
           />
