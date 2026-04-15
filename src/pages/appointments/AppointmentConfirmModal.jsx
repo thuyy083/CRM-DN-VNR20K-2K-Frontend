@@ -47,7 +47,7 @@ function AppointmentConfirmModal({ appointment, close, reload }) {
           <button type="button" className="modal-close-btn" onClick={close}>×</button>
         </div>
 
-        <div className="form-group">
+        {/* <div className="form-group">
           <label>Kết quả *</label>
           <select value={result} onChange={e => setResult(e.target.value)}>
             <option value="SUCCESSFUL">Thành công</option>
@@ -55,7 +55,7 @@ function AppointmentConfirmModal({ appointment, close, reload }) {
             <option value="NEED_FOLLOW_UP">Cần theo dõi thêm (Need follow up)</option>
             <option value="PENDING">Chờ xử lý (Pending)</option>
           </select>
-        </div>
+        </div> */}
 
         <div className="form-group">
           <label>Mô tả chi tiết</label>
