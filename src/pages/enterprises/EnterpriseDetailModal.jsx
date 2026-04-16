@@ -304,10 +304,13 @@ function EnterpriseDetailModal({
             <span>{enterpriseInfo?.name}</span>
           </div>
           <div><b>MST:</b> {enterpriseInfo?.taxCode}</div>
+          <div><b>Cụm:</b> {enterpriseInfo?.region}</div>
           <div><b>Ngành:</b> {industryMap[enterpriseInfo?.industry] || "-"}</div>
-          <div><b>Nhân viên:</b> {enterpriseInfo?.employeeCount}</div>
+          <div><b>Nhân sự:</b> {enterpriseInfo?.employeeCount}</div>
           <div><b>Phone:</b> {enterpriseInfo?.phone}</div>
           <div><b>Website:</b> {enterpriseInfo?.website}</div>
+          <div><b>Ngày thành lập:</b> {enterpriseInfo?.establishedDate}</div>
+
         </div>
 
         {/* CONTACT */}

@@ -237,7 +237,7 @@ useEffect(() => {
   // ];
 
    const regionOptions = [
-    { value: "ALL", label: "Tất cả vùng" },
+    { value: "ALL", label: "Tất cả cụm" },
     { value: "CTO", label: "Cần Thơ" },
     { value: "HUG", label: "Hậu Giang" },
     { value: "STG", label: "Sóc Trăng" },
@@ -248,7 +248,7 @@ useEffect(() => {
     { value: "ALL", label: "Tất cả loại DN" },
     { value: "HKD", label: "Hộ kinh doanh" },
     { value: "VNR20K", label: "VNR20K" },
-    { value: "VNR2K", label: "VNR2K" },
+    { value: "VNR2000", label: "VNR2000" },
   ];
 
   return (
