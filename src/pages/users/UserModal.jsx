@@ -34,26 +34,43 @@ const sanitizeInteractionContent = (value) => {
   return String(value).replace(/\s*Chức\s*vụ[^:]*:\s*.*$/giu, "").trim();
 };
 
-const toDateOnly = (value) => {
+/**
+ * Chuyển giá trị thời gian sang format YYYY-MM-DDTHH:mm cho input datetime-local.
+ * Xử lý được 2 format backend trả về:
+ *   - ISO string: "2026-04-16T02:00:00Z" → "2026-04-16T09:00" (UTC+7)
+ *   - dd/MM/yyyy HH:mm: "16/04/2026 09:00" (do @JsonFormat backend)
+ */
+const toDateTimeLocal = (value) => {
   if (!value) return "";
+
+  // Thử parse format "dd/MM/yyyy HH:mm" từ backend @JsonFormat
+  const ddMMyyyyMatch = String(value).match(
+    /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/
+  );
+  if (ddMMyyyyMatch) {
+    const [, day, month, year, hour, minute] = ddMMyyyyMatch;
+    return `${year}-${month}-${day}T${hour}:${minute}`;
+  }
+
+  // Fallback: parse ISO string, chuyển sang giờ local
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hour}:${minute}`;
 };
 
-// const toIsoDate = (value) => {
-//   if (!value) return null;
-//   const date = new Date(`${value}T00:00:00`);
-//   if (Number.isNaN(date.getTime())) return null;
-//   return date.toISOString();
-// };
-
+/**
+ * Chuyển giá trị từ input datetime-local (YYYY-MM-DDTHH:mm) sang ISO string.
+ * Cách dùng: new Date(value) với giá trị datetime-local sẽ dùng timezone local.
+ */
 const toIsoDate = (value) => {
   if (!value) return null;
   const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
   return date.toISOString();
 };
 
@@ -84,7 +101,7 @@ function UserModal({ interaction, enterprises, close, reload }) {
     contactId: interaction?.contactId ? String(interaction.contactId) : "",
     contactPosition: "",
     interactionType: interaction?.interactionType || "PHONE_CALL",
-    interactionTime: toDateOnly(interaction?.interactionTime),
+    interactionTime: toDateTimeLocal(interaction?.interactionTime),
     futureInteractionDate: "",
     location: interaction?.location || "",
     description: sanitizeInteractionContent(interaction?.description || ""),
