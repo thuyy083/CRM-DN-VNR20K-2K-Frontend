@@ -249,6 +249,7 @@ useEffect(() => {
     { value: "HKD", label: "Hộ kinh doanh" },
     { value: "VNR20K", label: "VNR20K" },
     { value: "VNR2000", label: "VNR2000" },
+    { value: "SME", label: "SME" },
   ];
 
   return (
