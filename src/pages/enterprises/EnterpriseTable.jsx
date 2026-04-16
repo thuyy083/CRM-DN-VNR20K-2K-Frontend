@@ -63,9 +63,9 @@ function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageC
             <th>STT</th>
             <th onClick={() => requestSort("name")}>Tên doanh nghiệp</th>
             <th>MST</th>
-            <th>Khu vực</th>
+            <th>Cụm</th>
             <th>Loại</th>
-            <th>Nhân viên</th>
+            <th>Nhân sự</th>
             <th>Điện thoại</th>
             <th></th>
           </tr>
@@ -113,8 +113,19 @@ function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageC
           ))}
         </tbody>
       </table>
-     {totalPages > 1 && (
+    {totalPages > 1 && (
   <div className="pagination">
+    
+    {/* Nút về trang đầu */}
+    <button
+      className="page-btn"
+      disabled={currentPage === 0}
+      onClick={() => onPageChange(0)}
+    >
+      &laquo;&laquo;
+    </button>
+
+    {/* Nút trang trước */}
     <button
       className="page-btn"
       disabled={currentPage === 0}
@@ -122,24 +133,6 @@ function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageC
     >
       &laquo; Trước
     </button>
-
-    {/* <div className="page-numbers">
-      {[...Array(totalPages)].map((_, index) => {
-        const pageNumber = index + 1;
-
-        return (
-          <button
-            key={pageNumber}
-            className={`page-num ${
-              currentPage === index ? "active" : ""
-            }`}
-            onClick={() => handlePageChange(pageNumber)}
-          >
-            {pageNumber}
-          </button>
-        );
-      })}
-    </div> */}
 
     <div className="page-numbers">
       {(() => {
@@ -169,6 +162,7 @@ function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageC
       })()}
     </div>
 
+    {/* Nút trang sau */}
     <button
       className="page-btn"
       disabled={currentPage === totalPages - 1}
@@ -176,6 +170,16 @@ function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageC
     >
       Sau &raquo;
     </button>
+
+    {/* Nút về trang cuối */}
+    <button
+      className="page-btn"
+      disabled={currentPage === totalPages - 1}
+      onClick={() => onPageChange(totalPages - 1)}
+    >
+      &raquo;&raquo;
+    </button>
+
   </div>
 )}
     </div>
