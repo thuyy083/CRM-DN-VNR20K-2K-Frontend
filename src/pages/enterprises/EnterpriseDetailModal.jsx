@@ -305,6 +305,7 @@ function EnterpriseDetailModal({
           </div>
           <div><b>MST:</b> {enterpriseInfo?.taxCode}</div>
           <div><b>Cụm:</b> {enterpriseInfo?.region}</div>
+          <div><b>Loại DN:</b> {enterpriseInfo?.type}</div>
           <div><b>Ngành:</b> {industryMap[enterpriseInfo?.industry] || "-"}</div>
           <div><b>Nhân sự:</b> {enterpriseInfo?.employeeCount}</div>
           <div><b>Phone:</b> {enterpriseInfo?.phone}</div>
