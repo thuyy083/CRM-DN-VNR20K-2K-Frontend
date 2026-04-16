@@ -7,6 +7,7 @@ import {
   updateEnterprise,
   addServiceToEnterprise,
 } from "../../services/enterpriseService";
+import { createContact } from "../../services/enterpriseContactService";
 
 const POTENTIAL_STORAGE_KEY = "enterprise_potential_map";
 
@@ -33,6 +34,8 @@ function EnterpriseModal({ enterprise, close, reload }) {
     status: enterprise?.status || "ACTIVE",
     region: enterprise?.region || "NONE",
     type: enterprise?.type || "HKD",
+    establishedDate: enterprise?.establishedDate || "",
+
     isPotential:
       normalizePotentialValue(
         enterprise?.isPotential ??
@@ -111,6 +114,10 @@ function EnterpriseModal({ enterprise, close, reload }) {
       toast.error("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu");
       return false;
     }
+    if (form.establishedDate && new Date(form.establishedDate) > new Date()) {
+  toast.error("Ngày thành lập không hợp lệ");
+  return;
+}
     return true;
   };
 
@@ -156,37 +163,66 @@ function EnterpriseModal({ enterprise, close, reload }) {
         savePotentialToStorage(enterprise.id, potentialFlag);
         toast.success("Cập nhật doanh nghiệp thành công");
       } else {
-        if (!validateServiceForm()) {
-          return;
-        }
+         if (!validateServiceForm()) {
+    return;
+  }
 
-        const createPayload = {
-          ...payloadWithPotential,
-          status: "ACTIVE",
-        };
+  // ❗ tách contact ra khỏi payload
+  const {
+    contactFullName,
+    contactEmail,
+    contactPhone,
+    contactPosition,
+    ...enterpriseData
+  } = payloadWithPotential;
 
-        const createRes = await createEnterprise(createPayload);
-        const createdEnterpriseId =
-          createRes?.data?.data?.id ||
-          createRes?.data?.id;
+  const createPayload = {
+    ...enterpriseData,
+    status: "ACTIVE",
+  };
 
-        savePotentialToStorage(createdEnterpriseId, potentialFlag);
+  const createRes = await createEnterprise(createPayload);
 
-        if (showServiceForm) {
-          if (!createdEnterpriseId) {
-            toast.warning("Đã tạo doanh nghiệp nhưng không lấy được ID để gắn dịch vụ");
-          } else {
-            await addServiceToEnterprise(createdEnterpriseId, {
-              viettelServiceId: Number(serviceForm.viettelServiceId),
-              contractNumber: serviceForm.contractNumber.trim(),
-              startDate: serviceForm.startDate,
-              endDate: serviceForm.endDate || null,
-              status: serviceForm.status,
-            });
-          }
-        }
+  const createdEnterpriseId =
+    createRes?.data?.data?.id ||
+    createRes?.data?.id;
 
-        toast.success("Thêm doanh nghiệp thành công");
+  // ✅ chỉ tạo contact ở đây (1 lần duy nhất)
+  if (
+    createdEnterpriseId &&
+    (contactFullName || contactEmail || contactPhone)
+  ) {
+    try {
+      await createContact(createdEnterpriseId, {
+        fullName: contactFullName.trim() || "",
+        position: contactPosition.trim() || "",
+        email: contactEmail.trim() || "",
+        phone: contactPhone.trim() || "",
+        isPrimary: true,
+      });
+    } catch (err) {
+      console.error("Create contact error:", err);
+      toast.warning("Tạo doanh nghiệp thành công nhưng thêm người đại diện thất bại");
+    }
+  }
+
+  savePotentialToStorage(createdEnterpriseId, potentialFlag);
+
+  if (showServiceForm) {
+    if (!createdEnterpriseId) {
+      toast.warning("Đã tạo doanh nghiệp nhưng không lấy được ID để gắn dịch vụ");
+    } else {
+      await addServiceToEnterprise(createdEnterpriseId, {
+        viettelServiceId: Number(serviceForm.viettelServiceId),
+        contractNumber: serviceForm.contractNumber.trim(),
+        startDate: serviceForm.startDate,
+        endDate: serviceForm.endDate || null,
+        status: serviceForm.status,
+      });
+    }
+  }
+
+  toast.success("Thêm doanh nghiệp thành công");
       }
 
       await reload();
@@ -288,7 +324,7 @@ function EnterpriseModal({ enterprise, close, reload }) {
             </div>
 
             <div className="form-group">
-              <label>Số nhân viên</label>
+              <label>Nhân sự</label>
               <input
                 type="number"
                 value={form.employeeCount}
@@ -303,6 +339,14 @@ function EnterpriseModal({ enterprise, close, reload }) {
 
           {/* RIGHT */}
           <div className="form-col">
+            <div className="form-group">
+  <label>Ngày thành lập</label>
+  <input
+    type="date"
+    value={form.establishedDate}
+    onChange={(e) => handleChange("establishedDate", e.target.value)}
+  />
+</div>
             <div className="form-group">
               <label>Loại doanh nghiệp</label>
               <select
@@ -354,13 +398,55 @@ function EnterpriseModal({ enterprise, close, reload }) {
           </div>
         </div>
 
+        <div className="form-group full-width contact-inline-module">
+          <div className="contact-inline-header">
+            <strong>Thêm người đại diện (không bắt buộc)</strong>
+          </div>
 
+          <div className="contact-inline-grid">
+            <div className="form-group">
+              <label>Họ tên</label>
+              <input
+                value={form.contactFullName}
+                onChange={(e) => handleChange("contactFullName", e.target.value)}
+                placeholder="VD: Nguyễn Văn A"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Chức vụ</label>
+              <input
+                value={form.contactPosition}
+                onChange={(e) => handleChange("contactPosition", e.target.value)}
+                placeholder="VD: Giám đốc"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                value={form.contactEmail}
+                onChange={(e) => handleChange("contactEmail", e.target.value)}
+                placeholder="VD: abc@gmail.com"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Số điện thoại</label>
+              <input
+                value={form.contactPhone}
+                onChange={(e) => handleChange("contactPhone", e.target.value)}
+                placeholder="VD: 0987654321"
+              />
+            </div>
+          </div>
+        </div>
 
         <div className="modal-actions">
           <button className="cancel-btn" onClick={close}>
             Hủy
           </button>
-          <button className="save-btn" onClick={handleSubmit}>
+          <button type="button" className="save-btn" onClick={handleSubmit}>
             Lưu
           </button>
         </div>

@@ -32,7 +32,7 @@ function ContactModal({ enterpriseId, contact, close, reload }) {
   return (
     <div className="modal">
       <div className="modal-box">
-        <h4>{contact ? "Sửa" : "Thêm"} người liên hệ</h4>
+        <h4>{contact ? "Sửa" : "Thêm"} người đại diện</h4>
 
         <div className="form-group">
           <input
