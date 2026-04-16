@@ -1,7 +1,7 @@
 .header {
   position: fixed;
     left: 240px;
-  width: 100%;   
+  width: calc(100% - 240px); 
   height: 64px;
   background: linear-gradient(180deg, #c8102e, #a50d26);
   color: #fff;
@@ -97,6 +97,7 @@
   overflow: hidden;
 
   animation: dropdownFade 0.2s ease;
+  // z-index: 2000; 
 }
 
 .dropdownItem {
