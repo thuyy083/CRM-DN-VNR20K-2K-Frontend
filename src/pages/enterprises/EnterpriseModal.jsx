@@ -76,7 +76,7 @@ function EnterpriseModal({ enterprise, close, reload }) {
 
   useEffect(() => {
     fetchIndustries();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   const fetchIndustries = async () => {
