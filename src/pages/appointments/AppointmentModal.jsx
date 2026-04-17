@@ -8,6 +8,7 @@ import {
 import {
   getEnterprises,
   getContactsByEnterprise,
+  createContact,
 } from "../../services/enterpriseService";
 
 function AppointmentModal({ appointment, close, reload }) {
@@ -22,6 +23,15 @@ function AppointmentModal({ appointment, close, reload }) {
 
   const [enterprises, setEnterprises] = useState([]);
   const [contacts, setContacts] = useState([]);
+  const [showCreateContactForm, setShowCreateContactForm] = useState(false);
+  const [creatingContact, setCreatingContact] = useState(false);
+  const [contactForm, setContactForm] = useState({
+    fullName: "",
+    position: "",
+    email: "",
+    phone: "",
+  });
+  const [createContactErrors, setCreateContactErrors] = useState({});
 
   useEffect(() => {
     // Load enterprises list (for select dropdown)
@@ -34,15 +44,28 @@ function AppointmentModal({ appointment, close, reload }) {
   }, []);
 
   useEffect(() => {
-    if (form.enterpriseId) {
-      getContactsByEnterprise(form.enterpriseId)
-        .then((res) => {
-          setContacts(res.data?.data || res.data || []);
-        })
-        .catch((err) => console.error(err));
-    } else {
-      setContacts([]);
-    }
+    const fetchContacts = async () => {
+      if (!form.enterpriseId) {
+        setContacts([]);
+        return;
+      }
+
+      try {
+        const res = await getContactsByEnterprise(form.enterpriseId);
+        const list = res.data?.data || res.data || [];
+        setContacts(list);
+
+        if (list.length === 0) {
+          toast.warning("Doanh nghiệp chưa có người liên hệ");
+          setShowCreateContactForm(true);
+        }
+      } catch (err) {
+        console.error(err);
+        setContacts([]);
+      }
+    };
+
+    fetchContacts();
   }, [form.enterpriseId]);
 
   // Handle datetime conversion for backend requirement format (dd/MM/yyyy HH:mm)
@@ -66,6 +89,136 @@ function AppointmentModal({ appointment, close, reload }) {
   const handleChange = (field, value) => {
     setForm({ ...form, [field]: value });
   };
+
+const validateContactForm = () => {
+  const nextErrors = {};
+
+  if (!contactForm.fullName.trim()) {
+    nextErrors.fullName = "Vui lòng nhập họ tên người liên hệ";
+  }
+
+  if (!contactForm.position.trim()) {
+    nextErrors.position = "Vui lòng nhập chức vụ";
+  }
+
+  if (!contactForm.phone.trim()) {
+    nextErrors.phone = "Vui lòng nhập số điện thoại";
+  }
+
+  if (
+    contactForm.email.trim() &&
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactForm.email.trim())
+  ) {
+    nextErrors.email = "Email không đúng định dạng";
+  }
+
+  if (
+    contactForm.phone.trim() &&
+    !/^[0-9+\s-]{8,20}$/.test(contactForm.phone.trim())
+  ) {
+    nextErrors.phone = "Số điện thoại không hợp lệ";
+  }
+
+  setCreateContactErrors(nextErrors);
+
+  return {
+    isValid: Object.keys(nextErrors).length === 0,
+    nextErrors,
+  };
+};
+
+  const handleCreateContact = async () => {
+  if (!form.enterpriseId) {
+    toast.error("Vui lòng chọn doanh nghiệp trước khi tạo người liên hệ");
+    return;
+  }
+
+  const { isValid, nextErrors } = validateContactForm();
+
+  if (!isValid) {
+    // show 1 số lỗi chính
+    if (nextErrors.fullName) toast.error(nextErrors.fullName);
+    else if (nextErrors.phone) toast.error(nextErrors.phone);
+    else if (nextErrors.position) toast.error(nextErrors.position);
+
+    return;
+  }
+
+  try {
+    setCreatingContact(true);
+
+    const payload = {
+      fullName: contactForm.fullName.trim(),
+      position: contactForm.position.trim(),
+      email: contactForm.email.trim(),
+      phone: contactForm.phone.trim(),
+    };
+
+    const created = await createContact(form.enterpriseId, payload);
+
+    const res = await getContactsByEnterprise(form.enterpriseId);
+    const list = res.data?.data || res.data || [];
+    setContacts(list);
+
+    const createdId = created?.id;
+    if (createdId) {
+      setForm((prev) => ({
+        ...prev,
+        contactId: createdId,
+      }));
+    }
+
+    // reset
+    setContactForm({
+      fullName: "",
+      position: "",
+      email: "",
+      phone: "",
+    });
+
+    setCreateContactErrors({});
+    setShowCreateContactForm(false);
+
+    toast.success("Tạo người liên hệ thành công");
+  }catch (err) {
+  console.error(err);
+
+  const res = err?.response?.data;
+
+  // ✅ Nếu BE trả validation dạng array
+  if (Array.isArray(res?.message)) {
+    // map lỗi vào UI (input đỏ + text dưới)
+    const backendErrors = {};
+    res.message.forEach((e) => {
+      if (e?.field) {
+        backendErrors[e.field] = e.message;
+      }
+    });
+
+    setCreateContactErrors(backendErrors);
+
+    // show toast list lỗi
+    toast.error(
+      <div style={{ maxHeight: 250, overflowY: "auto" }}>
+        {res.message.map((e, i) => (
+          <div key={i}>
+            {e.message}
+          </div>
+        ))}
+      </div>,
+      {
+        autoClose: false,
+        closeButton: true,
+      }
+    );
+  } else {
+    toast.error(res?.message || "Có lỗi xảy ra");
+  }
+} finally {
+    setCreatingContact(false);
+  }
+};
+
 
   const handleDtChange = (val) => {
     setDtLocal(val);
@@ -101,7 +254,28 @@ function AppointmentModal({ appointment, close, reload }) {
       close();
     } catch (err) {
       console.error(err);
-      toast.error(err?.response?.data?.message || "Có lỗi xảy ra");
+
+      const res = err?.response?.data;
+
+      // Nếu là validation error dạng array
+      if (Array.isArray(res?.message)) {
+        toast.error(
+          <div style={{ maxHeight: 250, overflowY: "auto" }}>
+            {res.message.map((e, i) => (
+              <div key={i}>
+                {e.message}
+              </div>
+            ))}
+          </div>,
+          {
+            autoClose: false,
+            closeButton: true,
+          }
+        );
+      } else {
+        // fallback lỗi thường
+        toast.error(res?.message || "Có lỗi xảy ra");
+      }
     }
   };
 
@@ -147,6 +321,7 @@ function AppointmentModal({ appointment, close, reload }) {
               </select>
             </div>
 
+           
             <div className="form-group">
               <label>Hình thức *</label>
               <select
@@ -163,7 +338,7 @@ function AppointmentModal({ appointment, close, reload }) {
                 <option value="EMAIL_QUOTE">Gửi báo giá</option>
                 <option value="CONTRACT_SIGNING">Ký hợp đồng</option>
                 <option value="CUSTOMER_SUPPORT">Hỗ trợ khách hàng</option>
-                <option value="OTHER"></option>
+                <option value="OTHER">Khác</option>
               </select>
             </div>
           </div>
@@ -188,8 +363,81 @@ function AppointmentModal({ appointment, close, reload }) {
               />
             </div>
           </div>
-        </div>
+           {showCreateContactForm && (
+                      <div className="form-group full-width">
 
+             <div className="contact-inline-form">
+  <h4>Thêm người liên hệ</h4>
+
+<div className="contact-grid">
+
+  <div className="form-group">
+    <input
+      className={createContactErrors.fullName ? "input-error" : ""}
+      placeholder="Họ tên *"
+      value={contactForm.fullName}
+      onChange={(e) =>
+        setContactForm({ ...contactForm, fullName: e.target.value })
+      }
+    />
+    {createContactErrors.fullName && (
+      <span className="error-text">{createContactErrors.fullName}</span>
+    )}
+  </div>
+
+  <div className="form-group">
+    <input
+      className={createContactErrors.position ? "input-error" : ""}
+      placeholder="Chức vụ"
+      value={contactForm.position}
+      onChange={(e) =>
+        setContactForm({ ...contactForm, position: e.target.value })
+      }
+    />
+    {createContactErrors.position && (
+      <span className="error-text">{createContactErrors.position}</span>
+    )}
+  </div>
+
+  <div className="form-group">
+    <input
+      className={createContactErrors.email ? "input-error" : ""}
+      placeholder="Email"
+      value={contactForm.email}
+      onChange={(e) =>
+        setContactForm({ ...contactForm, email: e.target.value })
+      }
+    />
+    {createContactErrors.email && (
+      <span className="error-text">{createContactErrors.email}</span>
+    )}
+  </div>
+
+  <div className="form-group">
+    <input
+      className={createContactErrors.phone ? "input-error" : ""}
+      placeholder="SĐT"
+      value={contactForm.phone}
+      onChange={(e) =>
+        setContactForm({ ...contactForm, phone: e.target.value })
+      }
+    />
+    {createContactErrors.phone && (
+      <span className="error-text">{createContactErrors.phone}</span>
+    )}
+  </div>
+
+</div>
+
+  <button onClick={handleCreateContact} disabled={creatingContact}>
+    {creatingContact ? "Đang tạo..." : "Tạo người liên hệ"}
+  </button>
+</div>
+</div>
+
+            )}
+
+        </div>
         <div className="form-group full-width">
           <label>Mục đích / Ghi chú</label>
           <textarea
