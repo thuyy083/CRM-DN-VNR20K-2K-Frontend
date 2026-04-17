@@ -214,12 +214,12 @@ function UserModal({ interaction, enterprises, close, reload }) {
       nextErrors.fullName = "Vui lòng nhập họ tên người liên hệ";
     }
 
-    if (!contactForm.email.trim()) {
-      nextErrors.email = "Không có gmail";
+    if (!contactForm.position.trim()) {
+      nextErrors.position = "Vui lòng nhập chức vụ";
     }
 
     if (!contactForm.phone.trim()) {
-      nextErrors.phone = "Không có số điện thoại";
+      nextErrors.phone = "Vui lòng nhập số điện thoại";
     }
 
     if (contactForm.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactForm.email.trim())) {
@@ -245,12 +245,12 @@ function UserModal({ interaction, enterprises, close, reload }) {
 
     const { isValid, nextErrors } = validateContactForm();
     if (!isValid) {
-      if (nextErrors.phone === "Không có số điện thoại") {
-        toast.error("Không có số điện thoại");
+      if (nextErrors.phone === "Vui lòng nhập số điện thoại") {
+        toast.error("Vui lòng nhập số điện thoại");
       }
-      if (nextErrors.email === "Không có gmail") {
-        toast.error("Không có gmail");
-      }
+      // if (nextErrors.email === "Không có gmail") {
+      //   toast.error("Không có gmail");
+      // }
       return;
     }
 
@@ -566,10 +566,14 @@ function UserModal({ interaction, enterprises, close, reload }) {
                 <div className="form-group">
                   <label>Chức vụ</label>
                   <input
+                    className={createContactErrors.position ? "input-error" : ""}
                     value={contactForm.position}
                     onChange={(e) => handleContactFormChange("position", e.target.value)}
                     placeholder="VD: Nhân viên"
                   />
+                  {createContactErrors.position && (
+                    <span className="error-text">{createContactErrors.position}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
