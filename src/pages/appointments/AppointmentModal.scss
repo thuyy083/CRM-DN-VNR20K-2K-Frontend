@@ -96,9 +96,6 @@
   }
 }
 
-.full-width {
-  margin-top: 16px;
-}
 
 .modal-actions {
   display: flex;
@@ -134,4 +131,70 @@
       opacity: 0.9;
     }
   }
+}
+
+.contact-inline-form {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+
+  h4 {
+    margin-bottom: 12px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; // ✅ 2 cột
+    gap: 12px;
+  }
+
+  input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 14px;
+
+    &:focus {
+      border-color: #EE0033;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(238, 0, 51, 0.1);
+    }
+  }
+
+  button {
+    margin-top: 12px;
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    background: #EE0033;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+      background: #c8002a;
+    }
+
+    &:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.input-error {
+  border-color: #dc2626 !important;
+}
+
+.error-text {
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
 }

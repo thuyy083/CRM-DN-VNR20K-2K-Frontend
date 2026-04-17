@@ -43,7 +43,7 @@ function AppointmentDetailModal({ appointment, close }) {
           <div className="detail-row">
             <span className="label">Người liên hệ:</span>
             <span className="value">
-              {appointment.contactName || "Không có"}
+              {appointment.contactName || "Không xác định"}
             </span>
           </div>
           <div className="detail-row">
@@ -68,7 +68,7 @@ function AppointmentDetailModal({ appointment, close }) {
 
           <div className="detail-row">
             <span className="label">Địa điểm:</span>
-            <span className="value">{appointment.location || "Không có"}</span>
+            <span className="value">{appointment.location || "Không xác định"}</span>
           </div>
 
           <div className="detail-row">

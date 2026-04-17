@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getEnterpriseById, getIndustries } from "../../services/enterpriseService";
 import "./UserDrawer.scss";
 import { toast } from "react-toastify";
-import { updateInteractionDescription } from "../../services/interactionService";
+import { getInteractionImageUrl, updateInteractionDescription } from "../../services/interactionService";
 
 const POTENTIAL_STORAGE_KEY = "enterprise_potential_map";
 
@@ -50,6 +50,7 @@ function InteractionTable({
   rows,
   emptyText,
   onEdit,
+  onViewImages
 }) {
 
   if (!rows.length) {
@@ -81,7 +82,7 @@ function InteractionTable({
             <td>
               <button
                 className="view-content-btn"
-                onClick={() => alert("API hình ảnh chưa có 😄")}
+                onClick={() => onViewImages(item)}
               >
                 Xem ảnh
               </button>
@@ -99,6 +100,7 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
   const [industries, setIndustries] = useState([]);
   const [editingItem, setEditingItem] = useState(null);
   const [editingDescription, setEditingDescription] = useState("");
+  const [previewImages, setPreviewImages] = useState([]);
   useEffect(() => {
     const fetchIndustries = async () => {
       try {
@@ -139,7 +141,7 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
     potentialFromStorage;
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     setLocalInteractions(interaction?.allInteractions || []);
     setEnterpriseInfo(null);
   }, [interaction]);
@@ -219,6 +221,10 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
                   setEditingItem(item);
                   setEditingDescription(item.description || "");
                 }}
+                onViewImages={(item) => {
+    const images = (item.photoPaths || []).map(getInteractionImageUrl);
+    setPreviewImages(images);
+  }}
               />
             </section>
 
@@ -279,6 +285,33 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
                 </div>
               </div>
             )}
+            {previewImages.length > 0 && (
+  <div
+    className="content-preview-overlay"
+    onClick={() => setPreviewImages([])}
+  >
+    <div
+      className="content-preview-dialog"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="content-preview-header">
+        <h5>Hình ảnh tiếp xúc</h5>
+        <button
+          className="content-close-btn"
+          onClick={() => setPreviewImages([])}
+        >
+          ×
+        </button>
+      </div>
+
+      <div className="image-preview-grid">
+        {previewImages.map((img, index) => (
+          <img key={index} src={img} alt="interaction" />
+        ))}
+      </div>
+    </div>
+  </div>
+)}
           </div>
         )}
       </aside>

@@ -99,8 +99,6 @@ function Appointments() {
     { value: "SCHEDULED", label: "Lên lịch" },
     { value: "REMINDED", label: "Đã nhắc" },
     { value: "CONFIRMED", label: "Đã xác nhận" },
-    { value: "COMPLETED", label: "Hoàn thành" },
-    { value: "CANCELLED", label: "Huỷ" },
     { value: "REJECTED", label: "Từ chối" },
   ];
 

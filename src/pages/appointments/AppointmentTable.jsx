@@ -17,14 +17,10 @@ function AppointmentTable({
   });
 
   const statusLabels = {
-    PENDING: "Đang chờ",
     CONFIRMED: "Đã xác nhận",
-    COMPLETED: "Hoàn thành",
-    CANCELLED: "Đã hủy",
-    REJECTED: "Từ chối",
+    REJECTED: "Đã hủy",
     SCHEDULED: "Lên lịch",
     REMINDED: "Đã nhắc nhở",
-    IN_PROGRESS: "Đang thực hiện",
   };
 
   const typeLabels = {
@@ -59,7 +55,7 @@ function AppointmentTable({
 
   const canEditOrAction = (status) => {
     return (
-      status !== "COMPLETED" && status !== "CANCELLED" && status !== "REJECTED"
+      status !== "COMPLETED" && status !== "CANCELLED" && status !== "REJECTED" && status !== "CONFIRMED"
     );
   };
 
