@@ -60,7 +60,7 @@ function AppRoutes() {
           <Route
             path="/profile"
             element={
-              <ProtectedRoute allowedRoles={["ADMIN", "CONSULTANT", "USER"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "OPERATOR", "MANAGER", "CONSULTANT"]}>
                 <Profile />
               </ProtectedRoute>
             }
@@ -68,7 +68,7 @@ function AppRoutes() {
           <Route
             path="/employees"
             element={
-              <ProtectedRoute allowedRoles={["ADMIN", "USER", "CONSULTANT"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "OPERATOR", "MANAGER", "CONSULTANT"]}>
                 <Employees />
               </ProtectedRoute>
             }
@@ -76,7 +76,7 @@ function AppRoutes() {
           <Route
             path="/services"
             element={
-              <ProtectedRoute allowedRoles={["ADMIN", "USER", "CONSULTANT"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "OPERATOR", "MANAGER", "CONSULTANT"]}>
                 <Services />
               </ProtectedRoute>
             }
@@ -84,7 +84,7 @@ function AppRoutes() {
           <Route
             path="/enterprises"
             element={
-              <ProtectedRoute allowedRoles={["ADMIN", "USER", "CONSULTANT"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "OPERATOR", "MANAGER", "CONSULTANT"]}>
                 <Enterprises />
               </ProtectedRoute>
             }
@@ -92,7 +92,7 @@ function AppRoutes() {
           <Route
             path="/appointments"
             element={
-              <ProtectedRoute allowedRoles={["ADMIN", "USER", "CONSULTANT"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "OPERATOR", "MANAGER", "CONSULTANT"]}>
                 <Appointments />
               </ProtectedRoute>
             }
@@ -100,7 +100,7 @@ function AppRoutes() {
           <Route
             path="/users"
             element={
-              <ProtectedRoute allowedRoles={["ADMIN", "USER", "CONSULTANT"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "OPERATOR", "MANAGER", "CONSULTANT"]}>
                 <Users />
               </ProtectedRoute>
             }

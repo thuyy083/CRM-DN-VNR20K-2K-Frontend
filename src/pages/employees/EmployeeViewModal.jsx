@@ -1,6 +1,6 @@
 import "./EmployeeViewModal.scss";
 
-function EmployeeViewModal({ user, close }) {
+function EmployeeViewModal({ user, communes = [], close }) {
   if (!user) return null;
 
   const roleMap = {
@@ -24,6 +24,15 @@ function EmployeeViewModal({ user, close }) {
     if (g === "OTHER") return "Khác";
     return gender;
   };
+
+const getCommuneNames = () => {
+  if (!user?.communeIds?.length) return [];
+
+  return user.communeIds.map((id) => {
+    const found = communes.find((c) => c.id === id);
+    return found?.name || `ID ${id}`;
+  });
+};
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";
@@ -156,6 +165,15 @@ function EmployeeViewModal({ user, close }) {
                     : "Chưa phân công"}
                 </span>
               </div>
+<div className="info-block">
+  <span className="info-label">Xã / Phường:</span>
+
+  <span className="info-value">
+    {getCommuneNames().length > 0
+      ? getCommuneNames().join(", ")
+      : "Chưa phân công"}
+  </span>
+</div>
             </div>
           </div>
 
