@@ -6,11 +6,18 @@ import {
   updateMyPassword,
   resetUserPasswordByAdmin,
 } from "../../services/userService";
+import { getClusters, getCommunes } from "../../services/locationsService";
 import "./EmployeeModal.scss";
 
 function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [clusters, setClusters] = useState([]);
+  const [communes, setCommunes] = useState([]);
+
+  const [selectedCluster, setSelectedCluster] = useState("");
+  const [selectedCommunes, setSelectedCommunes] = useState([]);
+  const [isChangingLocation, setIsChangingLocation] = useState(false);
   const dropdownRef = useRef(null);
 
   const formatDateForInput = (date) => {
@@ -66,6 +73,92 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!form.region) {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+
+      setClusters([]);
+      setSelectedCluster("");
+      return;
+    }
+
+    const fetchClusters = async () => {
+      try {
+        const res = await getClusters(form.region);
+        setClusters(res.data?.data || []);
+        if (!user) {
+          setSelectedCluster("");
+        }
+        if (!user) {
+          setCommunes([]);
+          setSelectedCommunes([]);
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Không load được danh sách cụm");
+      }
+    };
+
+    fetchClusters();
+  }, [form.region]);
+
+  useEffect(() => {
+    if (!selectedCluster) {
+      setCommunes([]);
+      return;
+    }
+
+    const fetchCommunes = async () => {
+      try {
+        const res = await getCommunes(selectedCluster);
+        setCommunes(res.data?.data || []);
+        if (!user) {
+          setSelectedCommunes([]);
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Không load được danh sách xã");
+      }
+    };
+
+    fetchCommunes();
+  }, [selectedCluster]);
+
+  useEffect(() => {
+    if (user) {
+      setSelectedCommunes(user.communeIds || []);
+    }
+  }, [user]);
+
+
+  useEffect(() => {
+    if (!user || clusters.length === 0) return;
+
+    const findClusterForUser = async () => {
+      for (const cluster of clusters) {
+        try {
+          const res = await getCommunes(cluster.id);
+          const list = res.data?.data || [];
+
+          const hasMatch = list.some((c) =>
+            user.communeIds?.includes(c.id)
+          );
+
+          if (hasMatch) {
+            setSelectedCluster(cluster.id);
+            setCommunes(list);
+            setSelectedCommunes(user.communeIds || []);
+            break;
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    };
+
+    findClusterForUser();
+}, [clusters, user, isChangingLocation]);
+
   const handleChange = (field, value) => {
     setForm({ ...form, [field]: value });
     if (errors[field]) setErrors({ ...errors, [field]: "" });
@@ -82,6 +175,15 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
     }
     return date;
   };
+  const handleClusterChange = (newClusterId) => {
+    // nếu đã có xã mà đổi cluster
+    if (selectedCommunes.length > 0 && newClusterId !== selectedCluster) {
+      toast.warning("Vui lòng xóa hết xã/phường trước khi đổi cụm");
+      return;
+    }
+
+    setSelectedCluster(newClusterId);
+  };
 
   const handleSubmit = async () => {
     const newErrors = {};
@@ -91,11 +193,11 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
       newErrors.fullName = "Vui lòng nhập họ tên";
       hasError = true;
     }
-    if (form.phone && !/^(0[3|5|7|8|9])+([0-9]{8})$/.test(form.phone)) {
-      newErrors.phone =
-        "Số điện thoại không hợp lệ (phải có 10 số, bắt đầu bằng 03/05/07/08/09)";
-      hasError = true;
-    }
+    // if (form.phone && !/^(0[3|5|7|8|9])+([0-9]{8})$/.test(form.phone)) {
+    //   newErrors.phone =
+    //     "Số điện thoại không hợp lệ (phải có 10 số, bắt đầu bằng 03/05/07/08/09)";
+    //   hasError = true;
+    // }
 
     if (!user) {
       if (!form.email.trim()) {
@@ -137,7 +239,20 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
         hasError = true;
       }
     }
+const requireLocationRoles = ["MANAGER", "ACCOUNT_MANAGER"];
 
+if (requireLocationRoles.includes(form.role)) {
+  if (!form.region || !selectedCluster || !selectedCommunes.length) {
+    toast.error("Vui lòng chọn đầy đủ Khu vực, Cụm và Xã/Phường");
+    
+    if (!form.region) newErrors.region = "Vui lòng chọn khu vực";
+    if (!selectedCluster) newErrors.cluster = "Vui lòng chọn cụm";
+    if (!selectedCommunes.length)
+      newErrors.communes = "Vui lòng chọn ít nhất 1 xã/phường";
+
+    hasError = true;
+  }
+}
     if (hasError) {
       setErrors(newErrors);
       return;
@@ -152,9 +267,24 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
         gender: form.gender,
         dateOfBirth: formatDateForSubmit(form.dateOfBirth),
         role: form.role,
-        status: form.status,
-        region: form.region || null,
+        status: user ? form.status : "ACTIVE",
+        region: user
+          ? isChangingLocation
+            ? form.region
+            : user?.region
+          : form.region,
+
+        communeIds: user
+          ? isChangingLocation
+            ? selectedCommunes
+            : user?.communeIds || []
+          : selectedCommunes,
       };
+
+      if (selectedCommunes.length === 0) {
+        newErrors.communes = "Vui lòng chọn ít nhất 1 xã";
+        hasError = true;
+      }
 
       if (user) {
         await updateUser(user.id, profileData);
@@ -180,17 +310,33 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
       close();
     } catch (error) {
       console.error("Submit error:", error.response?.data);
+
       const responseData = error.response?.data;
-      if (responseData?.errors && !Array.isArray(responseData.errors)) {
-        setErrors(responseData.errors);
-      } else if (Array.isArray(responseData?.errors)) {
+
+      // ✅ BE trả về message là array
+      if (Array.isArray(responseData?.message)) {
         const backendErrors = {};
-        responseData.errors.forEach((err) => {
-          backendErrors[err.field] = err.message;
+
+        responseData.message.forEach((err) => {
+          if (err?.field) {
+            backendErrors[err.field] = err.message;
+          }
+          if (err?.message) {
+            toast.error(err.message); // 👈 HIỂN THỊ TOAST
+          }
         });
+
         setErrors(backendErrors);
-      } else {
-        toast.error(responseData?.message || "Có lỗi xảy ra khi lưu nhân viên");
+      }
+
+      // ✅ BE trả về message là string
+      else if (typeof responseData?.message === "string") {
+        toast.error(responseData.message);
+      }
+
+      // fallback
+      else {
+        toast.error("Có lỗi xảy ra khi lưu nhân viên");
       }
     }
   };
@@ -198,22 +344,24 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
   const genderOptions = [
     { value: "MALE", label: "Nam" },
     { value: "FEMALE", label: "Nữ" },
-    { value: "OTHER", label: "Khác" },
   ];
   const roleOptions = [
     { value: "ADMIN", label: "Quản trị viên" },
     { value: "CONSULTANT", label: "Nhân viên tư vấn" },
+    { value: "OPERATOR", label: "Quản lý điều hành" },
+    { value: "MANAGER", label: "Quản lý khu vực" },
+    { value: "ACCOUNT_MANAGER", label: "Nhân viên AM" },
   ];
   const statusOptions = [
     { value: "ACTIVE", label: "Đang hoạt động" },
-    { value: "INACTIVE", label: "Ngưng hoạt động" },
+    { value: "INACTIVE", label: "Ngừng hoạt động" },
   ];
   const regionOptions = [
-    { value: "", label: "Chưa phân công" },
     { value: "CTO", label: "Cần Thơ" },
-    { value: "HUG", label: "Huế" },
+    { value: "HUG", label: "Hậu Giang" },
     { value: "STG", label: "Sóc Trăng" },
-    { value: "NONE", label: "Không có" },
+    // { value: "DA", label: "Dự Án" },
+
   ];
 
   const renderDropdown = (key, label, options, field) => (
@@ -226,7 +374,7 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
         >
           <span>
             {options.find((opt) => opt.value === form[field])?.label ||
-              options[0].label}
+              "-- Chọn --"}
           </span>
           <svg
             className={`icon-chevron ${openDropdown === key ? "open" : ""}`}
@@ -294,10 +442,10 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
               style={
                 user
                   ? {
-                      backgroundColor: "#f3f4f6",
-                      cursor: "not-allowed",
-                      color: "#6b7280",
-                    }
+                    backgroundColor: "#f3f4f6",
+                    cursor: "not-allowed",
+                    color: "#6b7280",
+                  }
                   : {}
               }
             />
@@ -445,15 +593,92 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
             {renderDropdown("gender", "Giới tính", genderOptions, "gender")}
             {renderDropdown("role", "Vai trò", roleOptions, "role")}
           </div>
+          {user && (
+  <div className="form-row">
+    {renderDropdown("status", "Trạng thái", statusOptions, "status")}
+  </div>
+)}
+          {user && (
+            <div className="checkbox-group">
+              <input
+                type="checkbox"
+                id="change-location-toggle"
+                checked={isChangingLocation}
+                onChange={(e) => setIsChangingLocation(e.target.checked)}
+              />
+              <label htmlFor="change-location-toggle">
+                Thay đổi khu vực / cụm / xã phường
+              </label>
+            </div>
+          )}
+          {(!user || isChangingLocation) && (
+            <>
+              <div className="form-row">
+                {renderDropdown("region", "Khu vực", regionOptions, "region")}
 
-          <div className="form-row">
-            {renderDropdown("region", "Khu vực", regionOptions, "region")}
-            {user ? (
-              renderDropdown("status", "Trạng thái", statusOptions, "status")
-            ) : (
-              <div className="form-group"></div>
-            )}
-          </div>
+                <div className="form-group">
+                  <label>Cụm</label>
+                  <select
+                    value={selectedCluster}
+                    onChange={(e) => handleClusterChange(Number(e.target.value))}
+                    disabled={!form.region}
+                  >
+                    <option value="">-- Chọn cụm --</option>
+                    {clusters.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Xã / Phường</label>
+
+                <div className="multi-select">
+                  <div className="selected-list">
+                    {selectedCommunes.map((id) => {
+                      const commune = communes.find((c) => c.id === id);
+                      return (
+                        <span key={id} className="tag">
+                          {commune?.name}
+                          <span
+                            className="remove"
+                            onClick={() =>
+                              setSelectedCommunes(
+                                selectedCommunes.filter((item) => item !== id)
+                              )
+                            }
+                          >
+                            ×
+                          </span>
+                        </span>
+                      );
+                    })}
+                  </div>
+
+                  <select
+                    className="select-box"
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      if (!selectedCommunes.includes(value)) {
+                        setSelectedCommunes([...selectedCommunes, value]);
+                      }
+                    }}
+                    value=""
+                  >
+                    <option value="">-- Chọn xã/phường --</option>
+                    {communes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="modal-actions">
