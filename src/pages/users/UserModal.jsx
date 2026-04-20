@@ -288,7 +288,25 @@ function UserModal({ interaction, enterprises, close, reload }) {
       toast.success("Tạo người liên hệ thành công");
     } catch (error) {
       console.error(error);
-      toast.error("Có lỗi xảy ra");
+
+      const responseData = error?.response?.data;
+
+      // Trường hợp BE trả về dạng mảng lỗi
+      if (Array.isArray(responseData?.message)) {
+        responseData.message.forEach((err) => {
+          if (err?.message) {
+            toast.error(err.message);
+          }
+        });
+      }
+      // Trường hợp BE trả về message string
+      else if (typeof responseData?.message === "string") {
+        toast.error(responseData.message);
+      }
+      // fallback
+      else {
+        toast.error("Có lỗi xảy ra");
+      }
     } finally {
       setCreatingContact(false);
     }
@@ -513,6 +531,10 @@ function UserModal({ interaction, enterprises, close, reload }) {
                 const selected = contacts.find(
                   (contact) => String(getContactId(contact)) === String(selectedContactId)
                 );
+
+                if (selected) {
+                  handleChange("contactPosition", selected.position || "");
+                }
                 handleChange("contactPosition", selected?.position || "");
               }}
               disabled={!form.enterpriseId || loadingContacts}
@@ -648,8 +670,8 @@ function UserModal({ interaction, enterprises, close, reload }) {
             <input
               readOnly
               value={form.contactPosition}
-              // onChange={(e) => handleChange("contactPosition", e.target.value)}
-              placeholder="VD: Giám đốc, Kế toán..."
+              onChange={(e) => handleChange("contactPosition", e.target.value)}
+            // placeholder="VD: Giám đốc, Kế toán..."
             />
           </div>
 

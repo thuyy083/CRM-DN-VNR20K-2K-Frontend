@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import "./Employees.scss";
 
 import { getUsers } from "../../services/userService";
+import { getClusters, getCommunes } from "../../services/locationsService";
 import EmployeeModal from "./EmployeeModal";
 import EmployeeTable from "./EmployeeTable";
 import EmployeeViewModal from "./EmployeeViewModal";
@@ -39,6 +40,8 @@ function Employees() {
   const [openDropdown, setOpenDropdown] = useState(null); 
   const dropdownRef = useRef(null);
 
+  const [communes, setCommunes] = useState([]);
+
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
     function handleClickOutside(event) {
@@ -69,10 +72,30 @@ function Employees() {
     setOpenModal(true);
   };
 
-  const handleView = (user) => {
-    setSelectedUser(user);
-    setOpenViewModal(true);
-  };
+const handleView = async (user) => {
+  setSelectedUser(user);
+
+  try {
+    // 1. Lấy clusters theo region
+    const clusterRes = await getClusters(user.region);
+    const clusters = clusterRes.data?.data || [];
+
+    let allCommunes = [];
+
+    // 2. Lấy tất cả communes của các cluster
+    for (const cluster of clusters) {
+      const res = await getCommunes(cluster.id);
+      const list = res.data?.data || [];
+      allCommunes = [...allCommunes, ...list];
+    }
+
+    setCommunes(allCommunes);
+  } catch (err) {
+    console.error(err);
+  }
+
+  setOpenViewModal(true);
+};
 
   const handleCreate = () => {
     setSelectedUser(null);
@@ -100,6 +123,9 @@ function Employees() {
     { value: "ALL", label: "Tất cả vai trò" },
     { value: "ADMIN", label: "Quản trị viên" },
     { value: "CONSULTANT", label: "Nhân viên tư vấn" },
+    { value: "OPERATOR", label: "Quản lý điều hành" },
+    { value: "MANAGER", label: "Quản lý khu vực" },
+    { value: " ACCOUNT_MANAGER", label: "Nhân viên AM" },
   ];
 
   const statusOptions = [
@@ -288,6 +314,7 @@ function Employees() {
       {openViewModal && (
         <EmployeeViewModal
           user={selectedUser}
+           communes={communes}
           close={() => setOpenViewModal(false)}
         />
       )}

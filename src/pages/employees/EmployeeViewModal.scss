@@ -97,10 +97,10 @@ $bg-card: #f8fafc;
 }
 
 .info-card {
-    background-color: $bg-card;
+    background-color: #f8fafc;
     border: 1px solid $border;
-    border-radius: 12px;
-    padding: 20px;
+    border-radius: 14px;
+    padding: 20px 20px 12px;
 
     .card-title {
         margin: 0 0 16px 0;
@@ -124,16 +124,14 @@ $bg-card: #f8fafc;
 
 /* Rows for Basic Info */
 .info-row {
-    display: flex;
-    justify-content: space-between;
-    padding-bottom: 12px;
-    margin-bottom: 12px;
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    align-items: center;
+    padding: 10px 0;
     border-bottom: 1px dashed #cbd5e1;
 
     &.no-border {
         border-bottom: none;
-        padding-bottom: 0;
-        margin-bottom: 0;
     }
 
     .info-label {
@@ -147,11 +145,7 @@ $bg-card: #f8fafc;
         font-weight: 500;
         font-size: 14px;
         text-align: right;
-
-        &.highlight {
-            font-weight: 700;
-            color: $primary;
-        }
+        word-break: break-word;
     }
 }
 
@@ -232,4 +226,78 @@ $bg-card: #f8fafc;
         opacity: 1;
         transform: translateY(0) scale(1);
     }
+}
+
+.avatar-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.avatar-circle {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: $primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 20px;
+}
+
+.avatar-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.avatar-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: $text-main;
+}
+
+.avatar-role {
+    font-size: 14px;
+    color: $text-muted;
+}
+
+.status-badge {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+
+    &.active {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    &.inactive {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+}
+.modal-header {
+    padding: 20px 24px 12px;
+}
+.view-content {
+    padding: 20px 24px;
+}
+
+.commune-tags {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+.tag {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 13px;
 }

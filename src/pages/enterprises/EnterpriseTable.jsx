@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import "./EnterpriseTable.scss";
 
 
-function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageChange, onDelete }) {
+function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageChange }) {
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
 
   const isPotentialEnterprise = (item) => {
@@ -51,9 +51,9 @@ function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageC
 
     return items;
   }, [enterprises, sortConfig]);
-//   const handlePageChange = (pageNumber) => {
-//   onPageChange(pageNumber - 1); // 👈 convert về 0-based
-// };
+  //   const handlePageChange = (pageNumber) => {
+  //   onPageChange(pageNumber - 1); // 👈 convert về 0-based
+  // };
 
   return (
     <div className="table-container">
@@ -75,8 +75,8 @@ function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageC
           {sortedData.map((e, index) => (
             <tr key={e.id}>
               <td>
-        {currentPage * 10 + index + 1}
-      </td>
+                {currentPage * 10 + index + 1}
+              </td>
               <td className="font-medium">
                 <div className="enterprise-name-wrapper">
                   <span className="enterprise-name-cell">
@@ -104,84 +104,84 @@ function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageC
                     Xem
                   </button>
 
-                  <button className="delete-btn" onClick={() => onDelete(e)}>
+                  {/* <button className="delete-btn" onClick={() => onDelete(e)}>
                     Xóa
-                  </button>
+                  </button> */}
                 </div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-    {totalPages > 1 && (
-  <div className="pagination">
-    
-    {/* Nút về trang đầu */}
-    <button
-      className="page-btn"
-      disabled={currentPage === 0}
-      onClick={() => onPageChange(0)}
-    >
-      &laquo;&laquo;
-    </button>
+      {totalPages > 1 && (
+        <div className="pagination">
 
-    {/* Nút trang trước */}
-    <button
-      className="page-btn"
-      disabled={currentPage === 0}
-      onClick={() => onPageChange(currentPage - 1)}
-    >
-      &laquo; Trước
-    </button>
+          {/* Nút về trang đầu */}
+          <button
+            className="page-btn"
+            disabled={currentPage === 0}
+            onClick={() => onPageChange(0)}
+          >
+            &laquo;&laquo;
+          </button>
 
-    <div className="page-numbers">
-      {(() => {
-        const pages = [];
-        const maxVisible = 5; 
-        
-        let startPage = Math.max(0, currentPage - Math.floor(maxVisible / 2));
-        let endPage = Math.min(totalPages - 1, startPage + maxVisible - 1);
+          {/* Nút trang trước */}
+          <button
+            className="page-btn"
+            disabled={currentPage === 0}
+            onClick={() => onPageChange(currentPage - 1)}
+          >
+            &laquo; Trước
+          </button>
 
-        if (endPage - startPage < maxVisible - 1) {
-          startPage = Math.max(0, endPage - maxVisible + 1);
-        }
+          <div className="page-numbers">
+            {(() => {
+              const pages = [];
+              const maxVisible = 5;
 
-        for (let i = startPage; i <= endPage; i++) {
-          const pageNumber = i + 1;
-          pages.push(
-            <button
-              key={pageNumber}
-              className={`page-num ${currentPage === i ? "active" : ""}`}
-              onClick={() => onPageChange(i)}
-            >
-              {pageNumber}
-            </button>
-          );
-        }
-        return pages;
-      })()}
-    </div>
+              let startPage = Math.max(0, currentPage - Math.floor(maxVisible / 2));
+              let endPage = Math.min(totalPages - 1, startPage + maxVisible - 1);
 
-    {/* Nút trang sau */}
-    <button
-      className="page-btn"
-      disabled={currentPage === totalPages - 1}
-      onClick={() => onPageChange(currentPage + 1)}
-    >
-      Sau &raquo;
-    </button>
+              if (endPage - startPage < maxVisible - 1) {
+                startPage = Math.max(0, endPage - maxVisible + 1);
+              }
 
-    {/* Nút về trang cuối */}
-    <button
-      className="page-btn"
-      disabled={currentPage === totalPages - 1}
-      onClick={() => onPageChange(totalPages - 1)}
-    >
-      &raquo;&raquo;
-    </button>
+              for (let i = startPage; i <= endPage; i++) {
+                const pageNumber = i + 1;
+                pages.push(
+                  <button
+                    key={pageNumber}
+                    className={`page-num ${currentPage === i ? "active" : ""}`}
+                    onClick={() => onPageChange(i)}
+                  >
+                    {pageNumber}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
+          </div>
 
-  </div>
-)}
+          {/* Nút trang sau */}
+          <button
+            className="page-btn"
+            disabled={currentPage === totalPages - 1}
+            onClick={() => onPageChange(currentPage + 1)}
+          >
+            Sau &raquo;
+          </button>
+
+          {/* Nút về trang cuối */}
+          <button
+            className="page-btn"
+            disabled={currentPage === totalPages - 1}
+            onClick={() => onPageChange(totalPages - 1)}
+          >
+            &raquo;&raquo;
+          </button>
+
+        </div>
+      )}
     </div>
   );
 }

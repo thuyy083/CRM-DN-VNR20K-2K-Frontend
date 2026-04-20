@@ -1,5 +1,6 @@
 // Enterprises.jsx
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useSelector } from "react-redux";
 import "./Enterprises.scss";
 
 import EnterpriseTable from "./EnterpriseTable";
@@ -35,6 +36,7 @@ function Enterprises() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
 
+  const { role, region } = useSelector((state) => state.auth.user || {});
 
   const getPotentialStorageMap = () => {
     try {
@@ -194,7 +196,7 @@ function Enterprises() {
   };
 
 
-useEffect(() => {
+  useEffect(() => {
     const delay = setTimeout(() => {
       fetchEnterprises();
     }, 400);
@@ -219,10 +221,10 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
-         
 
-  fetchIndustries();
-}, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchIndustries();
+  }, []);
 
   const statusOptions = [
     { value: "ALL", label: "Tất cả trạng thái" },
@@ -236,7 +238,7 @@ useEffect(() => {
   //   { value: "NORMAL", label: "Thông thường" },
   // ];
 
-   const regionOptions = [
+  const regionOptions = [
     { value: "ALL", label: "Tất cả cụm" },
     { value: "CTO", label: "Cần Thơ" },
     { value: "HUG", label: "Hậu Giang" },
@@ -251,6 +253,42 @@ useEffect(() => {
     { value: "VNR2000", label: "VNR2000" },
     { value: "SME", label: "SME" },
   ];
+
+  const getTypeOptionsByRole = () => {
+    if (role === "ADMIN" || role === "OPERATOR") {
+      return typeOptions;
+    }
+
+    if (role === "MANAGER") {
+      if (region === "DA") {
+        return typeOptions.filter((t) =>
+          ["ALL", "VNR20K", "VNR2000"].includes(t.value)
+        );
+      }
+
+      if (["CTO", "HUG", "STG"].includes(region)) {
+        return typeOptions.filter((t) =>
+          ["ALL", "SME", "HKD"].includes(t.value)
+        );
+      }
+    }
+
+    if (role === "CONSULTANT") {
+      return [{ value: "ALL", label: "Doanh nghiệp khu vực phụ trách" }];
+    }
+
+    return typeOptions;
+  };
+
+  const getRegionOptionsByRole = () => {
+    if (role === "CONSULTANT") {
+      return regionOptions.filter((r) => r.value === region);
+    }
+    return regionOptions;
+  };
+
+  const filteredTypeOptions = getTypeOptionsByRole();
+  const filteredRegionOptions = getRegionOptionsByRole();
 
   return (
     <div className="employees-page">
@@ -341,92 +379,87 @@ useEffect(() => {
               </div>
             )}
           </div>
-           {/* REGION */}
+          {/* REGION */}
           <div className="custom-dropdown">
-  <div
-    className={`dropdown-trigger ${
-      openDropdown === "region" ? "active" : ""
-    }`}
-    onClick={() =>
-      setOpenDropdown(openDropdown === "region" ? null : "region")
-    }
-  >
-    <span>
-      {regionOptions.find((o) => o.value === filterRegion)?.label}
-    </span>
-    <svg
-      className={`icon-chevron ${
-        openDropdown === "region" ? "open" : ""
-      }`}
-      viewBox="0 0 24 24"
-    >
-      <polyline points="6 9 12 15 18 9"></polyline>
-    </svg>
-  </div>
+            <div
+              className={`dropdown-trigger ${openDropdown === "region" ? "active" : ""
+                }`}
+              onClick={() => {
+                if (role === "CONSULTANT") return;
+                setOpenDropdown(openDropdown === "region" ? null : "region");
+              }}
+            >
+              <span>
+                {filteredRegionOptions.find((o) => o.value === filterRegion)?.label}
+              </span>
+              <svg
+                className={`icon-chevron ${openDropdown === "region" ? "open" : ""
+                  }`}
+                viewBox="0 0 24 24"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
 
-  {openDropdown === "region" && (
-    <div className="dropdown-menu">
-      {regionOptions.map((opt) => (
-        <div
-          key={opt.value}
-          className={`dropdown-item ${
-            filterRegion === opt.value ? "selected" : ""
-          }`}
-          onClick={() => {
-            setFilterRegion(opt.value);
-            setCurrentPage(0); // ✅ reset page
-            setOpenDropdown(null);
-          }}
-        >
-          {opt.label}
-        </div>
-      ))}
-    </div>
-  )}
-</div>
+            {openDropdown === "region" && (
+              <div className="dropdown-menu">
+                {filteredRegionOptions.map((opt) => (
+                  <div
+                    key={opt.value}
+                    className={`dropdown-item ${filterRegion === opt.value ? "selected" : ""
+                      }`}
+                    onClick={() => {
+                      setFilterRegion(opt.value);
+                      setCurrentPage(0); // ✅ reset page
+                      setOpenDropdown(null);
+                    }}
+                  >
+                    {opt.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           {/* TYPE */}
-<div className="custom-dropdown">
-  <div
-    className={`dropdown-trigger ${
-      openDropdown === "type" ? "active" : ""
-    }`}
-    onClick={() =>
-      setOpenDropdown(openDropdown === "type" ? null : "type")
-    }
-  >
-    <span>
-      {typeOptions.find((o) => o.value === filterType)?.label}
-    </span>
-    <svg
-      className={`icon-chevron ${
-        openDropdown === "type" ? "open" : ""
-      }`}
-      viewBox="0 0 24 24"
-    >
-      <polyline points="6 9 12 15 18 9"></polyline>
-    </svg>
-  </div>
+          <div className="custom-dropdown">
+            <div
+              className={`dropdown-trigger ${openDropdown === "type" ? "active" : ""
+                }`}
+              onClick={() => {
+                if (role === "CONSULTANT") return;
+                setOpenDropdown(openDropdown === "type" ? null : "type");
+              }}
+            >
+              <span>
+                {filteredTypeOptions.find((o) => o.value === filterType)?.label}    </span>
+              <svg
+                className={`icon-chevron ${openDropdown === "type" ? "open" : ""
+                  }`}
+                viewBox="0 0 24 24"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
 
-  {openDropdown === "type" && (
-    <div className="dropdown-menu">
-      {typeOptions.map((opt) => (
-        <div
-          key={opt.value}
-          className={`dropdown-item ${
-            filterType === opt.value ? "selected" : ""
-          }`}
-          onClick={() => {
-            setFilterType(opt.value);
-            setCurrentPage(0);
-            setOpenDropdown(null);
-          }}
-        >
-          {opt.label}
-        </div>
-      ))}
-    </div>
-  )}
-</div>
+            {openDropdown === "type" && (
+              <div className="dropdown-menu">
+                {filteredTypeOptions.map((opt) => (
+                  <div
+                    key={opt.value}
+                    className={`dropdown-item ${filterType === opt.value ? "selected" : ""
+                      }`}
+                    onClick={() => {
+                      setFilterType(opt.value);
+                      setCurrentPage(0);
+                      setOpenDropdown(null);
+                    }}
+                  >
+                    {opt.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* <div className="custom-dropdown">
             <div
@@ -505,25 +538,25 @@ useEffect(() => {
           onDelete={handleDeleteEnterprise}
         />
       </div>
-{openModal && (
-  <EnterpriseModal
-    enterprise={selectedEnterprise}
-    close={() => {
-      setOpenModal(false);
-      setSelectedEnterprise(null);
-    }}
-    reload={fetchEnterprises}
-  />
-)}
+      {openModal && (
+        <EnterpriseModal
+          enterprise={selectedEnterprise}
+          close={() => {
+            setOpenModal(false);
+            setSelectedEnterprise(null);
+          }}
+          reload={fetchEnterprises}
+        />
+      )}
       {openDetail && (
-  <EnterpriseDetailModal
-    enterprise={selectedEnterprise}
-    industries={industries} // ✅ BẮT BUỘC
-    reloadEnterprises={fetchEnterprises}
-    onEnterpriseUpdated={setSelectedEnterprise}
-    close={() => setOpenDetail(false)}
-  />
-)}
+        <EnterpriseDetailModal
+          enterprise={selectedEnterprise}
+          industries={industries} // ✅ BẮT BUỘC
+          reloadEnterprises={fetchEnterprises}
+          onEnterpriseUpdated={setSelectedEnterprise}
+          close={() => setOpenDetail(false)}
+        />
+      )}
       {openImport && (
         <ImportEnterpriseModal
           close={() => setOpenImport(false)}

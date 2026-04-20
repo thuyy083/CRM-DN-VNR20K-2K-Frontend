@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSelector } from "react-redux";
+import { getClusters, getCommunes } from "../../services/locationsService";
 import "./EmployeeTable.scss";
 
 function EmployeeTable({ users, onEdit, onView }) {
@@ -25,7 +26,7 @@ function EmployeeTable({ users, onEdit, onView }) {
 
   const regionMap = {
     CTO: "Cần Thơ",
-    HUG: "Huế",
+    HUG: "Hậu Giang",
     STG: "Sóc Trăng",
     NONE: "Chưa phân công",
   };
@@ -37,18 +38,22 @@ function EmployeeTable({ users, onEdit, onView }) {
   const roleMap = {
     ADMIN: "Quản trị viên",
     CONSULTANT: "Nhân viên tư vấn",
-    STAFF: "Nhân viên",
+    MANAGER: "Quản lý khu vực",
+    OPERATOR: "Quản lý điều hành",
   };
 
+  const [allClusters, setAllClusters] = useState([]);
+  const [allCommunes, setAllCommunes] = useState([]);
+
   // Hàm xử lý hiển thị Giới tính
-  const getGenderLabel = (gender) => {
-    if (!gender) return "-";
-    const genderUpper = gender.toUpperCase();
-    if (genderUpper === "MALE") return "Nam";
-    if (genderUpper === "FEMALE") return "Nữ";
-    if (genderUpper === "OTHER") return "Khác";
-    return gender;
-  };
+  // const getGenderLabel = (gender) => {
+  //   if (!gender) return "-";
+  //   const genderUpper = gender.toUpperCase();
+  //   if (genderUpper === "MALE") return "Nam";
+  //   if (genderUpper === "FEMALE") return "Nữ";
+  //   if (genderUpper === "OTHER") return "Khác";
+  //   return gender;
+  // };
 
   // Hàm xử lý Sắp xếp
   const requestSort = (key) => {
@@ -87,14 +92,70 @@ function EmployeeTable({ users, onEdit, onView }) {
   // Chỉ quay về khi dữ liệu lọc ít đi và làm mất cái trang hiện tại đang đứng.
   useEffect(() => {
     if (totalPages > 0 && currentPage > totalPages) {
-      setCurrentPage(totalPages); // Nếu lọc xong còn 2 trang mà đang đứng ở trang 3 thì lùi về trang 2
-       
+      setCurrentPage(totalPages);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+
     } else if (totalPages === 0 && currentPage !== 1) {
-      setCurrentPage(1); // Nếu rỗng ruột thì đưa về 1 tránh lỗi trắng bảng
+      setCurrentPage(1);
     }
   }, [totalPages, currentPage]);
-  // ==========================================
 
+  useEffect(() => {
+  const fetchLocations = async () => {
+    try {
+      // load tất cả clusters theo các region bạn dùng
+      const regions = ["CTO", "HUG", "STG"];
+      let clusters = [];
+      let communes = [];
+
+      for (const region of regions) {
+        const resCluster = await getClusters(region);
+        const listCluster = resCluster.data?.data || [];
+
+        clusters = [...clusters, ...listCluster];
+
+        // lấy communes của từng cluster
+        for (const cl of listCluster) {
+          const resCommune = await getCommunes(cl.id);
+          const listCommune = resCommune.data?.data || [];
+
+          // GẮN clusterId vào commune để map ngược
+          const mapped = listCommune.map((c) => ({
+            ...c,
+            clusterId: cl.id,
+            clusterName: cl.name,
+          }));
+
+          communes = [...communes, ...mapped];
+        }
+      }
+
+      setAllClusters(clusters);
+      setAllCommunes(communes);
+    } catch (err) {
+      console.error("Load location error:", err);
+    }
+  };
+
+  fetchLocations();
+}, []);
+  // ==========================================
+const getUserLocationDisplay = (user) => {
+  if (!user?.communeIds?.length) return null;
+
+  const userCommunes = allCommunes.filter((c) =>
+    user.communeIds.includes(c.id)
+  );
+
+  if (userCommunes.length === 0) return null;
+
+  const clusterName = userCommunes[0].clusterName;
+
+  return {
+    clusterName,
+    communes: userCommunes.map((c) => c.name),
+  };
+};
   // Logic Phân trang
   const currentTableData = useMemo(() => {
     // Đảm bảo an toàn không bị out of bound index
@@ -113,22 +174,22 @@ function EmployeeTable({ users, onEdit, onView }) {
     setCurrentPage(pageNumber);
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
+  // const formatDate = (dateString) => {
+  //   if (!dateString) return "-";
 
-    // detect format DD-MM-YYYY
-    if (dateString.includes("-") && dateString.split("-")[0].length === 2) {
-      const [day, month, year] = dateString.split("-");
-      return `${day}/${month}/${year}`;
-    }
+  //   // detect format DD-MM-YYYY
+  //   if (dateString.includes("-") && dateString.split("-")[0].length === 2) {
+  //     const [day, month, year] = dateString.split("-");
+  //     return `${day}/${month}/${year}`;
+  //   }
 
-    const date = new Date(dateString);
-    if (!isNaN(date.getTime())) {
-      return date.toLocaleDateString("vi-VN");
-    }
+  //   const date = new Date(dateString);
+  //   if (!isNaN(date.getTime())) {
+  //     return date.toLocaleDateString("vi-VN");
+  //   }
 
-    return "-";
-  };
+  //   return "-";
+  // };
 
   const getSortIcon = (key) => {
     if (sortConfig.key !== key) return <span className="sort-arrow">↕</span>;
@@ -158,15 +219,13 @@ function EmployeeTable({ users, onEdit, onView }) {
             <th onClick={() => requestSort("phone")} className="sortable">
               SĐT {getSortIcon("phone")}
             </th>
-            <th onClick={() => requestSort("status")} className="sortable">
-              Trạng thái {getSortIcon("status")}
-            </th>
             <th onClick={() => requestSort("role")} className="sortable">
               Vai trò {getSortIcon("role")}
             </th>
             <th onClick={() => requestSort("region")} className="sortable">
               Khu vực {getSortIcon("region")}
             </th>
+            <th>Cụm phụ trách</th>
             <th className="text-center">Hành động</th>
           </tr>
         </thead>
@@ -184,27 +243,45 @@ function EmployeeTable({ users, onEdit, onView }) {
               <tr key={user.id}>
                 <td>{user.id}</td>
                 <td className="font-medium text-left">
-                  {user.fullName || user.name}
+                  <div className="employee-name-wrapper">
+                    <span className="employee-name">
+                      {user.fullName || user.name}
+                    </span>
+
+                    {user.status === "INACTIVE" && (
+                      <span className="employee-inactive-text">
+                        Ngừng hoạt động
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="text-left">{user.email}</td>
                 <td>{user.phone || "-"}</td>
-                <td>
-                  <span
-                    className={`status-badge ${user.status?.toLowerCase()}`}
-                  >
-                    {user.status === "ACTIVE"
-                      ? "Hoạt động"
-                      : user.status === "INACTIVE"
-                        ? "Ngưng HĐ"
-                        : "-"}
-                  </span>
-                </td>
                 <td>
                   <span className={`role-badge ${user.role?.toLowerCase()}`}>
                     {roleMap[user.role] || user.role}
                   </span>
                 </td>
                 <td>{regionMap[user.region] || user.region || "-"}</td>
+                <td className="text-left">
+  {(() => {
+    const location = getUserLocationDisplay(user);
+
+    if (!location) return "-";
+
+    return (
+      <div>
+        <div className="cluster-name">{location.clusterName}</div>
+
+        {location.communes.map((name, index) => (
+          <div key={index} className="commune-item">
+            - {name}
+          </div>
+        ))}
+      </div>
+    );
+  })()}
+</td>
                 <td>
                   {/* Chỉ ADMIN mới thấy toàn bộ các nút hành động */}
                   {canManageEmployees ? (

@@ -250,3 +250,46 @@ $bg-overlay: rgba(17, 24, 39, 0.4);
         opacity: 1;
     }
 }
+
+.multi-select {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px;
+  background: #fff;
+}
+
+.selected-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.tag {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tag .remove {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.tag .remove:hover {
+  color: red;
+}
+
+.select-box {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  padding: 4px;
+  background: transparent;
+}
