@@ -124,16 +124,18 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
   };
   const detailRows = useMemo(() => sortByDateDesc(localInteractions), [localInteractions]);
 
-  const potentialFromStorage = useMemo(() => {
-    try {
-      const raw = localStorage.getItem(POTENTIAL_STORAGE_KEY);
-      const map = raw ? JSON.parse(raw) : {};
-      return Boolean(map[String(interaction?.enterpriseId)]);
-    } catch (error) {
-      console.error("Cannot parse potential storage", error);
-      return false;
-    }
-  }, [interaction?.enterpriseId]);
+const enterpriseId = interaction?.enterpriseId;
+
+const potentialFromStorage = useMemo(() => {
+  try {
+    const raw = localStorage.getItem(POTENTIAL_STORAGE_KEY);
+    const map = raw ? JSON.parse(raw) : {};
+    return Boolean(map[String(enterpriseId)]);
+  } catch (error) {
+    console.error("Cannot parse potential storage", error);
+    return false;
+  }
+}, [enterpriseId]);
 
   const isPotential =
     isPotentialEnterprise(enterpriseInfo) ||
@@ -141,7 +143,7 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
     potentialFromStorage;
 
   useEffect(() => {
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     setLocalInteractions(interaction?.allInteractions || []);
     setEnterpriseInfo(null);
   }, [interaction]);

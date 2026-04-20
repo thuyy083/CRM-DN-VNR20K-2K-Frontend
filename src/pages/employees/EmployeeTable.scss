@@ -290,3 +290,22 @@ $danger-light: #fef2f2;
     }
   }
 }
+
+.employee-name-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.employee-inactive-text {
+  font-size: 12px;
+  color: red;
+  margin-top: 2px;
+}
+.cluster-name {
+  font-weight: 600;
+}
+
+.commune-item {
+  font-size: 13px;
+  color: #374151;
+}
