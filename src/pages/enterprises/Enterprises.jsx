@@ -70,13 +70,22 @@ function Enterprises() {
 
   const fetchEnterprises = useCallback(async () => {
     try {
+      const finalRegion =
+        ["MANAGER", "ACCOUNT_MANAGER"].includes(role)
+          ? region // 🔥 ép theo region của user
+          : (filterRegion === "ALL" ? "" : filterRegion);
+
+      const finalType =
+        role === "ACCOUNT_MANAGER"
+          ? (filterType === "ALL" ? "" : filterType) // BE sẽ tự filter thêm SME, HKD
+          : (filterType === "ALL" ? "" : filterType);
       const res = await getEnterprises(
         currentPage,
         10,
         searchTerm,
         filterStatus === "ALL" ? "" : filterStatus,
-        filterRegion === "ALL" ? "" : filterRegion,
-        filterType === "ALL" ? "" : filterType,
+        finalRegion,
+        finalType,
       );
 
       const data = res.data?.data?.content || [];
@@ -225,6 +234,11 @@ function Enterprises() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     fetchIndustries();
   }, []);
+  useEffect(() => {
+  if (hideRegionFilter) {
+    setFilterRegion("ALL");
+  }
+}, [role]);
 
   const statusOptions = [
     { value: "ALL", label: "Tất cả trạng thái" },
@@ -243,7 +257,7 @@ function Enterprises() {
     { value: "CTO", label: "Cần Thơ" },
     { value: "HUG", label: "Hậu Giang" },
     { value: "STG", label: "Sóc Trăng" },
-    { value: "NONE", label: "Không xác định" },
+    // { value: "NONE", label: "Không xác định" },
   ];
 
   const typeOptions = [
@@ -253,37 +267,40 @@ function Enterprises() {
     { value: "VNR2000", label: "VNR2000" },
     { value: "SME", label: "SME" },
   ];
+  const hideRegionFilter = ["MANAGER", "ACCOUNT_MANAGER"].includes(role);
 
   const getTypeOptionsByRole = () => {
-    if (role === "ADMIN" || role === "OPERATOR") {
+    // FULL quyền
+    if (["ADMIN", "OPERATOR", "CONSULTANT"].includes(role)) {
       return typeOptions;
     }
 
+    // MANAGER: xem tất cả loại
     if (role === "MANAGER") {
-      if (region === "DA") {
-        return typeOptions.filter((t) =>
-          ["ALL", "VNR20K", "VNR2000"].includes(t.value)
-        );
-      }
-
-      if (["CTO", "HUG", "STG"].includes(region)) {
-        return typeOptions.filter((t) =>
-          ["ALL", "SME", "HKD"].includes(t.value)
-        );
-      }
+      return typeOptions;
     }
 
-    if (role === "CONSULTANT") {
-      return [{ value: "ALL", label: "Doanh nghiệp khu vực phụ trách" }];
+    // ACCOUNT_MANAGER: chỉ SME + HKD
+    if (role === "ACCOUNT_MANAGER") {
+      return typeOptions.filter((t) =>
+        ["ALL", "SME", "HKD"].includes(t.value)
+      );
     }
 
     return typeOptions;
   };
 
   const getRegionOptionsByRole = () => {
-    if (role === "CONSULTANT") {
+    // ADMIN / OPERATOR / CONSULTANT: full region
+    if (["ADMIN", "OPERATOR", "CONSULTANT"].includes(role)) {
+      return regionOptions;
+    }
+
+    // MANAGER & ACCOUNT_MANAGER: chỉ region của mình
+    if (["MANAGER", "ACCOUNT_MANAGER"].includes(role)) {
       return regionOptions.filter((r) => r.value === region);
     }
+
     return regionOptions;
   };
 
@@ -380,46 +397,46 @@ function Enterprises() {
             )}
           </div>
           {/* REGION */}
-          <div className="custom-dropdown">
-            <div
-              className={`dropdown-trigger ${openDropdown === "region" ? "active" : ""
-                }`}
-              onClick={() => {
-                if (role === "CONSULTANT") return;
-                setOpenDropdown(openDropdown === "region" ? null : "region");
-              }}
-            >
-              <span>
-                {filteredRegionOptions.find((o) => o.value === filterRegion)?.label}
-              </span>
-              <svg
-                className={`icon-chevron ${openDropdown === "region" ? "open" : ""
-                  }`}
-                viewBox="0 0 24 24"
-              >
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </div>
+{!hideRegionFilter && (
+  <div className="custom-dropdown">
+    <div
+      className={`dropdown-trigger ${openDropdown === "region" ? "active" : ""}`}
+      onClick={() =>
+        setOpenDropdown(openDropdown === "region" ? null : "region")
+      }
+    >
+      <span>
+        {filteredRegionOptions.find((o) => o.value === filterRegion)?.label}
+      </span>
+      <svg
+        className={`icon-chevron ${openDropdown === "region" ? "open" : ""}`}
+        viewBox="0 0 24 24"
+      >
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </div>
 
-            {openDropdown === "region" && (
-              <div className="dropdown-menu">
-                {filteredRegionOptions.map((opt) => (
-                  <div
-                    key={opt.value}
-                    className={`dropdown-item ${filterRegion === opt.value ? "selected" : ""
-                      }`}
-                    onClick={() => {
-                      setFilterRegion(opt.value);
-                      setCurrentPage(0); // ✅ reset page
-                      setOpenDropdown(null);
-                    }}
-                  >
-                    {opt.label}
-                  </div>
-                ))}
-              </div>
-            )}
+    {openDropdown === "region" && (
+      <div className="dropdown-menu">
+        {filteredRegionOptions.map((opt) => (
+          <div
+            key={opt.value}
+            className={`dropdown-item ${
+              filterRegion === opt.value ? "selected" : ""
+            }`}
+            onClick={() => {
+              setFilterRegion(opt.value);
+              setCurrentPage(0);
+              setOpenDropdown(null);
+            }}
+          >
+            {opt.label}
           </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
           {/* TYPE */}
           <div className="custom-dropdown">
             <div
@@ -504,15 +521,19 @@ function Enterprises() {
 
           {/* BUTTONS */}
 
-          <button className="add-btn" onClick={() => setOpenImport(true)}>
-            Import Excel
-          </button>
-          <button className="add-btn" onClick={handleDownloadTemplate}>
-            Tải file mẫu
-          </button>
-          <button className="add-btn" onClick={handleExport}>
-            Xuất Excel
-          </button>
+         {role !== "ACCOUNT_MANAGER" && (
+            <>
+              <button className="add-btn" onClick={() => setOpenImport(true)}>
+                Import Excel
+              </button>
+              <button className="add-btn" onClick={handleDownloadTemplate}>
+                Tải file mẫu
+              </button>
+              <button className="add-btn" onClick={handleExport}>
+                Xuất Excel
+              </button>
+            </>
+          )}
           <button className="add-btn" onClick={() => {
             setSelectedEnterprise(null);
             setOpenModal(true);
