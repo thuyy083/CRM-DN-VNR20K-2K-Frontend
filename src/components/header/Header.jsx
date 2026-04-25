@@ -8,8 +8,8 @@ import { logoutApi } from "../../services/authService";
 
 import styles from "./Header.module.scss";
 
-function Header() {
-  const user = useSelector((state) => state.auth.user);
+function Header({ onToggleSidebar }) {
+    const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -55,8 +55,15 @@ function Header() {
 
   return (
     <div className={styles.header}>
-      <h3>HỆ THỐNG QUẢN LÝ TIẾP XÚC DOANH NGHIỆP</h3>
+      <div className={styles.leftSection}>
+        <button className={styles.menuBtn} onClick={onToggleSidebar}>
+          ☰
+        </button>
 
+        <h3 className={styles.title}>
+          HỆ THỐNG QUẢN LÝ TIẾP XÚC DOANH NGHIỆP
+        </h3>
+      </div>
       <div className={styles.userSection} ref={menuRef}>
         <div className={styles.userInfo} onClick={toggleMenu}>
           <div className={styles.avatarHeader}>
