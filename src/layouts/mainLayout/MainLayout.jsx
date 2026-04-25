@@ -40,29 +40,28 @@ function MainLayout() {
 }, []);
   
   return (
+   <div className={styles.mainLayout}>
+  <Sidebar
+    isOpen={isSidebarOpen}
+    isMobile={isMobile}
+    onClose={() => setIsSidebarOpen(false)}
+  />
+
+  <div
+    className={`${styles.mainContent} ${
+      isMobile ? styles.fullWidth : ""
+    }`}
+  >
+    <Header onToggleSidebar={() => setIsSidebarOpen(true)} />
+
     <div
-      className={`${styles.mainContent} ${
-        isMobile ? styles.fullWidth : ""
+      className={`${styles.pageContent} ${
+        isMobile ? styles.mobilePage : ""
       }`}
     >
-      <Sidebar
-        isOpen={isSidebarOpen}
-        isMobile={isMobile}
-        onClose={() => setIsSidebarOpen(false)}
-      />
-
-      <div className={styles.mainContent}>
-        <Header onToggleSidebar={() => setIsSidebarOpen(true)} />
-
-        <div
-          className={`${styles.pageContent} ${
-            isMobile ? styles.mobilePage : ""
-          }`}
-        >
-          <Outlet />
-        </div>
-      </div>
-
+      <Outlet />
+    </div>
+  </div>
       <ToastContainer
         position="top-right"
         autoClose={2500}
