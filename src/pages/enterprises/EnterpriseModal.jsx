@@ -355,7 +355,7 @@ function EnterpriseModal({ enterprise, close, reload }) {
               >
                 <option value="HKD">Hộ kinh doanh</option>
                 <option value="VNR20K">VNR20K</option>
-                <option value="VNR2K">VNR2K</option>
+                <option value="VNR2000">VNR2000</option>
                 <option value="SME">SME</option>
               </select>
             </div>

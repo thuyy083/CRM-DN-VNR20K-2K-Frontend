@@ -20,6 +20,7 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
   const [isChangingLocation, setIsChangingLocation] = useState(false);
   const dropdownRef = useRef(null);
 
+
   const formatDateForInput = (date) => {
     if (!date) return "";
     const dateOnly = date.substring(0, 10);
@@ -62,6 +63,11 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
   });
 
   const [errors, setErrors] = useState({});
+
+  
+  const isAdminLike = ["ADMIN", "OPERATOR", "CONSULTANT"].includes(form.role);
+  const isManager = form.role === "MANAGER";
+  const isAM = form.role === "ACCOUNT_MANAGER";
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -157,7 +163,20 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
     };
 
     findClusterForUser();
-}, [clusters, user, isChangingLocation]);
+  }, [clusters, user, isChangingLocation]);
+
+  useEffect(() => {
+    if (isAdminLike) {
+      handleChange("region", "");
+      setSelectedCluster("");
+      setSelectedCommunes([]);
+    }
+
+    if (isManager) {
+      setSelectedCluster("");
+      setSelectedCommunes([]);
+    }
+  }, [form.role]);
 
   const handleChange = (field, value) => {
     setForm({ ...form, [field]: value });
@@ -239,20 +258,18 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
         hasError = true;
       }
     }
-const requireLocationRoles = ["MANAGER", "ACCOUNT_MANAGER"];
+    if (form.role === "ACCOUNT_MANAGER") {
+      if (!form.region || !selectedCluster || !selectedCommunes.length) {
+        toast.error("Vui lòng chọn đầy đủ Khu vực, Cụm và Xã/Phường");
 
-if (requireLocationRoles.includes(form.role)) {
-  if (!form.region || !selectedCluster || !selectedCommunes.length) {
-    toast.error("Vui lòng chọn đầy đủ Khu vực, Cụm và Xã/Phường");
-    
-    if (!form.region) newErrors.region = "Vui lòng chọn khu vực";
-    if (!selectedCluster) newErrors.cluster = "Vui lòng chọn cụm";
-    if (!selectedCommunes.length)
-      newErrors.communes = "Vui lòng chọn ít nhất 1 xã/phường";
+        if (!form.region) newErrors.region = "Vui lòng chọn khu vực";
+        if (!selectedCluster) newErrors.cluster = "Vui lòng chọn cụm";
+        if (!selectedCommunes.length)
+          newErrors.communes = "Vui lòng chọn ít nhất 1 xã/phường";
 
-    hasError = true;
-  }
-}
+        hasError = true;
+      }
+    }
     if (hasError) {
       setErrors(newErrors);
       return;
@@ -563,6 +580,108 @@ if (requireLocationRoles.includes(form.role)) {
           )}
 
           <div className="form-row">
+            {renderDropdown("gender", "Giới tính", genderOptions, "gender")}
+            {renderDropdown("role", "Vai trò", roleOptions, "role")}
+          </div>
+
+          
+
+
+          {user && (
+            <div className="form-row">
+              {renderDropdown("status", "Trạng thái", statusOptions, "status")}
+            </div>
+          )}
+          {user && (
+            <div className="checkbox-group">
+              <input
+                type="checkbox"
+                id="change-location-toggle"
+                checked={isChangingLocation}
+                onChange={(e) => setIsChangingLocation(e.target.checked)}
+              />
+              <label htmlFor="change-location-toggle">
+                Thay đổi khu vực / cụm / xã phường
+              </label>
+            </div>
+          )}
+          {(!user || isChangingLocation) && !isAdminLike && (
+            <>
+              {/* REGION */}
+              <div className="form-row">
+                {renderDropdown("region", "Khu vực", regionOptions, "region")}
+
+                {/* CLUSTER chỉ hiện với ACCOUNT_MANAGER */}
+                {isAM && (
+                  <div className="form-group">
+                    <label>Cụm</label>
+                    <select
+                      value={selectedCluster}
+                      onChange={(e) => handleClusterChange(Number(e.target.value))}
+                      disabled={!form.region}
+                    >
+                      <option value="">-- Chọn cụm --</option>
+                      {clusters.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* COMMUNE chỉ hiện với ACCOUNT_MANAGER */}
+              {isAM && (
+                <div className="form-group">
+                  <label>Xã / Phường</label>
+
+                  <div className="multi-select">
+                    <div className="selected-list">
+                      {selectedCommunes.map((id) => {
+                        const commune = communes.find((c) => c.id === id);
+                        return (
+                          <span key={id} className="tag">
+                            {commune?.name}
+                            <span
+                              className="remove"
+                              onClick={() =>
+                                setSelectedCommunes(
+                                  selectedCommunes.filter((item) => item !== id)
+                                )
+                              }
+                            >
+                              ×
+                            </span>
+                          </span>
+                        );
+                      })}
+                    </div>
+
+                    <select
+                      className="select-box"
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        if (!selectedCommunes.includes(value)) {
+                          setSelectedCommunes([...selectedCommunes, value]);
+                        }
+                      }}
+                      value=""
+                    >
+                      <option value="">-- Chọn xã/phường --</option>
+                      {communes.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+        <div className="form-row">
             <div className="form-group">
               <label>Số điện thoại</label>
               <input
@@ -588,98 +707,6 @@ if (requireLocationRoles.includes(form.role)) {
               )}
             </div>
           </div>
-
-          <div className="form-row">
-            {renderDropdown("gender", "Giới tính", genderOptions, "gender")}
-            {renderDropdown("role", "Vai trò", roleOptions, "role")}
-          </div>
-          {user && (
-  <div className="form-row">
-    {renderDropdown("status", "Trạng thái", statusOptions, "status")}
-  </div>
-)}
-          {user && (
-            <div className="checkbox-group">
-              <input
-                type="checkbox"
-                id="change-location-toggle"
-                checked={isChangingLocation}
-                onChange={(e) => setIsChangingLocation(e.target.checked)}
-              />
-              <label htmlFor="change-location-toggle">
-                Thay đổi khu vực / cụm / xã phường
-              </label>
-            </div>
-          )}
-          {(!user || isChangingLocation) && (
-            <>
-              <div className="form-row">
-                {renderDropdown("region", "Khu vực", regionOptions, "region")}
-
-                <div className="form-group">
-                  <label>Cụm</label>
-                  <select
-                    value={selectedCluster}
-                    onChange={(e) => handleClusterChange(Number(e.target.value))}
-                    disabled={!form.region}
-                  >
-                    <option value="">-- Chọn cụm --</option>
-                    {clusters.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Xã / Phường</label>
-
-                <div className="multi-select">
-                  <div className="selected-list">
-                    {selectedCommunes.map((id) => {
-                      const commune = communes.find((c) => c.id === id);
-                      return (
-                        <span key={id} className="tag">
-                          {commune?.name}
-                          <span
-                            className="remove"
-                            onClick={() =>
-                              setSelectedCommunes(
-                                selectedCommunes.filter((item) => item !== id)
-                              )
-                            }
-                          >
-                            ×
-                          </span>
-                        </span>
-                      );
-                    })}
-                  </div>
-
-                  <select
-                    className="select-box"
-                    onChange={(e) => {
-                      const value = Number(e.target.value);
-                      if (!selectedCommunes.includes(value)) {
-                        setSelectedCommunes([...selectedCommunes, value]);
-                      }
-                    }}
-                    value=""
-                  >
-                    <option value="">-- Chọn xã/phường --</option>
-                    {communes.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
 
         <div className="modal-actions">
           <button className="cancel-btn" onClick={close}>
