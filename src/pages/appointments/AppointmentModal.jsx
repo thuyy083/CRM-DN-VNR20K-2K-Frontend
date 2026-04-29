@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+// AppointmentModal.jsx
+import { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import "./AppointmentModal.scss";
 import {
@@ -6,9 +7,10 @@ import {
   updateAppointment,
 } from "../../services/appointmentService";
 import {
-  getEnterprises,
   getContactsByEnterprise,
   createContact,
+  getEnterprises,
+  getEnterpriseById,
 } from "../../services/enterpriseService";
 
 function AppointmentModal({ appointment, close, reload }) {
@@ -21,7 +23,6 @@ function AppointmentModal({ appointment, close, reload }) {
     purpose: appointment?.purpose || "",
   });
 
-  const [enterprises, setEnterprises] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [showCreateContactForm, setShowCreateContactForm] = useState(false);
   const [creatingContact, setCreatingContact] = useState(false);
@@ -33,15 +34,20 @@ function AppointmentModal({ appointment, close, reload }) {
   });
   const [createContactErrors, setCreateContactErrors] = useState({});
 
-  useEffect(() => {
-    // Load enterprises list (for select dropdown)
-    // Could fetch a larger amount to show in select or search in select, using page=0, size=1000 for simplicity
-    getEnterprises(0, 1000)
-      .then((res) => {
-        setEnterprises(res.data?.data?.content || res.data?.content || []);
-      })
-      .catch((err) => console.error(err));
-  }, []);
+  const [enterpriseOptions, setEnterpriseOptions] = useState([]);
+  const [loadingEnterprise, setLoadingEnterprise] = useState(false);
+  const [page, setPage] = useState(0);
+
+  const [openEnterpriseDropdown, setOpenEnterpriseDropdown] = useState(false);
+  const [searchEnterprise, setSearchEnterprise] = useState("");
+
+  const [selectedEnterpriseObj, setSelectedEnterpriseObj] = useState(null);
+
+  const [inputValue, setInputValue] = useState("");
+
+  const enterpriseDropdownRef = useRef(null);
+  const cacheRef = useRef({});
+
 
   useEffect(() => {
     const fetchContacts = async () => {
@@ -68,6 +74,114 @@ function AppointmentModal({ appointment, close, reload }) {
     fetchContacts();
   }, [form.enterpriseId]);
 
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      const run = async () => {
+        const keyword = searchEnterprise.trim().toLowerCase();
+
+        if (keyword.length < 2) {
+          setEnterpriseOptions([]);
+          return;
+        }
+
+        if (cacheRef.current[keyword]) {
+          setEnterpriseOptions(cacheRef.current[keyword]);
+          return;
+        }
+
+        setLoadingEnterprise(true);
+
+        try {
+          const res = await getEnterprises(
+            0,
+            10,
+            keyword,
+            "",
+            "",
+            ""
+          );
+
+          const data = res.data?.data?.content || [];
+          setEnterpriseOptions(data);
+
+          cacheRef.current[keyword] = data;
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoadingEnterprise(false);
+        }
+      };
+
+      run();
+    }, 300);
+
+    return () => clearTimeout(debounce);
+  }, [searchEnterprise]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        enterpriseDropdownRef.current &&
+        !enterpriseDropdownRef.current.contains(event.target)
+      ) {
+        setOpenEnterpriseDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const loadSelectedEnterprise = async () => {
+      if (!appointment?.enterpriseId) return;
+
+      try {
+        const res = await getEnterpriseById(appointment.enterpriseId);
+
+        const enterprise = res.data?.data || res.data;
+
+        if (enterprise) {
+          setSelectedEnterpriseObj(enterprise);
+          setInputValue(enterprise.name);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadSelectedEnterprise();
+  }, [appointment]);
+
+  const handleLoadMore = async () => {
+    if (loadingEnterprise) return;
+
+    const nextPage = page + 1;
+    const keyword = searchEnterprise.trim().toLowerCase();
+
+    const res = await getEnterprises(
+      nextPage,
+      10,
+      keyword,
+      "",
+      "",
+      ""
+    );
+
+    const newData = res.data?.data?.content || [];
+
+    setEnterpriseOptions((prev) => {
+      const combined = [...prev, ...newData];
+
+      return Array.from(
+        new Map(combined.map((item) => [item.id, item])).values()
+      );
+    });
+
+    setPage(nextPage);
+  };
+
   // Handle datetime conversion for backend requirement format (dd/MM/yyyy HH:mm)
   // Input type datetime-local has format "YYYY-MM-DDThh:mm"
   const parseInitDateTime = (str) => {
@@ -90,134 +204,134 @@ function AppointmentModal({ appointment, close, reload }) {
     setForm({ ...form, [field]: value });
   };
 
-const validateContactForm = () => {
-  const nextErrors = {};
+  const validateContactForm = () => {
+    const nextErrors = {};
 
-  if (!contactForm.fullName.trim()) {
-    nextErrors.fullName = "Vui lòng nhập họ tên người liên hệ";
-  }
-
-  if (!contactForm.position.trim()) {
-    nextErrors.position = "Vui lòng nhập chức vụ";
-  }
-
-  if (!contactForm.phone.trim()) {
-    nextErrors.phone = "Vui lòng nhập số điện thoại";
-  }
-
-  if (
-    contactForm.email.trim() &&
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactForm.email.trim())
-  ) {
-    nextErrors.email = "Email không đúng định dạng";
-  }
-
-  if (
-    contactForm.phone.trim() &&
-    !/^[0-9+\s-]{8,20}$/.test(contactForm.phone.trim())
-  ) {
-    nextErrors.phone = "Số điện thoại không hợp lệ";
-  }
-
-  setCreateContactErrors(nextErrors);
-
-  return {
-    isValid: Object.keys(nextErrors).length === 0,
-    nextErrors,
-  };
-};
-
-  const handleCreateContact = async () => {
-  if (!form.enterpriseId) {
-    toast.error("Vui lòng chọn doanh nghiệp trước khi tạo người liên hệ");
-    return;
-  }
-
-  const { isValid, nextErrors } = validateContactForm();
-
-  if (!isValid) {
-    // show 1 số lỗi chính
-    if (nextErrors.fullName) toast.error(nextErrors.fullName);
-    else if (nextErrors.phone) toast.error(nextErrors.phone);
-    else if (nextErrors.position) toast.error(nextErrors.position);
-
-    return;
-  }
-
-  try {
-    setCreatingContact(true);
-
-    const payload = {
-      fullName: contactForm.fullName.trim(),
-      position: contactForm.position.trim(),
-      email: contactForm.email.trim(),
-      phone: contactForm.phone.trim(),
-    };
-
-    const created = await createContact(form.enterpriseId, payload);
-
-    const res = await getContactsByEnterprise(form.enterpriseId);
-    const list = res.data?.data || res.data || [];
-    setContacts(list);
-
-    const createdId = created?.id;
-    if (createdId) {
-      setForm((prev) => ({
-        ...prev,
-        contactId: createdId,
-      }));
+    if (!contactForm.fullName.trim()) {
+      nextErrors.fullName = "Vui lòng nhập họ tên người liên hệ";
     }
 
-    // reset
-    setContactForm({
-      fullName: "",
-      position: "",
-      email: "",
-      phone: "",
-    });
+    if (!contactForm.position.trim()) {
+      nextErrors.position = "Vui lòng nhập chức vụ";
+    }
 
-    setCreateContactErrors({});
-    setShowCreateContactForm(false);
+    if (!contactForm.phone.trim()) {
+      nextErrors.phone = "Vui lòng nhập số điện thoại";
+    }
 
-    toast.success("Tạo người liên hệ thành công");
-  }catch (err) {
-  console.error(err);
+    if (
+      contactForm.email.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactForm.email.trim())
+    ) {
+      nextErrors.email = "Email không đúng định dạng";
+    }
 
-  const res = err?.response?.data;
+    if (
+      contactForm.phone.trim() &&
+      !/^[0-9+\s-]{8,20}$/.test(contactForm.phone.trim())
+    ) {
+      nextErrors.phone = "Số điện thoại không hợp lệ";
+    }
 
-  // ✅ Nếu BE trả validation dạng array
-  if (Array.isArray(res?.message)) {
-    // map lỗi vào UI (input đỏ + text dưới)
-    const backendErrors = {};
-    res.message.forEach((e) => {
-      if (e?.field) {
-        backendErrors[e.field] = e.message;
+    setCreateContactErrors(nextErrors);
+
+    return {
+      isValid: Object.keys(nextErrors).length === 0,
+      nextErrors,
+    };
+  };
+
+  const handleCreateContact = async () => {
+    if (!form.enterpriseId) {
+      toast.error("Vui lòng chọn doanh nghiệp trước khi tạo người liên hệ");
+      return;
+    }
+
+    const { isValid, nextErrors } = validateContactForm();
+
+    if (!isValid) {
+      // show 1 số lỗi chính
+      if (nextErrors.fullName) toast.error(nextErrors.fullName);
+      else if (nextErrors.phone) toast.error(nextErrors.phone);
+      else if (nextErrors.position) toast.error(nextErrors.position);
+
+      return;
+    }
+
+    try {
+      setCreatingContact(true);
+
+      const payload = {
+        fullName: contactForm.fullName.trim(),
+        position: contactForm.position.trim(),
+        email: contactForm.email.trim(),
+        phone: contactForm.phone.trim(),
+      };
+
+      const created = await createContact(form.enterpriseId, payload);
+
+      const res = await getContactsByEnterprise(form.enterpriseId);
+      const list = res.data?.data || res.data || [];
+      setContacts(list);
+
+      const createdId = created?.id;
+      if (createdId) {
+        setForm((prev) => ({
+          ...prev,
+          contactId: createdId,
+        }));
       }
-    });
 
-    setCreateContactErrors(backendErrors);
+      // reset
+      setContactForm({
+        fullName: "",
+        position: "",
+        email: "",
+        phone: "",
+      });
 
-    // show toast list lỗi
-    toast.error(
-      <div style={{ maxHeight: 250, overflowY: "auto" }}>
-        {res.message.map((e, i) => (
-          <div key={i}>
-            {e.message}
-          </div>
-        ))}
-      </div>,
-      {
-        autoClose: false,
-        closeButton: true,
+      setCreateContactErrors({});
+      setShowCreateContactForm(false);
+
+      toast.success("Tạo người liên hệ thành công");
+    } catch (err) {
+      console.error(err);
+
+      const res = err?.response?.data;
+
+      // ✅ Nếu BE trả validation dạng array
+      if (Array.isArray(res?.message)) {
+        // map lỗi vào UI (input đỏ + text dưới)
+        const backendErrors = {};
+        res.message.forEach((e) => {
+          if (e?.field) {
+            backendErrors[e.field] = e.message;
+          }
+        });
+
+        setCreateContactErrors(backendErrors);
+
+        // show toast list lỗi
+        toast.error(
+          <div style={{ maxHeight: 250, overflowY: "auto" }}>
+            {res.message.map((e, i) => (
+              <div key={i}>
+                {e.message}
+              </div>
+            ))}
+          </div>,
+          {
+            autoClose: false,
+            closeButton: true,
+          }
+        );
+      } else {
+        toast.error(res?.message || "Có lỗi xảy ra");
       }
-    );
-  } else {
-    toast.error(res?.message || "Có lỗi xảy ra");
-  }
-} finally {
-    setCreatingContact(false);
-  }
-};
+    } finally {
+      setCreatingContact(false);
+    }
+  };
 
 
   const handleDtChange = (val) => {
@@ -280,7 +394,7 @@ const validateContactForm = () => {
   };
 
   return (
-    <div className="modal">
+    <div className="modal open">
       <div className="modal-box">
         <div className="modal-title-row">
           <h3>{appointment ? "Cập nhật lịch hẹn" : "Thêm lịch hẹn mới"}</h3>
@@ -292,18 +406,71 @@ const validateContactForm = () => {
         <div className="form-grid">
           <div className="form-col">
             <div className="form-group">
-              <label>Doanh nghiệp *</label>
-              <select
-                value={form.enterpriseId}
-                onChange={(e) => handleChange("enterpriseId", e.target.value)}
-              >
-                <option value="">-- Chọn doanh nghiệp --</option>
-                {enterprises.map((ent) => (
-                  <option key={ent.id} value={ent.id}>
-                    {ent.name}
-                  </option>
-                ))}
-              </select>
+              <div className="form-group" ref={enterpriseDropdownRef}>
+                <label>Doanh nghiệp *</label>
+
+                <input
+                  className="select-box"
+                  placeholder="Tìm doanh nghiệp..."
+                  value={inputValue}
+                  onFocus={() => {
+                    setOpenEnterpriseDropdown(true);
+                    setSearchEnterprise(""); // 🔥 reset để search mới
+                  }}
+                  onChange={(e) => {
+                    const val = e.target.value;
+
+                    setInputValue(val);        // hiển thị text
+                    setSearchEnterprise(val);  // dùng để search API
+
+                    handleChange("enterpriseId", ""); // reset chọn cũ
+                    setSelectedEnterpriseObj(null);   // 🔥 QUAN TRỌNG
+                  }}
+                />
+
+                {openEnterpriseDropdown && (
+                  <div className="select-dropdown">
+                    <div
+                      className="options"
+                      onScroll={(e) => {
+                        const bottom =
+                          e.target.scrollHeight - e.target.scrollTop <=
+                          e.target.clientHeight + 5;
+
+                        if (bottom && !loadingEnterprise) {
+                          handleLoadMore();
+                        }
+                      }}
+                    >
+                      {loadingEnterprise ? (
+                        <div className="option">Đang tìm...</div>
+                      ) : searchEnterprise.length > 0 &&
+                        searchEnterprise.length < 2 ? (
+                        <div className="option">Nhập ít nhất 2 ký tự</div>
+                      ) : enterpriseOptions.length === 0 ? (
+                        <div className="option">Không có dữ liệu</div>
+                      ) : (
+                        enterpriseOptions.map((enterprise) => (
+                          <div
+                            key={enterprise.id}
+                            className="option"
+                            onClick={() => {
+                              handleChange("enterpriseId", enterprise.id);
+
+                              setSelectedEnterpriseObj(enterprise); // 🔥 thêm dòng này
+                              setInputValue(enterprise.name);
+                              setSearchEnterprise(""); // reset keyword
+                              setOpenEnterpriseDropdown(false);
+                            }}
+                          >
+                            {enterprise.name}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="form-group">
@@ -321,7 +488,7 @@ const validateContactForm = () => {
               </select>
             </div>
 
-           
+
             <div className="form-group">
               <label>Hình thức *</label>
               <select
@@ -363,79 +530,79 @@ const validateContactForm = () => {
               />
             </div>
           </div>
-           {showCreateContactForm && (
-                      <div className="form-group full-width">
+          {showCreateContactForm && (
+            <div className="form-group full-width">
 
-             <div className="contact-inline-form">
-  <h4>Thêm người liên hệ</h4>
+              <div className="contact-inline-form">
+                <h4>Thêm người liên hệ</h4>
 
-<div className="contact-grid">
+                <div className="contact-grid">
 
-  <div className="form-group">
-    <input
-      className={createContactErrors.fullName ? "input-error" : ""}
-      placeholder="Họ tên *"
-      value={contactForm.fullName}
-      onChange={(e) =>
-        setContactForm({ ...contactForm, fullName: e.target.value })
-      }
-    />
-    {createContactErrors.fullName && (
-      <span className="error-text">{createContactErrors.fullName}</span>
-    )}
-  </div>
+                  <div className="form-group">
+                    <input
+                      className={createContactErrors.fullName ? "input-error" : ""}
+                      placeholder="Họ tên *"
+                      value={contactForm.fullName}
+                      onChange={(e) =>
+                        setContactForm({ ...contactForm, fullName: e.target.value })
+                      }
+                    />
+                    {createContactErrors.fullName && (
+                      <span className="error-text">{createContactErrors.fullName}</span>
+                    )}
+                  </div>
 
-  <div className="form-group">
-    <input
-      className={createContactErrors.position ? "input-error" : ""}
-      placeholder="Chức vụ"
-      value={contactForm.position}
-      onChange={(e) =>
-        setContactForm({ ...contactForm, position: e.target.value })
-      }
-    />
-    {createContactErrors.position && (
-      <span className="error-text">{createContactErrors.position}</span>
-    )}
-  </div>
+                  <div className="form-group">
+                    <input
+                      className={createContactErrors.position ? "input-error" : ""}
+                      placeholder="Chức vụ"
+                      value={contactForm.position}
+                      onChange={(e) =>
+                        setContactForm({ ...contactForm, position: e.target.value })
+                      }
+                    />
+                    {createContactErrors.position && (
+                      <span className="error-text">{createContactErrors.position}</span>
+                    )}
+                  </div>
 
-  <div className="form-group">
-    <input
-      className={createContactErrors.email ? "input-error" : ""}
-      placeholder="Email"
-      value={contactForm.email}
-      onChange={(e) =>
-        setContactForm({ ...contactForm, email: e.target.value })
-      }
-    />
-    {createContactErrors.email && (
-      <span className="error-text">{createContactErrors.email}</span>
-    )}
-  </div>
+                  <div className="form-group">
+                    <input
+                      className={createContactErrors.email ? "input-error" : ""}
+                      placeholder="Email"
+                      value={contactForm.email}
+                      onChange={(e) =>
+                        setContactForm({ ...contactForm, email: e.target.value })
+                      }
+                    />
+                    {createContactErrors.email && (
+                      <span className="error-text">{createContactErrors.email}</span>
+                    )}
+                  </div>
 
-  <div className="form-group">
-    <input
-      className={createContactErrors.phone ? "input-error" : ""}
-      placeholder="SĐT"
-      value={contactForm.phone}
-      onChange={(e) =>
-        setContactForm({ ...contactForm, phone: e.target.value })
-      }
-    />
-    {createContactErrors.phone && (
-      <span className="error-text">{createContactErrors.phone}</span>
-    )}
-  </div>
+                  <div className="form-group">
+                    <input
+                      className={createContactErrors.phone ? "input-error" : ""}
+                      placeholder="SĐT"
+                      value={contactForm.phone}
+                      onChange={(e) =>
+                        setContactForm({ ...contactForm, phone: e.target.value })
+                      }
+                    />
+                    {createContactErrors.phone && (
+                      <span className="error-text">{createContactErrors.phone}</span>
+                    )}
+                  </div>
 
-</div>
+                </div>
 
-  <button onClick={handleCreateContact} disabled={creatingContact}>
-    {creatingContact ? "Đang tạo..." : "Tạo người liên hệ"}
-  </button>
-</div>
-</div>
+                <button onClick={handleCreateContact} disabled={creatingContact}>
+                  {creatingContact ? "Đang tạo..." : "Tạo người liên hệ"}
+                </button>
+              </div>
+            </div>
 
-            )}
+          )}
 
         </div>
         <div className="form-group full-width">

@@ -21,15 +21,26 @@ $bg-overlay: rgba(17, 24, 39, 0.4);
    MODAL OVERLAY
 ========================= */
 .modal {
-    position: fixed;
-    inset: 0;
-    background: $bg-overlay;
-    backdrop-filter: blur(4px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  position: fixed;
+  inset: 0;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+
+  z-index: 9999; // 👈 cao hơn sidebar
+
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
+
+  &.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 /* =========================
@@ -37,12 +48,15 @@ $bg-overlay: rgba(17, 24, 39, 0.4);
 ========================= */
 .modal-box {
     background: #ffffff;
-    width: 580px;
-    /* Nới rộng một chút cho 2 cột thoáng hơn */
-    max-width: 95vw;
-    border-radius: 16px;
-    padding: 32px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+width: min(600px, calc(100vw - 24px));
+  max-width: 100%;
+  max-height: 92vh;
+
+  overflow-y: auto;
+
+  border-radius: 16px;
+  padding: 28px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
     animation: modalShow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
     max-height: 90vh;
@@ -292,4 +306,23 @@ $bg-overlay: rgba(17, 24, 39, 0.4);
   font-size: 14px;
   padding: 4px;
   background: transparent;
+}
+
+.dropdown-menu {
+  position: absolute;
+  z-index: 10000; // 👈 cao hơn modal-box
+}
+.multi-select {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 768px) {
+  .modal-box {
+    padding: 18px;
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
 }

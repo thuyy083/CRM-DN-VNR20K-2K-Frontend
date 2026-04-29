@@ -178,6 +178,13 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
     }
   }, [form.role]);
 
+  useEffect(() => {
+  document.body.style.overflow = "hidden";
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, []);
+
   const handleChange = (field, value) => {
     setForm({ ...form, [field]: value });
     if (errors[field]) setErrors({ ...errors, [field]: "" });
@@ -426,8 +433,8 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
   );
 
   return (
-    <div className="modal">
-      <div className="modal-box" ref={dropdownRef}>
+<div className="modal open" onClick={close}>
+  <div className="modal-box" onClick={(e) => e.stopPropagation()} ref={dropdownRef}>
         <h3>{user ? "Cập nhật nhân viên" : "Thêm nhân viên"}</h3>
 
         <div className="form-content">

@@ -278,8 +278,8 @@ function EnterpriseDetailModal({
   });
 
   return (
-    <div className="modal">
-      <div className="modal-box large">
+<div className="modal open" onClick={close}>
+  <div className="modal-box large" onClick={(e) => e.stopPropagation()}>
         <div className="modal-title-row">
           <h3>Chi tiết doanh nghiệp</h3>
           <button type="button" className="modal-close-btn" onClick={close}>
@@ -298,21 +298,54 @@ function EnterpriseDetailModal({
             Sửa thông tin
           </button>
         </div>
-        <div className="info-grid">
-          <div>
-            <b>Tên</b>
-            <span>{enterpriseInfo?.name}</span>
-          </div>
-          <div><b>MST:</b> {enterpriseInfo?.taxCode}</div>
-          <div><b>Cụm:</b> {enterpriseInfo?.region}</div>
-          <div><b>Loại DN:</b> {enterpriseInfo?.type}</div>
-          <div><b>Ngành:</b> {industryMap[enterpriseInfo?.industry] || "-"}</div>
-          <div><b>Nhân sự:</b> {enterpriseInfo?.employeeCount}</div>
-          <div><b>Phone:</b> {enterpriseInfo?.phone}</div>
-          <div><b>Website:</b> {enterpriseInfo?.website}</div>
-          <div><b>Ngày thành lập:</b> {enterpriseInfo?.establishedDate}</div>
+<div className="info-grid">
+  <div className="info-item">
+    <span className="label">Tên</span>
+    <span className="value">{enterpriseInfo?.name}</span>
+  </div>
 
-        </div>
+  <div className="info-item">
+    <span className="label">MST</span>
+    <span className="value">{enterpriseInfo?.taxCode}</span>
+  </div>
+
+  <div className="info-item">
+    <span className="label">Cụm</span>
+    <span className="value">{enterpriseInfo?.region}</span>
+  </div>
+
+  <div className="info-item">
+    <span className="label">Loại DN</span>
+    <span className="value">{enterpriseInfo?.type}</span>
+  </div>
+
+  <div className="info-item">
+    <span className="label">Ngành</span>
+    <span className="value">
+      {industryMap[enterpriseInfo?.industry] || "-"}
+    </span>
+  </div>
+
+  <div className="info-item">
+    <span className="label">Nhân sự</span>
+    <span className="value">{enterpriseInfo?.employeeCount}</span>
+  </div>
+
+  <div className="info-item">
+    <span className="label">Phone</span>
+    <span className="value">{enterpriseInfo?.phone}</span>
+  </div>
+
+  <div className="info-item">
+    <span className="label">Website</span>
+    <span className="value">{enterpriseInfo?.website}</span>
+  </div>
+
+  <div className="info-item full">
+    <span className="label">Ngày thành lập</span>
+    <span className="value">{enterpriseInfo?.establishedDate}</span>
+  </div>
+</div>
 
         {/* CONTACT */}
         <div className="contact-header">
