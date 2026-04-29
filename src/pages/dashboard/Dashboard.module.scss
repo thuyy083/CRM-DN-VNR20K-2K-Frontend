@@ -1,128 +1,87 @@
+// ─── Design Tokens ───────────────────────────────────────────────────────────
+$red: #c8102e;
+$red-dark: #9b0c24;
+$red-light: #fef2f2;
+$red-border: #fecaca;
+
+$green: #16a34a;
+$green-light: #f0fdf4;
+$green-border: #bbf7d0;
+
+$text-primary: #0f172a;
+$text-secondary: #475569;
+$text-muted: #94a3b8;
+
+$bg-page: #f1f5f9;
+$bg-card: #ffffff;
+$border: #e8ecf0;
+
+$radius-sm: 8px;
+$radius-md: 14px;
+$radius-lg: 20px;
+
+$shadow-card:
+  0 1px 3px rgba(0, 0, 0, 0.06),
+  0 1px 2px rgba(0, 0, 0, 0.04);
+$shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+// ─── Layout ──────────────────────────────────────────────────────────────────
 .dashboardContainer {
-  padding: 24px;
-  background: #f8f9fa;
+  padding: 28px 32px;
+  background: $bg-page;
   min-height: 100vh;
 }
 
-/* HEADER */
-.dashboardHeader {
-  margin-bottom: 32px;
-}
-
-.title {
-  font-size: 26px;
-  font-weight: 700;
-  color: #1a1a1a;
-}
-
-.subtitle {
-  color: #6c757d;
+// ─── Loading ─────────────────────────────────────────────────────────────────
+.loadingScreen {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: $text-secondary;
   font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
-/* MAIN GRID */
-.mainStatsWrapper {
-  display: grid;
-  grid-template-columns: 1.2fr 2fr;
-  gap: 24px;
-  margin-bottom: 32px;
+.loadingSpinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid $border;
+  border-top-color: $red;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
-@media (max-width: 1200px) {
-  .mainStatsWrapper {
-    grid-template-columns: 1fr;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
-/* CARD CHÍNH */
-.interactionCard {
-  background: linear-gradient(135deg, #c8102e, #9b0c24);
-  color: #fff;
-  padding: 28px;
-  border-radius: 24px;
+// ─── Header ──────────────────────────────────────────────────────────────────
+.dashboardHeader {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 12px 24px rgba(200, 16, 46, 0.2);
+  align-items: flex-end;
+  margin-bottom: 24px;
 }
 
-.cardInfo label {
-  font-size: 15px;
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: $text-primary;
+  margin: 0 0 4px;
+  letter-spacing: -0.3px;
 }
 
-.value {
-  font-size: 48px;
-  font-weight: 800;
-  margin: 12px 0;
-}
-
-.subLabel {
+.subtitle {
   font-size: 13px;
-}
-
-/* CHART */
-.cardChart {
-  position: relative;
-}
-
-.chartPercentage {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-weight: 700;
-}
-
-/* MINI CARD */
-.secondaryGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-}
-
-.miniCard {
-  background: #fff;
-  padding: 24px;
-  border-radius: 20px;
-  border: 1px solid #edf2f7;
-  transition: all 0.3s;
-}
-
-.miniCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 15px rgba(0,0,0,0.1);
-}
-
-.highlight {
-  border-left: 4px solid #c8102e;
-  background: #fffafa;
-}
-
-.miniValue {
-  font-size: 28px;
-  font-weight: 700;
-  margin-top: 10px;
-}
-
-.statusActive {
-  color: #38a169;
-}
-
-/* CHART BOX */
-.employeeChartBox {
-  background: #fff;
-  padding: 32px;
-  border-radius: 24px;
-}
-
-.chartHeaderRow {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.sectionTitle {
-  font-weight: 700;
+  color: $text-muted;
+  margin: 0;
+  letter-spacing: 0.01em;
 }
 
 .filterGroup {
@@ -130,18 +89,723 @@
   gap: 10px;
 }
 
-.filterSelect {
-  height: 36px;
-  padding: 0px 12px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
+.selectWrapper {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid $text-secondary;
+    pointer-events: none;
+  }
 }
 
-/* LOADING */
-.loading {
+.filterSelect {
+  appearance: none;
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+  padding: 8px 32px 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: $text-primary;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover {
+    border-color: darken($border, 8%);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $red;
+    box-shadow: 0 0 0 3px rgba($red, 0.1);
+  }
+}
+
+// ─── KPI Row ─────────────────────────────────────────────────────────────────
+.kpiRow {
+  display: grid;
+  grid-template-columns: 280px repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+
+  @media (max-width: 1280px) {
+    grid-template-columns: 1fr 1fr;
+    .interactionCard {
+      grid-column: span 2;
+    }
+  }
+}
+
+// Hero interaction card
+.interactionCard {
+  background: linear-gradient(140deg, $red 0%, $red-dark 100%);
+  border-radius: $radius-lg;
+  padding: 24px;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  height: 80vh;
-  color: #c8102e;
+  color: white;
+  box-shadow: 0 4px 20px rgba($red, 0.3);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -24px;
+    right: -24px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+.interactionMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 1;
+}
+
+.cardLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.75;
+}
+
+.interactionValue {
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1;
+  margin: 6px 0;
+  letter-spacing: -1px;
+}
+
+.interactionSub {
+  font-size: 12px;
+  opacity: 0.7;
+  font-weight: 400;
+
+  strong {
+    font-weight: 600;
+    opacity: 1;
+  }
+}
+
+.pieWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.pct {
+  position: absolute;
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+  pointer-events: none;
+}
+
+// Mini KPI cards
+.miniCard {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: $radius-md;
+  padding: 20px;
+  box-shadow: $shadow-card;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+
+  &:hover {
+    box-shadow: $shadow-hover;
+    transform: translateY(-1px);
+  }
+
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: $text-muted;
+    cursor: default;
+  }
+}
+
+.miniCardAccent {
+  background: $red-light;
+  border-color: $red-border;
+}
+
+.miniIcon {
+  color: $red;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+
+.miniVal {
+  font-size: 28px;
+  font-weight: 700;
+  color: $text-primary;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  margin-top: 4px;
+}
+
+.accentVal {
+  color: $red;
+}
+
+// ─── Delta Badge ──────────────────────────────────────────────────────────────
+.deltaBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 100px;
+  padding: 3px 8px 3px 6px;
+  margin-top: 6px;
+  width: fit-content;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.deltaUp {
+  background: $green-light;
+  color: $green;
+  border: 1px solid $green-border;
+}
+
+.deltaDown {
+  background: $red-light;
+  color: $red;
+  border: 1px solid $red-border;
+}
+
+.deltaFlat {
+  background: #f8fafc;
+  color: $text-muted;
+  border: 1px solid $border;
+}
+
+.deltaUpInvert {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.deltaDownInvert {
+  background: rgba(0, 0, 0, 0.15);
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.deltaSuffix {
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+// ─── Monthly Trend (Lũy kế) ───────────────────────────────────────────────────
+.trendBox {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: $radius-lg;
+  padding: 24px;
+  box-shadow: $shadow-card;
+  margin-bottom: 20px;
+}
+
+.trendHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+
+  .sectionTitle {
+    margin-bottom: 0;
+  }
+}
+
+.trendLegend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: $text-muted;
+  flex-shrink: 0;
+}
+
+.legendLine {
+  display: inline-block;
+  width: 22px;
+  height: 2.5px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+// 3 stat cards above the chart
+.trendStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.trendStat {
+  background: $bg-page;
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.trendStatLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: $text-muted;
+}
+
+.trendStatVal {
+  font-size: 26px;
+  font-weight: 700;
+  color: $text-primary;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.trendStatGreen {
+  color: $green;
+}
+
+// delta inside trend stat card
+.trendDelta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 100px;
+  padding: 3px 8px;
+  width: fit-content;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.trendDeltaUp {
+  background: $green-light;
+  color: $green;
+  border: 1px solid $green-border;
+}
+
+.trendDeltaDown {
+  background: $red-light;
+  color: $red;
+  border: 1px solid $red-border;
+}
+
+// Trend chart tooltip
+.trendTooltip {
+  background: $text-primary;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: $radius-sm;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  min-width: 160px;
+}
+
+.trendTooltipDay {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.6;
+  margin-bottom: 2px;
+}
+
+.trendTooltipRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 400;
+
+  strong {
+    font-weight: 600;
+  }
+}
+
+.trendTooltipDiff {
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  padding-top: 4px;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+// ─── Bottom Grid ─────────────────────────────────────────────────────────────
+.bottomGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chartBox,
+.listBox {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: $radius-lg;
+  padding: 24px;
+  box-shadow: $shadow-card;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: $text-primary;
+  margin: 0 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.1px;
+
+  svg {
+    color: $text-muted;
+    flex-shrink: 0;
+  }
+}
+
+// ─── Tooltips ────────────────────────────────────────────────────────────────
+.barTooltip {
+  background: $text-primary;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: $radius-sm;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+.barTooltipName {
+  font-weight: 600;
+  font-size: 11px;
+  opacity: 0.75;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.barTooltipVal {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.barTooltipSub {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+// ─── Region Summary ──────────────────────────────────────────────────────────
+.regionSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  background: $bg-page;
+  border-radius: $radius-sm;
+  border: 1px solid $border;
+}
+
+.regionRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.regionDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.regionName {
+  font-weight: 600;
+  color: $text-primary;
+  min-width: 44px;
+}
+
+.regionContacted {
+  color: $text-muted;
+  font-size: 11px;
+  flex: 1;
+}
+
+.regionPct {
+  font-size: 11px;
+  font-weight: 700;
+  color: $text-secondary;
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+// ─── Appointment List ────────────────────────────────────────────────────────
+.scrollList {
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0 -4px;
+  padding: 0 4px;
+
+  &::-webkit-scrollbar {
+    width: 3px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #dde3ea;
+    border-radius: 10px;
+  }
+}
+
+.appItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid $border;
+  transition: background 0.15s ease;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  &:first-child {
+    padding-top: 0;
+  }
+  &:hover .appInfo strong {
+    color: $red;
+  }
+}
+
+.appDateBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 52px;
+  background: $red-light;
+  border: 1px solid $red-border;
+  border-radius: $radius-sm;
+  padding: 6px 8px;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.appTime {
+  font-size: 13px;
+  font-weight: 700;
+  color: $red;
+  line-height: 1;
+}
+
+.appDate {
+  font-size: 10px;
+  font-weight: 500;
+  color: $red;
+  opacity: 0.7;
+  line-height: 1;
+}
+
+.appDow {
+  font-size: 10px;
+  font-weight: 600;
+  color: $red;
+  opacity: 0.65;
+  line-height: 1;
+}
+
+.appInfo {
+  flex: 1;
+  min-width: 0;
+
+  strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: $text-primary;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.15s ease;
+  }
+
+  p {
+    font-size: 12px;
+    color: $text-muted;
+    margin: 3px 0 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.emptyNote {
+  font-size: 13px;
+  color: $text-muted;
+  text-align: center;
+  padding: 32px 0;
+  margin: 0;
+}
+
+// ─── Warning Box ──────────────────────────────────────────────────────────────
+.warningBox {
+  border-color: $red-border;
+  background: #fffafa;
+}
+
+.warnIcon {
+  color: $red !important;
+}
+
+.warnSummary {
+  font-size: 12px;
+  color: $text-secondary;
+  background: $red-light;
+  border: 1px solid $red-border;
+  border-radius: $radius-sm;
+  padding: 9px 12px;
+  margin-bottom: 14px;
+  line-height: 1.6;
+
+  strong {
+    color: $red;
+    font-weight: 700;
+  }
+}
+
+.warningItem {
+  display: flex;
+  align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid lighten($red-border, 4%);
+  gap: 12px;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  &:first-child {
+    padding-top: 0;
+  }
+}
+
+.warnBadge {
+  font-size: 10px;
+  font-weight: 700;
+  color: $red;
+  background: $red-light;
+  border: 1px solid $red-border;
+  border-radius: 4px;
+  padding: 3px 7px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+}
+
+.entMain {
+  flex: 1;
+  min-width: 0;
+
+  strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: $text-primary;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  span {
+    font-size: 11px;
+    color: $text-muted;
+    display: block;
+    margin-top: 2px;
+  }
+}
+
+.entPhone {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: $red;
+  text-decoration: none;
+  white-space: nowrap;
+  padding: 4px 8px;
+  border-radius: $radius-sm;
+  border: 1px solid $red-border;
+  background: $red-light;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background: darken($red-light, 2%);
+  }
+}
+
+.entConsultant {
+  font-size: 11px;
+  color: $text-muted;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
