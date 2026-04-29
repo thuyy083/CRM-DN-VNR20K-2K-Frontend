@@ -36,6 +36,9 @@ function Enterprises() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
 
+const [exportLoading, setExportLoading] = useState(false);
+
+
   const { role, region } = useSelector((state) => state.auth.user || {});
 
   const getPotentialStorageMap = () => {
@@ -160,33 +163,41 @@ function Enterprises() {
     }
   };
 
-  const handleExport = async () => {
-    try {
-      const res = await exportEnterprises({
-        keyword: searchTerm,
-        status: filterStatus === "ALL" ? "" : filterStatus,
-      });
+const handleExport = async () => {
+  if (exportLoading) return;
 
-      const blob = new Blob([res.data], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
+  try {
+    setExportLoading(true);
 
-      const url = window.URL.createObjectURL(blob);
+    const res = await exportEnterprises({
+      keyword: searchTerm,
+      status: filterStatus === "ALL" ? "" : filterStatus,
+    });
 
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "enterprises.xlsx";
+    const blob = new Blob([res.data], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
 
-      document.body.appendChild(link);
-      link.click();
+    const url = window.URL.createObjectURL(blob);
 
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error(err);
-      toast.error("Xuất file thất bại");
-    }
-  };
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "enterprises.xlsx";
+
+    document.body.appendChild(link);
+    link.click();
+
+    link.remove();
+    window.URL.revokeObjectURL(url);
+
+    toast.success("Xuất file thành công");
+  } catch (err) {
+    console.error(err);
+    toast.error("Xuất file thất bại");
+  } finally {
+    setExportLoading(false);
+  }
+};
 
   const handleDeleteEnterprise = async (enterprise) => {
     const confirmDelete = window.confirm(
@@ -529,11 +540,19 @@ function Enterprises() {
               <button className="add-btn" onClick={handleDownloadTemplate}>
                 Tải file mẫu
               </button>
-              <button className="add-btn" onClick={handleExport}>
-                Xuất Excel
+              <button className="add-btn" onClick={handleExport} disabled={exportLoading}>
+                {exportLoading ? "Đang xuất file..." : "Xuất Excel"}
               </button>
             </>
           )}
+          {exportLoading && (
+  <div className="export-overlay">
+    <div className="export-box">
+      <div className="spinner"></div>
+      <p>Đang xuất file, vui lòng chờ...</p>
+    </div>
+  </div>
+)}
           <button className="add-btn" onClick={() => {
             setSelectedEnterprise(null);
             setOpenModal(true);
