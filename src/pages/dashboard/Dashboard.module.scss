@@ -1,4 +1,4 @@
-// ─── Design Tokens ───────────────────────────────────────────────────────────
+@use "sass:color";
 $red: #c8102e;
 $red-dark: #9b0c24;
 $red-light: #fef2f2;
@@ -121,9 +121,9 @@ $shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
     border-color 0.15s ease,
     box-shadow 0.15s ease;
 
-  &:hover {
-    border-color: darken($border, 8%);
-  }
+&:hover {
+  border-color: color.adjust($border, $lightness: -8%);
+}
 
   &:focus {
     outline: none;
@@ -735,7 +735,7 @@ $shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   padding: 11px 0;
-  border-bottom: 1px solid lighten($red-border, 4%);
+border-bottom: 1px solid color.adjust($red-border, $lightness: 4%);
   gap: 12px;
 
   &:last-child {
@@ -798,9 +798,9 @@ $shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
   transition: background 0.15s ease;
   flex-shrink: 0;
 
-  &:hover {
-    background: darken($red-light, 2%);
-  }
+&:hover {
+  background: color.adjust($red-light, $lightness: -2%);
+}
 }
 
 .entConsultant {
