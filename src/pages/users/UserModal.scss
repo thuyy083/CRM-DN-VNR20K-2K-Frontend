@@ -10,19 +10,32 @@ $bg-overlay: rgba(17, 24, 39, 0.42);
 .modal {
   position: fixed;
   inset: 0;
-  background: $bg-overlay;
-  backdrop-filter: blur(4px);
+
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1100;
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
+
+  background: rgba(15, 23, 42, 0.5); // đậm hơn
+  backdrop-filter: blur(4px); // 👈 làm mờ cả sidebar
+
+  z-index: 9999; // 👈 cao hơn tất cả layout
+
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
+
+  &.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 .modal-box.users-modal {
+
+    width: min(980px, calc(100vw - 24px));
+  max-width: 100%;
+  max-height: 92vh;
   background: #ffffff;
-  width: 980px;
-  max-width: 96vw;
   max-height: 92vh;
   overflow: auto;
   border-radius: 16px;
@@ -65,6 +78,8 @@ $bg-overlay: rgba(17, 24, 39, 0.42);
 .form-group {
   display: flex;
   flex-direction: column;
+    position: relative;
+
 
   label {
     font-size: 14px;
@@ -117,6 +132,24 @@ $bg-overlay: rgba(17, 24, 39, 0.42);
   textarea {
     min-height: 76px;
   }
+}
+.select-dropdown {
+  position: absolute;
+  top: 100%; /* nằm dưới input */
+  left: 0;
+  width: 100%;
+  z-index: 999;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-top: 4px;
+  max-height: 250px;
+  overflow: hidden;
+}
+
+.options {
+  max-height: 250px;
+  overflow-y: auto;
 }
 
 .full-width {

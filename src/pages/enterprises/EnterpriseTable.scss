@@ -1,12 +1,29 @@
 .enterprise-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 
   th, td {
     padding: 10px;
     border-bottom: 1px solid #eee;
   }
 
+    th:nth-child(1), td:nth-child(1) { width: 60px; }   // STT
+    th:nth-child(2), td:nth-child(2) { width: 450px; }  // Tên DN
+    th:nth-child(3), td:nth-child(3) { width: 130px; }  // MST
+    th:nth-child(4), td:nth-child(4) { width: 70px; }  // Cụm
+    th:nth-child(5), td:nth-child(5) { width: 70px; }  // Loại
+    th:nth-child(6), td:nth-child(6) { width: 80px; }  // Nhân sự
+    th:nth-child(7), td:nth-child(7) { width: 120px; }  // Điện thoại
+    th:nth-child(8), td:nth-child(8) { width: 90px; }  // Action
+
+    // th:nth-child(3),
+    // th:nth-child(4),
+    // th:nth-child(5),
+    // th:nth-child(6),
+    // th:nth-child(7) {
+    //   text-align: center;
+    // }
   td:last-child {
     min-width: 150px;
   }
