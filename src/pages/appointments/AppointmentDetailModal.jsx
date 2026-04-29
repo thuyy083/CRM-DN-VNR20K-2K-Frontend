@@ -24,8 +24,8 @@ function AppointmentDetailModal({ appointment, close }) {
   };
 
   return (
-    <div className="modal">
-      <div className="modal-box">
+<div className="modal open" onClick={close}>
+  <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-title-row">
           <h3>Chi tiết lịch hẹn #{appointment.id}</h3>
           <button type="button" className="modal-close-btn" onClick={close}>

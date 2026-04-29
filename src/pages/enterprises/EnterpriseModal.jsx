@@ -232,10 +232,16 @@ function EnterpriseModal({ enterprise, close, reload }) {
       toast.error("Có lỗi xảy ra");
     }
   };
+  useEffect(() => {
+  document.body.style.overflow = "hidden";
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, []);
 
   return (
-    <div className="modal">
-      <div className="modal-box">
+<div className="modal open" onClick={close}>
+  <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-title-row">
           <h3>{enterprise ? "Cập nhật doanh nghiệp" : "Thêm doanh nghiệp"}</h3>
           <button type="button" className="modal-close-btn" onClick={close}>

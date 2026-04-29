@@ -1,9 +1,11 @@
+// UserModal.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import "./UserModal.scss";
 
 import { createContact, getContactsByEnterprise } from "../../services/enterpriseContactService";
 import { createInteraction, updateInteraction } from "../../services/interactionService";
+import { getEnterprises } from "../../services/enterpriseService";
 
 const getEnterpriseId = (enterprise) =>
   enterprise?.id ?? enterprise?.enterpriseId ?? enterprise?.enterprise_id ?? "";
@@ -74,13 +76,19 @@ const toIsoDate = (value) => {
   return date.toISOString();
 };
 
-function UserModal({ interaction, enterprises, close, reload }) {
+function UserModal({ interaction, close, reload }) {
   const [contacts, setContacts] = useState([]);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [showCreateContactForm, setShowCreateContactForm] = useState(false);
   const [creatingContact, setCreatingContact] = useState(false);
   const [createContactErrors, setCreateContactErrors] = useState({});
   const [errors, setErrors] = useState({});
+
+  const [enterpriseOptions, setEnterpriseOptions] = useState([]);
+  const [loadingEnterprise, setLoadingEnterprise] = useState(false);
+  const [page, setPage] = useState(0);
+
+  const [selectedEnterpriseObj, setSelectedEnterpriseObj] = useState(null);
 
   const [openEnterpriseDropdown, setOpenEnterpriseDropdown] = useState(false);
   const [searchEnterprise, setSearchEnterprise] = useState("");
@@ -108,23 +116,20 @@ function UserModal({ interaction, enterprises, close, reload }) {
   });
 
   const selectedEnterprise = useMemo(() => {
-    return enterprises.find(
-      (e) => getEnterpriseId(e) === form.enterpriseId
+    if (!Array.isArray(enterpriseOptions)) return null;
+
+    return enterpriseOptions.find(
+      (e) => String(getEnterpriseId(e)) === String(form.enterpriseId)
     );
-  }, [enterprises, form.enterpriseId]);
+  }, [enterpriseOptions, form.enterpriseId]);
+
   const selectedEnterpriseName = (getEnterpriseName(selectedEnterprise) || "").trim().toLowerCase();
   const isViettelEnterprise =
     selectedEnterpriseName === "vt" || selectedEnterpriseName.includes("viettel");
-  const filteredEnterprises = useMemo(() => {
-    return enterprises.filter((e) =>
-      (getEnterpriseName(e) || "")
-        .toLowerCase()
-        .includes(searchEnterprise.toLowerCase())
-    );
-  }, [enterprises, searchEnterprise]);
 
-
-
+  useEffect(() => {
+    setPage(0);
+  }, [searchEnterprise]);
   useEffect(() => {
     const run = async () => {
       if (!form.enterpriseId) {
@@ -192,6 +197,58 @@ function UserModal({ interaction, enterprises, close, reload }) {
       setShowCreateContactForm(true);
     }
   }, [interaction, form.enterpriseId, loadingContacts, contacts.length, isViettelEnterprise]);
+
+  const cacheRef = useRef({});
+
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      const run = async () => {
+        const keyword = searchEnterprise.trim().toLowerCase();
+
+        // nếu nhập < 2 ký tự thì bỏ qua
+        if (keyword.length < 2) {
+          setEnterpriseOptions([]);
+          return;
+        }
+
+        // check cache
+        if (cacheRef.current[keyword]) {
+          setEnterpriseOptions(cacheRef.current[keyword]);
+          return;
+        }
+
+        setLoadingEnterprise(true);
+
+        try {
+          const res = await getEnterprises(
+            0,
+            10,
+            keyword,
+            "",   // status
+            "",   // region
+            ""    // type → để rỗng để search tất cả
+          );
+          console.log("searchEnterprise:", searchEnterprise);
+
+          const data = res.data?.data?.content || [];
+
+          const safeData = Array.isArray(data) ? data : [];
+          setEnterpriseOptions(safeData);
+
+          // cache lại
+          cacheRef.current[keyword] = safeData;
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoadingEnterprise(false);
+        }
+      };
+
+      run();
+    }, 300);
+
+    return () => clearTimeout(debounce);
+  }, [searchEnterprise]);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -312,6 +369,45 @@ function UserModal({ interaction, enterprises, close, reload }) {
     }
   };
 
+  const handleLoadMore = async () => {
+    if (loadingEnterprise) return;
+
+    const nextPage = page + 1;
+    const keyword = searchEnterprise.trim().toLowerCase();
+
+const res = await getEnterprises(
+  nextPage,
+  10,
+  keyword,
+  "",
+  "",
+  ""
+);
+
+    const newData = res.data?.data?.content || [];
+
+setEnterpriseOptions(prev => {
+  const combined = [
+    ...(Array.isArray(prev) ? prev : []),
+    ...(Array.isArray(newData) ? newData : [])
+  ];
+
+  // 🔥 remove duplicate theo id
+  const unique = Array.from(
+    new Map(combined.map(item => [getEnterpriseId(item), item])).values()
+  );
+
+  return unique;
+});
+
+    cacheRef.current[keyword] = [
+      ...(cacheRef.current[keyword] || []),
+      ...newData
+    ];
+
+    setPage(nextPage);
+  };
+
   const validate = () => {
 
     const nextErrors = {};
@@ -420,22 +516,21 @@ function UserModal({ interaction, enterprises, close, reload }) {
         setErrors(backendErrors);
       }
 
-      // Đồng bộ toast lỗi chung với các module khác (đã có ToastContainer ở main.jsx)
       toast.error("Có lỗi xảy ra");
     }
   };
 
   return (
-    <div className="modal" onClick={close}>
-      <div className="modal-box users-modal" onClick={(e) => e.stopPropagation()}>
+  <div className={`modal ${true ? "open" : ""}`} onClick={close}>
+        <div className="modal-box users-modal" onClick={(e) => e.stopPropagation()}>
         <h3>{interaction ? "Cập nhật tiếp xúc" : "Thêm tiếp xúc"}</h3>
 
         <div className="section-title">Thông tin tiếp xúc</div>
-        {!interaction && enterprises.length === 0 && (
+        {/* {!interaction && enterprises.length === 0 && (
           <p className="form-hint-warning">
             Chưa có doanh nghiệp trong hệ thống. Hãy tạo doanh nghiệp trước khi thêm tiếp xúc.
           </p>
-        )}
+        )} */}
 
         <div className="form-grid">
           <div className="form-group" ref={enterpriseDropdownRef}>
@@ -443,65 +538,77 @@ function UserModal({ interaction, enterprises, close, reload }) {
               Doanh nghiệp <span className="required">*</span>
             </label>
 
-            <div
-              className={`select-box ${openEnterpriseDropdown ? "active" : ""} ${errors.enterpriseId ? "input-error" : ""
-                }`}
-              onClick={() => !interaction && setOpenEnterpriseDropdown(!openEnterpriseDropdown)}
-            >
-              <span className={form.enterpriseId ? "selected" : "placeholder"}>
-                {selectedEnterprise
-                  ? getEnterpriseName(selectedEnterprise)
-                  : "Chọn doanh nghiệp"}
-              </span>
-
-              <svg
-                className={`icon ${openEnterpriseDropdown ? "open" : ""}`}
-                viewBox="0 0 24 24"
-              >
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </div>
+            <input
+              className={`select-box ${errors.enterpriseId ? "input-error" : ""}`}
+              placeholder="Tìm doanh nghiệp..."
+              value={searchEnterprise}
+              onFocus={() => {
+                setOpenEnterpriseDropdown(true);
+                setSearchEnterprise("");
+              }} onChange={(e) => {
+                setSearchEnterprise(e.target.value);
+                handleChange("enterpriseId", ""); // reset chọn cũ khi gõ
+              }}
+            />
 
             {openEnterpriseDropdown && !interaction && (
               <div className="select-dropdown">
-                <input
-                  className="search"
-                  placeholder="Tìm doanh nghiệp..."
-                  value={searchEnterprise}
-                  onChange={(e) => setSearchEnterprise(e.target.value)}
-                />
 
-                <div className="options">
-                  {filteredEnterprises.map((enterprise) => (
-                    <div
-                      key={getEnterpriseId(enterprise)}
-                      className={`option ${String(form.enterpriseId) === String(getEnterpriseId(enterprise))
-                        ? "selected"
-                        : ""
-                        }`}
-                      onClick={() => {
-                        handleChange("enterpriseId", getEnterpriseId(enterprise));
+                <div className="options"
+                  onScroll={(e) => {
+                    const bottom =
+                      e.target.scrollHeight - e.target.scrollTop <= e.target.clientHeight + 5;
+if (bottom && !loadingEnterprise) {
+  handleLoadMore();
+}
+                  }}
+                >
+                  {loadingEnterprise ? (
+                    <div className="option">Đang tìm...</div>
+                  ) : searchEnterprise.length > 0 && searchEnterprise.length < 2 ? (
+                    <div className="option">Nhập ít nhất 2 ký tự</div>
+                  ) : !Array.isArray(enterpriseOptions) || enterpriseOptions.length === 0 ? (
+                    <div className="option">Vui lòng nhập từ khóa tìm kiếm</div>
+                  ) : (
+                    enterpriseOptions.map((enterprise) => (
+                      <div
+                        key={getEnterpriseId(enterprise)}
+                        className={`option ${String(form.enterpriseId) === String(getEnterpriseId(enterprise))
+                          ? "selected"
+                          : ""
+                          }`}
+                        onClick={() => {
+                          const id = getEnterpriseId(enterprise);
+                          const name = getEnterpriseName(enterprise);
 
-                        // reset giống code cũ
-                        handleChange("contactId", "");
-                        handleChange("contactPosition", "");
-                        noContactToastEnterpriseRef.current = "";
-                        setShowCreateContactForm(false);
-                        setContactForm({
-                          fullName: "",
-                          position: "",
-                          email: "",
-                          phone: "",
-                          isPrimary: false,
-                        });
-                        setCreateContactErrors({});
+                          handleChange("enterpriseId", id);
+                          setSelectedEnterpriseObj(enterprise);
 
-                        setOpenEnterpriseDropdown(false);
-                      }}
-                    >
-                      {getEnterpriseName(enterprise)}
-                    </div>
-                  ))}
+                          // 🔥 QUAN TRỌNG: hiển thị lại text vào input
+                          setSearchEnterprise(name);
+
+                          // reset dữ liệu liên hệ
+                          handleChange("contactId", "");
+                          handleChange("contactPosition", "");
+
+                          noContactToastEnterpriseRef.current = "";
+                          setShowCreateContactForm(false);
+                          setContactForm({
+                            fullName: "",
+                            position: "",
+                            email: "",
+                            phone: "",
+                            isPrimary: false,
+                          });
+                          setCreateContactErrors({});
+
+                          setOpenEnterpriseDropdown(false);
+                        }}
+                      >
+                        {getEnterpriseName(enterprise)}
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}

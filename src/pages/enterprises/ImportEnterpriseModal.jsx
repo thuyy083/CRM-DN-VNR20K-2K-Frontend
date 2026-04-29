@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { importEnterprises } from "../../services/enterpriseService";
 import { toast } from "react-toastify";
 import "./ImportEnterpriseModal.scss"
@@ -64,17 +64,22 @@ function ImportEnterpriseModal({ close, reload }) {
       setLoading(false);
     }
   };
-
+useEffect(() => {
+  document.body.style.overflow = "hidden";
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, []);
   return (
-    <div className="modal">
+    <div className="modal open" onClick={close}>
       {loading && (
         <div className="loading-overlay">
           <div className="spinner"></div>
           <p>Đang import dữ liệu, vui lòng chờ...</p>
         </div>
       )}
-      <div className="modal-box">
-        <h3>Import doanh nghiệp</h3>
+  <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Import doanh nghiệp</h3>
 
         <input
           type="file"

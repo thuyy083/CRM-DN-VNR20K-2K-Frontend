@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "react-toastify";
 import { createService, updateService } from "../../services/servicesService";
 import "./ServiceModal.scss";
@@ -97,10 +97,16 @@ function ServiceModal({ services, service, close, reload }) {
       }
     }
   };
+  useEffect(() => {
+  document.body.style.overflow = "hidden";
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, []);
 
   return (
-    <div className="modal">
-      <div className="modal-box">
+<div className="modal-overlay open" onClick={close}>
+  <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         <h3>{service ? "Cập nhật dịch vụ" : "Thêm dịch vụ mới"}</h3>
 
         <div className="form-content">
@@ -141,8 +147,8 @@ function ServiceModal({ services, service, close, reload }) {
             <label style={{ marginBottom: "8px", display: "block" }}>
               Mô tả dịch vụ
             </label>
-            <div style={{ height: "200px", marginBottom: "50px" }}>
-              <ReactQuill
+<div style={{ minHeight: "180px", marginBottom: "20px" }}>
+                <ReactQuill
                 theme="snow"
                 value={form.description}
                 modules={modules}
