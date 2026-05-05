@@ -1,16 +1,25 @@
 .modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.4);
+  inset: 0;
+
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
-}
 
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+
+  z-index: 1000; // 👈 FIX CHÍNH
+
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.25s ease;
+
+  &.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
 .confirm-box {
   width: 500px;
   max-width: 95%;
@@ -144,5 +153,122 @@
         opacity: 0.9;
       }
     }
+  }
+}
+.usage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.usage-card {
+  position: relative;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px;
+  background: #fafafa;
+}
+
+.usage-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+
+  @media (min-width: 600px) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (min-width: 900px) {
+    grid-template-columns: 1.2fr 1fr 1fr 0.8fr;
+  }
+}
+
+.remove-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+
+  &:hover {
+    background: #fee2e2;
+    color: #dc2626;
+  }
+}
+
+.add-btn {
+  margin-top: 10px;
+  align-self: flex-start;
+
+  background: #EE0033;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  border: none;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+.usage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.usage-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fafafa;
+  position: relative;
+}
+
+/* GRID 2 CỘT */
+.usage-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* FIELD */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  input,
+  select {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 13px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+
+    &:focus {
+      border-color: #EE0033;
+      box-shadow: 0 0 0 2px rgba(238, 0, 51, 0.1);
+    }
+  }
+}
+
+/* MOBILE */
+@media (max-width: 500px) {
+  .usage-grid {
+    grid-template-columns: 1fr;
   }
 }

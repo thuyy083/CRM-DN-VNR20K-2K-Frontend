@@ -94,8 +94,6 @@ function Users() {
     }
   }, []);
 
-
-
   useEffect(() => {
     fetchInteractions();
     fetchEnterprises();
