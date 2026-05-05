@@ -1,11 +1,15 @@
 // UserModal.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import DatePicker from "react-datepicker";
+import dayjs from "dayjs";
+import "react-datepicker/dist/react-datepicker.css";
 import "./UserModal.scss";
 
 import { createContact, getContactsByEnterprise } from "../../services/enterpriseContactService";
 import { createInteraction, updateInteraction } from "../../services/interactionService";
 import { getEnterprises } from "../../services/enterpriseService";
+import { getServices } from "../../services/servicesService";
 
 const getEnterpriseId = (enterprise) =>
   enterprise?.id ?? enterprise?.enterpriseId ?? enterprise?.enterprise_id ?? "";
@@ -30,51 +34,22 @@ const typeOptions = [
   { value: "OTHER", label: "Khác" },
 ];
 
+const resultOptions = [
+  { value: "PENDING", label: "Chờ xử lý" },
+  { value: "NEED_FOLLOW_UP", label: "Cần chăm sóc thêm" },
+  { value: "NEXT_APPOINTMENT", label: "Hẹn gặp tiếp" },
+  { value: "INTERESTED", label: "Tiềm năng" },
+  { value: "IN_PROGRESS", label: "Đang thương thảo" },
+  { value: "CLOSED_WON", label: "Chốt thành công" },
+  { value: "CLOSED_LOST", label: "Thất bại" },
+];
+
 
 const sanitizeInteractionContent = (value) => {
   if (!value) return "";
   return String(value).replace(/\s*Chức\s*vụ[^:]*:\s*.*$/giu, "").trim();
 };
 
-/**
- * Chuyển giá trị thời gian sang format YYYY-MM-DDTHH:mm cho input datetime-local.
- * Xử lý được 2 format backend trả về:
- *   - ISO string: "2026-04-16T02:00:00Z" → "2026-04-16T09:00" (UTC+7)
- *   - dd/MM/yyyy HH:mm: "16/04/2026 09:00" (do @JsonFormat backend)
- */
-const toDateTimeLocal = (value) => {
-  if (!value) return "";
-
-  // Thử parse format "dd/MM/yyyy HH:mm" từ backend @JsonFormat
-  const ddMMyyyyMatch = String(value).match(
-    /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/
-  );
-  if (ddMMyyyyMatch) {
-    const [, day, month, year, hour, minute] = ddMMyyyyMatch;
-    return `${year}-${month}-${day}T${hour}:${minute}`;
-  }
-
-  // Fallback: parse ISO string, chuyển sang giờ local
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hour = String(date.getHours()).padStart(2, "0");
-  const minute = String(date.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hour}:${minute}`;
-};
-
-/**
- * Chuyển giá trị từ input datetime-local (YYYY-MM-DDTHH:mm) sang ISO string.
- * Cách dùng: new Date(value) với giá trị datetime-local sẽ dùng timezone local.
- */
-const toIsoDate = (value) => {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toISOString();
-};
 
 function UserModal({ interaction, close, reload }) {
   const [contacts, setContacts] = useState([]);
@@ -88,6 +63,14 @@ function UserModal({ interaction, close, reload }) {
   const [loadingEnterprise, setLoadingEnterprise] = useState(false);
   const [page, setPage] = useState(0);
 
+const [usages, setUsages] = useState([
+  {
+    viettelServiceId: "",
+    contractNumber: "",
+    startDate: "",
+    quantity: "",
+  },
+]);
   const [selectedEnterpriseObj, setSelectedEnterpriseObj] = useState(null);
 
   const [openEnterpriseDropdown, setOpenEnterpriseDropdown] = useState(false);
@@ -109,11 +92,85 @@ function UserModal({ interaction, close, reload }) {
     contactId: interaction?.contactId ? String(interaction.contactId) : "",
     contactPosition: "",
     interactionType: interaction?.interactionType || "PHONE_CALL",
-    interactionTime: toDateTimeLocal(interaction?.interactionTime),
+    interactionTime: interaction?.interactionTime || "",
     futureInteractionDate: "",
     location: interaction?.location || "",
     description: sanitizeInteractionContent(interaction?.description || ""),
   });
+
+  const [services, setServices] = useState([]);
+const [loadingServices, setLoadingServices] = useState(false);
+
+useEffect(() => {
+  const fetchServices = async () => {
+    try {
+      setLoadingServices(true);
+
+      const res = await getServices({
+        page: 0,
+        size: 100,
+      });
+
+      const data = res.data?.data?.content || [];
+
+      // chỉ lấy service active
+      const activeServices = data.filter((s) => s.isActive);
+
+      setServices(activeServices);
+    } catch (err) {
+      console.error(err);
+      toast.error("Không tải được dịch vụ");
+    } finally {
+      setLoadingServices(false);
+    }
+  };
+
+  fetchServices();
+}, []);
+
+const updateUsageField = (index, field, value) => {
+  const updated = [...usages];
+  updated[index][field] = value;
+  setUsages(updated);
+};
+
+const addUsage = () => {
+  setUsages([
+    ...usages,
+    {
+      viettelServiceId: "",
+      contractNumber: "",
+      startDate: "",
+      quantity: "",
+    },
+  ]);
+};
+
+const removeUsage = (index) => {
+  setUsages(usages.filter((_, i) => i !== index));
+};
+
+  console.log("form", form)
+
+  const parseInitDateTime = (str) => {
+    if (!str) return null;
+
+    const match = String(str).match(
+      /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/
+    );
+
+    if (match) {
+      const [, day, month, year, hour, minute] = match;
+      return new Date(`${year}-${month}-${day}T${hour}:${minute}`);
+    }
+
+    return new Date(str);
+  };
+
+  const [dtInteraction, setDtInteraction] = useState(
+    parseInitDateTime(interaction?.interactionTime)
+  );
+
 
   const selectedEnterprise = useMemo(() => {
     if (!Array.isArray(enterpriseOptions)) return null;
@@ -375,30 +432,30 @@ function UserModal({ interaction, close, reload }) {
     const nextPage = page + 1;
     const keyword = searchEnterprise.trim().toLowerCase();
 
-const res = await getEnterprises(
-  nextPage,
-  10,
-  keyword,
-  "",
-  "",
-  ""
-);
+    const res = await getEnterprises(
+      nextPage,
+      10,
+      keyword,
+      "",
+      "",
+      ""
+    );
 
     const newData = res.data?.data?.content || [];
 
-setEnterpriseOptions(prev => {
-  const combined = [
-    ...(Array.isArray(prev) ? prev : []),
-    ...(Array.isArray(newData) ? newData : [])
-  ];
+    setEnterpriseOptions(prev => {
+      const combined = [
+        ...(Array.isArray(prev) ? prev : []),
+        ...(Array.isArray(newData) ? newData : [])
+      ];
 
-  // 🔥 remove duplicate theo id
-  const unique = Array.from(
-    new Map(combined.map(item => [getEnterpriseId(item), item])).values()
-  );
+      // 🔥 remove duplicate theo id
+      const unique = Array.from(
+        new Map(combined.map(item => [getEnterpriseId(item), item])).values()
+      );
 
-  return unique;
-});
+      return unique;
+    });
 
     cacheRef.current[keyword] = [
       ...(cacheRef.current[keyword] || []),
@@ -471,9 +528,11 @@ setEnterpriseOptions(prev => {
       enterpriseId: Number(form.enterpriseId),
       contactId: form.contactId ? Number(form.contactId) : null,
       interactionType: form.interactionType,
-      interactionTime: toIsoDate(form.interactionTime),
+      result: form.result,
+      interactionTime: form.interactionTime,
       location: form.location?.trim() || null,
       description: sanitizeInteractionContent(form.description) || null,
+      newUsages: form.result === "CLOSED_WON" ? usages : [],
     };
 
     try {
@@ -485,9 +544,10 @@ setEnterpriseOptions(prev => {
             enterpriseId: Number(interaction.enterpriseId || form.enterpriseId),
             contactId: form.contactId ? Number(form.contactId) : interaction.contactId ?? null,
             interactionType: form.interactionType,
-            interactionTime: toIsoDate(form.futureInteractionDate),
+            interactionTime: form.interactionTime,
             location: form.location.trim() || null,
             description: sanitizeInteractionContent(form.description) || null,
+            result: interaction?.result || "PENDING",
           });
         }
 
@@ -501,28 +561,53 @@ setEnterpriseOptions(prev => {
       await reload();
       close();
     } catch (error) {
-      console.error(error);
       const responseData = error?.response?.data;
 
-      if (responseData?.errors && !Array.isArray(responseData.errors)) {
-        setErrors(responseData.errors);
-      } else if (Array.isArray(responseData?.errors)) {
+      if (Array.isArray(responseData?.message)) {
+        responseData.message.forEach((err) => {
+          toast.error(err.message);
+        });
+
+        // map lỗi vào form luôn
         const backendErrors = {};
-        responseData.errors.forEach((err) => {
+        responseData.message.forEach((err) => {
           if (err?.field) {
             backendErrors[err.field] = err.message;
           }
         });
-        setErrors(backendErrors);
-      }
 
-      toast.error("Có lỗi xảy ra");
+        setErrors(backendErrors);
+      } else if (typeof responseData?.message === "string") {
+        toast.error(responseData.message);
+      } else {
+        const responseData = error?.response?.data;
+
+        if (Array.isArray(responseData?.message)) {
+          responseData.message.forEach((err) => {
+            toast.error(err.message);
+          });
+
+          // map lỗi vào form luôn
+          const backendErrors = {};
+          responseData.message.forEach((err) => {
+            if (err?.field) {
+              backendErrors[err.field] = err.message;
+            }
+          });
+
+          setErrors(backendErrors);
+        } else if (typeof responseData?.message === "string") {
+          toast.error(responseData.message);
+        } else {
+          toast.error("Có lỗi xảy ra");
+        }
+      }
     }
   };
 
   return (
-  <div className={`modal ${true ? "open" : ""}`} onClick={close}>
-        <div className="modal-box users-modal" onClick={(e) => e.stopPropagation()}>
+    <div className={`modal ${true ? "open" : ""}`} onClick={close}>
+      <div className="modal-box users-modal" onClick={(e) => e.stopPropagation()}>
         <h3>{interaction ? "Cập nhật tiếp xúc" : "Thêm tiếp xúc"}</h3>
 
         <div className="section-title">Thông tin tiếp xúc</div>
@@ -558,9 +643,9 @@ setEnterpriseOptions(prev => {
                   onScroll={(e) => {
                     const bottom =
                       e.target.scrollHeight - e.target.scrollTop <= e.target.clientHeight + 5;
-if (bottom && !loadingEnterprise) {
-  handleLoadMore();
-}
+                    if (bottom && !loadingEnterprise) {
+                      handleLoadMore();
+                    }
                   }}
                 >
                   {loadingEnterprise ? (
@@ -805,11 +890,24 @@ if (bottom && !loadingEnterprise) {
             <label>
               Ngày tiếp xúc <span className="required">*</span>
             </label>
-            <input
-              type="datetime-local"
-              className={errors.interactionTime ? "input-error" : ""}
-              value={form.interactionTime}
-              onChange={(e) => handleChange("interactionTime", e.target.value)}
+            <DatePicker
+              selected={dtInteraction}
+              onChange={(date) => {
+                setDtInteraction(date);
+
+                if (date) {
+                  const formatted = dayjs(date).format("DD/MM/YYYY HH:mm");
+                  handleChange("interactionTime", formatted);
+                } else {
+                  handleChange("interactionTime", "");
+                }
+              }}
+              showTimeSelect
+              timeFormat="HH:mm"
+              timeIntervals={15}
+              dateFormat="dd/MM/yyyy HH:mm"
+              placeholderText="Chọn thời gian"
+              className={`input ${errors.interactionTime ? "input-error" : ""}`}
             />
             {errors.interactionTime && <span className="error-text">{errors.interactionTime}</span>}
           </div>
@@ -823,6 +921,107 @@ if (bottom && !loadingEnterprise) {
             />
             {errors.location && <span className="error-text">{errors.location}</span>}
           </div>
+          <div className="form-group">
+            <label>Kết quả</label>
+            <select
+              value={form.result}
+              onChange={(e) => handleChange("result", e.target.value)}
+            >
+              {resultOptions.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {form.result === "CLOSED_WON" && (
+  <div className="form-group full-width">
+    <h4>Dịch vụ đã ký</h4>
+
+<div className="usage-list">
+  {usages.map((item, index) => (
+    <div key={index} className="usage-card">
+      <div className="usage-grid">
+
+        <div className="field">
+          <label>Dịch vụ</label>
+          <select
+            value={item.viettelServiceId}
+            onChange={(e) =>
+              updateUsageField(index, "viettelServiceId", Number(e.target.value))
+            }
+          >
+            <option value="">
+              {loadingServices ? "Đang tải..." : "Chọn dịch vụ"}
+            </option>
+
+            {services.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.serviceName} ({s.serviceCode})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="field">
+          <label>Số hợp đồng</label>
+          <input
+            value={item.contractNumber}
+            onChange={(e) =>
+              updateUsageField(index, "contractNumber", e.target.value)
+            }
+          />
+        </div>
+
+        <div className="field">
+          <label>Ngày bắt đầu</label>
+          <input
+            type="date"
+            value={item.startDate}
+            onChange={(e) =>
+              updateUsageField(index, "startDate", e.target.value)
+            }
+          />
+        </div>
+
+        <div className="field">
+          <label>Số lượng</label>
+          <input
+            type="number"
+            value={item.quantity}
+            onChange={(e) =>
+              updateUsageField(index, "quantity", Number(e.target.value))
+            }
+          />
+        </div>
+
+      </div>
+
+      {usages.length > 1 && (
+        <button
+          type="button"
+          className="remove-btn"
+          onClick={() => removeUsage(index)}
+        >
+          ✕
+        </button>
+      )}
+    </div>
+  ))}
+
+  <button type="button" className="add-btn" onClick={addUsage}>
+    + Thêm dịch vụ
+  </button>
+</div>
+
+    {/* 🔥 SHOW ERROR */}
+    {errors["newUsages[0].viettelServiceId"] && (
+      <span className="error-text">
+        {errors["newUsages[0].viettelServiceId"]}
+      </span>
+    )}
+  </div>
+)}
 
           <div className="form-group full-width">
             <label>Nội dung trao đổi</label>

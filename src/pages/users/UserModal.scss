@@ -329,3 +329,76 @@ $bg-overlay: rgba(17, 24, 39, 0.42);
     grid-template-columns: 1fr;
   }
 }
+.react-datepicker {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+.react-datepicker__header {
+  background: #EE0033;
+  color: #fff;
+}
+
+.react-datepicker__day--selected {
+  background: #EE0033;
+  color: #fff;
+}
+
+.react-datepicker__time-list-item--selected {
+  background: #EE0033 !important;
+}
+.usage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.usage-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fafafa;
+  position: relative;
+}
+
+.usage-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  input,
+  select {
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+  }
+}
+
+.remove-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+}
+
+.add-btn {
+  margin-top: 10px;
+  background: #EE0033;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+}

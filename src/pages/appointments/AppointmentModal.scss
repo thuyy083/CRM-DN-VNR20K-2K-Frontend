@@ -6,10 +6,10 @@
   justify-content: center;
   align-items: center;
 
-  background: rgba(15, 23, 42, 0.5); // tối hơn
-  backdrop-filter: blur(4px); // 👈 làm mờ sidebar
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
 
-  z-index: 9999; // 👈 cao nhất
+  z-index: 1000;
 
   opacity: 0;
   pointer-events: none;
@@ -229,4 +229,105 @@
 .options {
   max-height: 250px;
   overflow-y: auto;
+}
+
+/* ===== DATEPICKER CUSTOM ===== */
+
+.react-datepicker {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  font-family: inherit;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* Header */
+.react-datepicker__header {
+  background-color: #EE0033;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  color: #fff;
+}
+
+.react-datepicker__current-month {
+  color: #fff;
+  font-weight: 600;
+}
+
+.react-datepicker__day-name {
+  color: #ffe4e6;
+  font-weight: 500;
+}
+
+/* Day */
+.react-datepicker__day {
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.react-datepicker__day:hover {
+  background-color: #fee2e2;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background-color: #EE0033;
+  color: #fff;
+}
+
+/* Time column */
+.react-datepicker__time-container {
+  border-left: 1px solid #f3f4f6;
+}
+
+.react-datepicker__time {
+  background: #fff;
+}
+
+.react-datepicker__time-box {
+  width: 100px;
+}
+
+/* Time item */
+.react-datepicker__time-list-item {
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 2px 6px;
+}
+
+.react-datepicker__time-list-item:hover {
+  background-color: #fee2e2;
+}
+
+.react-datepicker__time-list-item--selected {
+  background-color: #EE0033 !important;
+  color: #fff;
+}
+
+/* Input */
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.input:focus {
+  border-color: #EE0033;
+  box-shadow: 0 0 0 2px rgba(238, 0, 51, 0.1);
+  outline: none;
+}
+
+.react-datepicker {
+  display: flex;
+}
+
+.react-datepicker__month-container {
+  flex: 1;
+}
+
+.react-datepicker__time-container {
+  width: 120px;
+  border-left: 1px solid #eee;
 }
