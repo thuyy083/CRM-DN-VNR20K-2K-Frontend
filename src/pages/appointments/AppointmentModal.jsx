@@ -1,6 +1,9 @@
 // AppointmentModal.jsx
 import { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
+import DatePicker from "react-datepicker";
+import dayjs from "dayjs";
+import "react-datepicker/dist/react-datepicker.css";
 import "./AppointmentModal.scss";
 import {
   createAppointment,
@@ -48,6 +51,45 @@ function AppointmentModal({ appointment, close, reload }) {
   const enterpriseDropdownRef = useRef(null);
   const cacheRef = useRef({});
 
+
+  // Handle datetime conversion for backend requirement format (dd/MM/yyyy HH:mm)
+  // Input type datetime-local has format "YYYY-MM-DDThh:mm"
+const parseInitDateTime = (str) => {
+  if (!str) return null;
+
+  const [date, time] = str.split(" ");
+  if (!date || !time) return null;
+
+  const [day, month, year] = date.split("/");
+
+  return new Date(`${year}-${month}-${day}T${time}`);
+};
+
+
+const [dtLocal, setDtLocal] = useState(
+  parseInitDateTime(appointment?.scheduledTime)
+);
+<DatePicker
+  selected={dtLocal}
+  onChange={(date) => {
+    setDtLocal(date);
+
+    if (date) {
+      const formatted = dayjs(date).format("DD/MM/YYYY HH:mm");
+      handleChange("scheduledTime", formatted);
+    } else {
+      handleChange("scheduledTime", "");
+    }
+  }}
+  showTimeSelect
+  showTimeSelectOnly={false}
+  timeFormat="HH:mm"
+  timeIntervals={15}
+  dateFormat="dd/MM/yyyy HH:mm"
+  placeholderText="Chọn thời gian"
+  className="input"
+  inline
+/>
 
   useEffect(() => {
     const fetchContacts = async () => {
@@ -182,23 +224,7 @@ function AppointmentModal({ appointment, close, reload }) {
     setPage(nextPage);
   };
 
-  // Handle datetime conversion for backend requirement format (dd/MM/yyyy HH:mm)
-  // Input type datetime-local has format "YYYY-MM-DDThh:mm"
-  const parseInitDateTime = (str) => {
-    if (!str) return "";
-    const parts = str.split(" ");
-    if (parts.length === 2) {
-      const dateParts = parts[0].split("/");
-      if (dateParts.length === 3) {
-        return `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${parts[1]}`;
-      }
-    }
-    return str; // fallback
-  };
 
-  const [dtLocal, setDtLocal] = useState(
-    parseInitDateTime(appointment?.scheduledTime) || "",
-  );
 
   const handleChange = (field, value) => {
     setForm({ ...form, [field]: value });
@@ -334,22 +360,7 @@ function AppointmentModal({ appointment, close, reload }) {
   };
 
 
-  const handleDtChange = (val) => {
-    setDtLocal(val);
-    // convert to dd/MM/yyyy HH:mm
-    if (val) {
-      const d = new Date(val);
-      const day = String(d.getDate()).padStart(2, "0");
-      const month = String(d.getMonth() + 1).padStart(2, "0");
-      const year = d.getFullYear();
-      let h = String(d.getHours()).padStart(2, "0");
-      let m = String(d.getMinutes()).padStart(2, "0");
-      handleChange("scheduledTime", `${day}/${month}/${year} ${h}:${m}`);
-    } else {
-      handleChange("scheduledTime", "");
-    }
-  };
-
+  
   const handleSubmit = async () => {
     if (!form.enterpriseId || !form.appointmentType || !form.scheduledTime) {
       toast.warning("Vui lòng điền đủ thông tin bắt buộc!");
@@ -448,7 +459,7 @@ function AppointmentModal({ appointment, close, reload }) {
                         searchEnterprise.length < 2 ? (
                         <div className="option">Nhập ít nhất 2 ký tự</div>
                       ) : enterpriseOptions.length === 0 ? (
-                        <div className="option">Không có dữ liệu</div>
+                        <div className="option">Vui lòng nhập tên doanh nghiệp</div>
                       ) : (
                         enterpriseOptions.map((enterprise) => (
                           <div
@@ -503,7 +514,7 @@ function AppointmentModal({ appointment, close, reload }) {
                 </option>
                 <option value="PHONE_CALL">Gọi điện thoại</option>
                 <option value="EMAIL_QUOTE">Gửi báo giá</option>
-                <option value="CONTRACT_SIGNING">Ký hợp đồng</option>
+                {/* <option value="CONTRACT_SIGNING">Ký hợp đồng</option> */}
                 <option value="CUSTOMER_SUPPORT">Hỗ trợ khách hàng</option>
                 <option value="OTHER">Khác</option>
               </select>
@@ -513,11 +524,25 @@ function AppointmentModal({ appointment, close, reload }) {
           <div className="form-col">
             <div className="form-group">
               <label>Thời gian (Bắt buộc) *</label>
-              <input
-                type="datetime-local"
-                value={dtLocal}
-                onChange={(e) => handleDtChange(e.target.value)}
-              />
+              <DatePicker
+  selected={dtLocal ? new Date(dtLocal) : null}
+  onChange={(date) => {
+    setDtLocal(date);
+
+    if (date) {
+      const formatted = dayjs(date).format("DD/MM/YYYY HH:mm");
+      handleChange("scheduledTime", formatted);
+    } else {
+      handleChange("scheduledTime", "");
+    }
+  }}
+  showTimeSelect
+  timeFormat="HH:mm"
+  timeIntervals={15}
+  dateFormat="dd/MM/yyyy HH:mm"
+  placeholderText="Chọn thời gian"
+  className="input"
+/>
             </div>
 
             <div className="form-group">

@@ -1,7 +1,28 @@
 .table-container {
   overflow-x: auto;
 }
+.modal {
+  position: fixed;
+  inset: 0;
 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+
+  z-index: 9999; // 👈 cao hơn sidebar
+
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.25s ease;
+
+  &.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
 .appointment-table {
   width: 100%;
   border-collapse: collapse;
