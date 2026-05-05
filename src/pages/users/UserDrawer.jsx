@@ -6,7 +6,15 @@ import { getInteractionImageUrl, updateInteractionDescription } from "../../serv
 
 const POTENTIAL_STORAGE_KEY = "enterprise_potential_map";
 
-
+const RESULT_MAP = {
+  PENDING: "Chờ xử lý",
+  NEED_FOLLOW_UP: "Cần chăm sóc",
+  NEXT_APPOINTMENT: "Hẹn lần sau",
+  INTERESTED: "Tiềm năng",
+  IN_PROGRESS: "Đang thương thảo",
+  CLOSED_WON: "Ký hợp đồng",
+  CLOSED_LOST: "Thất bại"
+};
 const formatDateOnly = (value) => {
   if (!value) return "-";
   const date = new Date(value);
@@ -50,7 +58,8 @@ function InteractionTable({
   rows,
   emptyText,
   onEdit,
-  onViewImages
+  onViewImages,
+  onViewContract
 }) {
 
   if (!rows.length) {
@@ -62,31 +71,64 @@ function InteractionTable({
       <thead>
         <tr>
           <th>STT</th>
-          <th>Ngày tiếp xúc</th>
+          <th>Ngày</th>
+          <th>Loại</th>
+          <th>Kết quả</th>
           <th>Người liên hệ</th>
+          <th>Người phụ trách</th>
+          <th>Địa điểm</th>
           <th>Nội dung</th>
-          <th>Hình ảnh</th>
+          <th>Ảnh</th>
         </tr>
       </thead>
       <tbody>
         {rows.map((item, index) => (
-          <tr key={`${item.id}-${item.interactionTime || "no-time"}`}>
+          <tr key={item.id}>
             <td>{index + 1}</td>
             <td>{formatDateOnly(item.interactionTime)}</td>
-            <td>{item.contactName || "-"}</td>
-            <td>
-              <button className="view-content-btn" type="button" onClick={() => onEdit(item)}>
-                Xem nội dung
-              </button>
-            </td>
-            <td>
+
+            <td>{item.interactionType || "-"}</td>
+            {item.result === "CLOSED_WON" && item.usages?.length > 0 ? (
               <button
-                className="view-content-btn"
-                onClick={() => onViewImages(item)}
+                className="result-badge clickable"
+                onClick={() => onViewContract(item)}
               >
-                Xem ảnh
+                ✅ {RESULT_MAP[item.result]}
+              </button>
+            ) : (
+              <span className={`result-badge ${item.result}`}>
+                {RESULT_MAP[item.result] || item.result}
+              </span>
+            )}
+
+            <td>{item.contactName || "-"}</td>
+            <td>{item.consultantName || "-"}</td>
+            <td>{item.location || "-"}</td>
+
+            <td className="action-cell">
+              <button className="btn-action btn-view" onClick={() => onEdit(item)}>
+                Nội dung
               </button>
             </td>
+
+            <td className="action-cell">
+              <button className="btn-action btn-image" onClick={() => onViewImages(item)}>
+                Ảnh
+              </button>
+            </td>
+
+            {/* <td className="action-cell">
+  {item.result === "CLOSED_WON" && item.usages?.length > 0 ? (
+    <button
+      className="btn-action btn-contract"
+      onClick={() => onViewContract(item)}
+    >
+      Hợp đồng
+    </button>
+  ) : (
+    <span className="no-data">-</span>
+  )}
+</td> */}
           </tr>
         ))}
       </tbody>
@@ -101,6 +143,7 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
   const [editingItem, setEditingItem] = useState(null);
   const [editingDescription, setEditingDescription] = useState("");
   const [previewImages, setPreviewImages] = useState([]);
+  const [selectedContract, setSelectedContract] = useState([]);
   useEffect(() => {
     const fetchIndustries = async () => {
       try {
@@ -124,18 +167,18 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
   };
   const detailRows = useMemo(() => sortByDateDesc(localInteractions), [localInteractions]);
 
-const enterpriseId = interaction?.enterpriseId;
+  const enterpriseId = interaction?.enterpriseId;
 
-const potentialFromStorage = useMemo(() => {
-  try {
-    const raw = localStorage.getItem(POTENTIAL_STORAGE_KEY);
-    const map = raw ? JSON.parse(raw) : {};
-    return Boolean(map[String(enterpriseId)]);
-  } catch (error) {
-    console.error("Cannot parse potential storage", error);
-    return false;
-  }
-}, [enterpriseId]);
+  const potentialFromStorage = useMemo(() => {
+    try {
+      const raw = localStorage.getItem(POTENTIAL_STORAGE_KEY);
+      const map = raw ? JSON.parse(raw) : {};
+      return Boolean(map[String(enterpriseId)]);
+    } catch (error) {
+      console.error("Cannot parse potential storage", error);
+      return false;
+    }
+  }, [enterpriseId]);
 
   const isPotential =
     isPotentialEnterprise(enterpriseInfo) ||
@@ -224,9 +267,12 @@ const potentialFromStorage = useMemo(() => {
                   setEditingDescription(item.description || "");
                 }}
                 onViewImages={(item) => {
-    const images = (item.photoPaths || []).map(getInteractionImageUrl);
-    setPreviewImages(images);
-  }}
+                  const images = (item.photoPaths || []).map(getInteractionImageUrl);
+                  setPreviewImages(images);
+                }}
+                onViewContract={(item) => {
+                  setSelectedContract(item.usages || []);
+                }}
               />
             </section>
 
@@ -288,32 +334,85 @@ const potentialFromStorage = useMemo(() => {
               </div>
             )}
             {previewImages.length > 0 && (
-  <div
-    className="content-preview-overlay"
-    onClick={() => setPreviewImages([])}
-  >
-    <div
-      className="content-preview-dialog"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="content-preview-header">
-        <h5>Hình ảnh tiếp xúc</h5>
-        <button
-          className="content-close-btn"
-          onClick={() => setPreviewImages([])}
-        >
-          ×
-        </button>
-      </div>
+              <div
+                className="content-preview-overlay"
+                onClick={() => setPreviewImages([])}
+              >
+                <div
+                  className="content-preview-dialog"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="content-preview-header">
+                    <h5>Hình ảnh tiếp xúc</h5>
+                    <button
+                      className="content-close-btn"
+                      onClick={() => setPreviewImages([])}
+                    >
+                      ×
+                    </button>
+                  </div>
 
-      <div className="image-preview-grid">
-        {previewImages.map((img, index) => (
-          <img key={index} src={img} alt="interaction" />
-        ))}
-      </div>
-    </div>
-  </div>
-)}
+                  <div className="image-preview-grid">
+                    {previewImages.map((img, index) => (
+                      <img key={index} src={img} alt="interaction" />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+            {selectedContract.length > 0 && (
+              <div
+                className="content-preview-overlay"
+                onClick={() => setSelectedContract([])}
+              >
+                <div
+                  className="content-preview-dialog"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="content-preview-header">
+                    <h5>Thông tin hợp đồng</h5>
+                    <button
+                      className="content-close-btn"
+                      onClick={() => setSelectedContract([])}
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <div className="contract-list">
+                    {selectedContract.map((c) => (
+                      <div key={c.id} className="contract-card">
+                        <div className="contract-header">
+                          <span className="contract-service">{c.serviceName}</span>
+                          <span className="contract-status">{c.status}</span>
+                        </div>
+
+                        <div className="contract-body">
+                          <div>
+                            <b>Mã dịch vụ:</b>
+                            <span>{c.serviceCode}</span>
+                          </div>
+
+                          <div>
+                            <b>Số hợp đồng:</b>
+                            <span>{c.contractNumber}</span>
+                          </div>
+
+                          <div>
+                            <b>Ngày bắt đầu:</b>
+                            <span>
+                              {Array.isArray(c.startDate)
+                                ? `${c.startDate[2]}/${c.startDate[1]}/${c.startDate[0]}`
+                                : "-"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </aside>
