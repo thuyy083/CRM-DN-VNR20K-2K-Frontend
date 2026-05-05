@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import "./ServiceTable.scss";
 import ServiceViewModal from "./ServiceViewModal";
+import { getServices } from "../../services/servicesService";
 
 // Component Modal Xác nhận Xóa Dịch vụ Tùy chỉnh
 function DeleteServiceModal({ isOpen, onClose, onConfirm, serviceName }) {
@@ -32,13 +33,36 @@ function DeleteServiceModal({ isOpen, onClose, onConfirm, serviceName }) {
   );
 }
 
-function ServiceTable({ services, onEdit, onDelete, currentUserRole }) {
-  const [sortConfig, setSortConfig] = useState({
-    key: "originalIndex",
-    direction: "asc",
-  });
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+function ServiceTable({ onEdit, onDelete, currentUserRole }) {
+    const [services, setServices] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize] = useState(5);
+    const [totalPages, setTotalPages] = useState(0);
+    const [sortConfig, setSortConfig] = useState({
+      key: "originalIndex",
+      direction: "asc",
+    });
+const fetchServices = async () => {
+  try {
+    const res = await getServices({
+      page: currentPage - 1,
+      size: pageSize,
+      keyword: "",
+      isActive: "",
+    });
+
+    // ✅ FIX CHUẨN
+    setServices(res.data.data.content);
+    setTotalPages(res.data.data.totalPages);
+
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+useEffect(() => {
+  fetchServices();
+}, [currentPage]);
 
   const processedServices = useMemo(() => {
     return (services || []).map((service, index) => ({
@@ -79,7 +103,6 @@ function ServiceTable({ services, onEdit, onDelete, currentUserRole }) {
     return sortableItems;
   }, [processedServices, sortConfig]);
 
-  const totalPages = Math.ceil(sortedServices.length / itemsPerPage);
 
   // ==========================================
   // LOGIC PHÂN TRANG THÔNG MINH (THEO ĐÚNG Ý BẠN)
@@ -94,13 +117,7 @@ function ServiceTable({ services, onEdit, onDelete, currentUserRole }) {
   }, [totalPages, currentPage]);
   // ==========================================
 
-  const currentTableData = useMemo(() => {
-    // Đảm bảo không bị lỗi tính toán index nếu currentPage tạm thời lớn hơn totalPages
-    const safeCurrentPage = currentPage > totalPages && totalPages > 0 ? totalPages : (currentPage === 0 ? 1 : currentPage);
-    const firstPageIndex = (safeCurrentPage - 1) * itemsPerPage;
-    const lastPageIndex = firstPageIndex + itemsPerPage;
-    return sortedServices.slice(firstPageIndex, lastPageIndex);
-  }, [currentPage, sortedServices, totalPages, itemsPerPage]);
+  const currentTableData = sortedServices;
 
   const getSortIcon = (key) => {
     if (sortConfig.key !== key) return <span className="sort-arrow">↕</span>;
@@ -201,17 +218,82 @@ function ServiceTable({ services, onEdit, onDelete, currentUserRole }) {
         </tbody>
       </table>
 
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button className="page-btn" disabled={currentPage === 1} onClick={() => setCurrentPage((c) => c - 1)}>&laquo; Trước</button>
-          <div className="page-numbers">
-            {[...Array(totalPages)].map((_, i) => (
-              <button key={i + 1} className={`page-num ${currentPage === i + 1 ? "active" : ""}`} onClick={() => setCurrentPage(i + 1)}>{i + 1}</button>
-            ))}
-          </div>
-          <button className="page-btn" disabled={currentPage === totalPages} onClick={() => setCurrentPage((c) => c + 1)}>Sau &raquo;</button>
-        </div>
-      )}
+{totalPages > 1 && (
+  <div className="pagination">
+    {/* VỀ TRANG ĐẦU */}
+    <button
+      className="page-btn"
+      disabled={currentPage === 1}
+      onClick={() => setCurrentPage(1)}
+    >
+      ⏮
+    </button>
+
+    {/* TRANG TRƯỚC */}
+    <button
+      className="page-btn"
+      disabled={currentPage === 1}
+      onClick={() => setCurrentPage((c) => c - 1)}
+    >
+      &laquo; Trước
+    </button>
+
+    {/* PAGE NUMBERS (CHỈ HIỂN THỊ 5 TRANG XUNG QUANH) */}
+    <div className="page-numbers">
+      {(() => {
+        const pageNumbers = [];
+        const maxVisible = 5;
+
+        let start = Math.max(1, currentPage - 2);
+        let end = Math.min(totalPages, currentPage + 2);
+
+        // fix khi gần đầu
+        if (currentPage <= 3) {
+          start = 1;
+          end = Math.min(totalPages, maxVisible);
+        }
+
+        // fix khi gần cuối
+        if (currentPage >= totalPages - 2) {
+          start = Math.max(1, totalPages - maxVisible + 1);
+          end = totalPages;
+        }
+
+        for (let i = start; i <= end; i++) {
+          pageNumbers.push(
+            <button
+              key={i}
+              className={`page-num ${currentPage === i ? "active" : ""}`}
+              onClick={() => setCurrentPage(i)}
+            >
+              {i}
+            </button>
+          );
+        }
+
+        return pageNumbers;
+      })()}
+    </div>
+
+    {/* TRANG SAU */}
+    <button
+      className="page-btn"
+      disabled={currentPage === totalPages}
+      onClick={() => setCurrentPage((c) => c + 1)}
+    >
+      Sau &raquo;
+    </button>
+
+    {/* ĐẾN TRANG CUỐI */}
+    <button
+      className="page-btn"
+      disabled={currentPage === totalPages}
+      onClick={() => setCurrentPage(totalPages)}
+    >
+      ⏭
+    </button>
+  </div>
+)}
 
       {/* MODAL XÓA */}
       <DeleteServiceModal isOpen={isDeleteDialogOpen} onClose={handleCloseDeleteDialog} onConfirm={handleConfirmDelete} serviceName={serviceToDelete?.displayName || ""} />

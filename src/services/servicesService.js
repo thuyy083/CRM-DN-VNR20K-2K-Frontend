@@ -1,8 +1,8 @@
 import axios from "../config/axios";
 import "react-quill-new/dist/quill.snow.css";
 
-export const getServices = () => {
-  return axios.get("/viettel-services");
+export const getServices = (params) => {
+  return axios.get("/viettel-services", { params });
 };
 
 export const getServiceById = (id) => {
