@@ -353,9 +353,20 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
                   </div>
 
                   <div className="image-preview-grid">
-                    {previewImages.map((img, index) => (
-                      <img key={index} src={img} alt="interaction" />
-                    ))}
+                    {previewImages.map((img, index) => {
+                      // Thêm điều kiện kiểm tra: img.startsWith('/uploads/')
+                      const imageSrc = (img.startsWith('http') || img.startsWith('data:') || img.startsWith('/uploads/'))
+                        ? img
+                        : `/uploads/${img}`;
+
+                      return (
+                        <img
+                          key={index}
+                          src={imageSrc}
+                          alt="interaction preview"
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               </div>
