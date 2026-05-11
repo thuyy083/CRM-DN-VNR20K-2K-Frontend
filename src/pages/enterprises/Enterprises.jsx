@@ -7,8 +7,9 @@ import EnterpriseTable from "./EnterpriseTable";
 import EnterpriseModal from "./EnterpriseModal";
 import EnterpriseDetailModal from "./EnterpriseDetailModal";
 import ImportEnterpriseModal from "./ImportEnterpriseModal";
+import ExportEnterpriseModal from "./ExportEnterpriseModal";
 import { getIndustries } from "../../services/enterpriseService";
-import { deleteEnterprise, downloadEnterpriseTemplate, exportEnterprises, getEnterprises } from "../../services/enterpriseService";
+import { deleteEnterprise, downloadEnterpriseTemplate, getEnterprises } from "../../services/enterpriseService";
 // import "../employees/Employees.scss"
 import { toast } from "react-toastify";
 
@@ -37,6 +38,8 @@ function Enterprises() {
   const dropdownRef = useRef(null);
 
 const [exportLoading, setExportLoading] = useState(false);
+
+const [openExport, setOpenExport] = useState(false);
 
 
   const { role, region } = useSelector((state) => state.auth.user || {});
@@ -162,42 +165,6 @@ const [exportLoading, setExportLoading] = useState(false);
       toast.error("Tải file mẫu thất bại");
     }
   };
-
-const handleExport = async () => {
-  if (exportLoading) return;
-
-  try {
-    setExportLoading(true);
-
-    const res = await exportEnterprises({
-      keyword: searchTerm,
-      status: filterStatus === "ALL" ? "" : filterStatus,
-    });
-
-    const blob = new Blob([res.data], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-
-    const url = window.URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "enterprises.xlsx";
-
-    document.body.appendChild(link);
-    link.click();
-
-    link.remove();
-    window.URL.revokeObjectURL(url);
-
-    toast.success("Xuất file thành công");
-  } catch (err) {
-    console.error(err);
-    toast.error("Xuất file thất bại");
-  } finally {
-    setExportLoading(false);
-  }
-};
 
   const handleDeleteEnterprise = async (enterprise) => {
     const confirmDelete = window.confirm(
@@ -454,7 +421,7 @@ const handleExport = async () => {
               className={`dropdown-trigger ${openDropdown === "type" ? "active" : ""
                 }`}
               onClick={() => {
-                if (role === "CONSULTANT") return;
+                // if (role === "CONSULTANT") return;
                 setOpenDropdown(openDropdown === "type" ? null : "type");
               }}
             >
@@ -540,9 +507,15 @@ const handleExport = async () => {
               <button className="add-btn" onClick={handleDownloadTemplate}>
                 Tải file mẫu
               </button>
-              <button className="add-btn" onClick={handleExport} disabled={exportLoading}>
+              {/* <button className="add-btn" onClick={handleExport} disabled={exportLoading}>
                 {exportLoading ? "Đang xuất file..." : "Xuất Excel"}
-              </button>
+              </button> */}
+              <button
+  className="add-btn"
+  onClick={() => setOpenExport(true)}
+>
+  Xuất Excel
+</button>
             </>
           )}
           {exportLoading && (
@@ -603,6 +576,11 @@ const handleExport = async () => {
           reload={fetchEnterprises}
         />
       )}
+      {openExport && (
+  <ExportEnterpriseModal
+    close={() => setOpenExport(false)}
+  />
+)}
     </div>
   );
 }

@@ -34,6 +34,7 @@ function AppointmentModal({ appointment, close, reload }) {
     position: "",
     email: "",
     phone: "",
+    isPrimary: false,
   });
   const [createContactErrors, setCreateContactErrors] = useState({});
 
@@ -292,6 +293,7 @@ const [dtLocal, setDtLocal] = useState(
         position: contactForm.position.trim(),
         email: contactForm.email.trim(),
         phone: contactForm.phone.trim(),
+        isPrimary: contactForm.isPrimary,
       };
 
       const created = await createContact(form.enterpriseId, payload);
@@ -314,6 +316,7 @@ const [dtLocal, setDtLocal] = useState(
         position: "",
         email: "",
         phone: "",
+        isPrimary: false,
       });
 
       setCreateContactErrors({});
@@ -577,6 +580,7 @@ const [dtLocal, setDtLocal] = useState(
                     )}
                   </div>
 
+
                   <div className="form-group">
                     <input
                       className={createContactErrors.position ? "input-error" : ""}
@@ -618,7 +622,21 @@ const [dtLocal, setDtLocal] = useState(
                       <span className="error-text">{createContactErrors.phone}</span>
                     )}
                   </div>
-
+                  <div className="form-group full-width">
+  <label className="checkbox-primary">
+    <input
+      type="checkbox"
+      checked={contactForm.isPrimary}
+      onChange={(e) =>
+        setContactForm({
+          ...contactForm,
+          isPrimary: e.target.checked,
+        })
+      }
+    />
+    <span>Đặt làm người liên hệ chính</span>
+  </label>
+</div>
                 </div>
 
                 <button onClick={handleCreateContact} disabled={creatingContact}>

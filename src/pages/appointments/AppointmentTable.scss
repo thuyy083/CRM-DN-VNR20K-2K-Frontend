@@ -60,11 +60,14 @@
   }
 
   .status {
+    white-space: nowrap;
     padding: 4px 10px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 500;
-    display: inline-block;
+    display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
     &.scheduled {
       background: #e0f2fe;
@@ -136,7 +139,12 @@
     }
   }
 }
-
+.appointment-table td:nth-child(5) {
+  white-space: nowrap;
+}
+.appointment-table td:nth-child(6) {
+  white-space: nowrap;
+}
 .pagination {
   display: flex;
   justify-content: flex-end;
