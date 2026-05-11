@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   BarChart,
   Bar,
@@ -12,6 +12,9 @@ import {
   Pie,
   Cell,
   Tooltip,
+  RadialBarChart,
+  RadialBar,
+  Legend,
 } from "recharts";
 import {
   Users,
@@ -23,8 +26,17 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
+  X,
+  Clock,
+  Building2,
+  User,
+  ChevronRight,
+  BarChart2,
 } from "lucide-react";
-import { getDashboardMetrics } from "../../services/dashboardService";
+import {
+  getDashboardMetrics,
+  getRegionDetail,
+} from "../../services/dashboardService";
 import styles from "./Dashboard.module.scss";
 
 /* ─── Appointment type labels ─── */
@@ -37,8 +49,20 @@ const APPOINTMENT_TYPE_LABEL = {
   FOLLOW_UP: "Theo dõi",
   CONSULTATION: "Tư vấn",
   NEGOTIATION: "Đàm phán",
+  ONLINE_MEETING: "Trực tuyến",
+  OFFLINE_MEETING: "Trực tiếp",
+  CUSTOMER_SUPPORT: "Hỗ trợ",
+  OTHER: "Khác",
 };
 const getTypeLabel = (type) => APPOINTMENT_TYPE_LABEL[type] ?? type ?? "";
+
+const STATUS_LABEL = {
+  CONFIRMED: "Đã xác nhận",
+  REJECTED: "Đã hủy",
+  SCHEDULED: "Lên lịch",
+  REMINDED: "Đã nhắc nhở",
+  PENDING: "Chờ xác nhận",
+};
 
 /* ─── Format helpers ─── */
 const formatTime = (scheduledTime) => {
@@ -54,16 +78,65 @@ const formatTime = (scheduledTime) => {
 
 const formatDate = (dateStr) => {
   if (!dateStr) return "";
-  const [, month, day] = dateStr.split("-");
-  return `${day}/${month}`;
+  const parts = dateStr.split("-");
+  if (parts.length === 3) {
+    const [, month, day] = parts;
+    return `${day}/${month}`;
+  }
+  return dateStr;
+};
+
+const formatFullDate = (dateStr) => {
+  if (!dateStr) return "";
+  const parts = dateStr.split("-");
+  if (parts.length === 3) {
+    const [year, month, day] = parts;
+    return `${day}/${month}/${year}`;
+  }
+  return dateStr;
+};
+
+/* ─── Region config ─── */
+const REGION_CONFIG = {
+  CTO: {
+    label: "Cần Thơ",
+    color: "#c8102e",
+    lightColor: "#fef2f2",
+    borderColor: "#fecaca",
+  },
+  HUG: {
+    label: "Hậu Giang",
+    color: "#e53e3e",
+    lightColor: "#fff5f5",
+    borderColor: "#fed7d7",
+  },
+  STG: {
+    label: "Sóc Trăng",
+    color: "#f87171",
+    lightColor: "#fef2f2",
+    borderColor: "#fca5a5",
+  },
+};
+
+const ENTERPRISE_TYPE_LABEL = {
+  SME: "SME",
+  HKD: "HKD",
+  VNR2000: "VNR 2000",
+  VNR20K: "VNR 20K",
+};
+
+const TYPE_COLORS = {
+  SME: "#c8102e",
+  HKD: "#f87171",
+  VNR2000: "#1d4ed8",
+  VNR20K: "#7c3aed",
 };
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   DeltaBadge — Silicon Valley / Enterprise style
-   ─────────────────────────────────────────────────────────────────────────── */
+   DeltaBadge
+─────────────────────────────────────────────────────────────────────────── */
 const DeltaBadge = ({ current, previous, invertColor = false }) => {
   if (previous == null) return null;
-
   const diff = current - previous;
   const pct =
     previous === 0
@@ -119,9 +192,10 @@ const BarTooltip = ({ active, payload }) => {
 const RegionTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
+  const cfg = REGION_CONFIG[d.region] || {};
   return (
     <div className={styles.barTooltip}>
-      <span className={styles.barTooltipName}>{d.region}</span>
+      <span className={styles.barTooltipName}>{cfg.label || d.region}</span>
       <span className={styles.barTooltipVal}>
         Tổng: {d.totalEnterprises} DN
       </span>
@@ -135,7 +209,6 @@ const RegionTooltip = ({ active, payload }) => {
   );
 };
 
-/* ─── Trend Tooltip ─── */
 const TrendTooltip = ({ active, payload, label, month }) => {
   if (!active || !payload?.length) return null;
   const cur = payload.find((p) => p.dataKey === "cumContacted");
@@ -165,23 +238,311 @@ const TrendTooltip = ({ active, payload, label, month }) => {
   );
 };
 
-/* ─── Main component ─── */
+/* ─────────────────────────────────────────────────────────────────────────────
+   AppointmentDetailModal
+─────────────────────────────────────────────────────────────────────────── */
+const AppointmentDetailModal = ({ appointment, dayLabel, date, onClose }) => {
+  if (!appointment) return null;
+
+  const statusClass = appointment.status?.toLowerCase();
+  const statusLabel = STATUS_LABEL[appointment.status] || appointment.status;
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className={styles.modalHeader}>
+          <div className={styles.modalHeaderLeft}>
+            <div className={styles.modalDateBadge}>
+              <span className={styles.modalTime}>
+                {formatTime(appointment.scheduledTime)}
+              </span>
+              <span className={styles.modalDateText}>
+                {formatFullDate(date)}
+              </span>
+              <span className={styles.modalDow}>{dayLabel}</span>
+            </div>
+            <div>
+              <h3 className={styles.modalTitle}>
+                {appointment.enterpriseName}
+              </h3>
+              <span
+                className={`${styles.modalStatus} ${styles[`status_${statusClass}`]}`}
+              >
+                {statusLabel}
+              </span>
+            </div>
+          </div>
+          <button className={styles.modalCloseBtn} onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className={styles.modalBody}>
+          <div className={styles.modalInfoGrid}>
+            <div className={styles.modalInfoItem}>
+              <div className={styles.modalInfoIcon}>
+                <User size={14} />
+              </div>
+              <div>
+                <span className={styles.modalInfoLabel}>Tư vấn viên</span>
+                <span className={styles.modalInfoValue}>
+                  {appointment.consultantName || "—"}
+                </span>
+              </div>
+            </div>
+            <div className={styles.modalInfoItem}>
+              <div className={styles.modalInfoIcon}>
+                <Clock size={14} />
+              </div>
+              <div>
+                <span className={styles.modalInfoLabel}>Thời gian</span>
+                <span className={styles.modalInfoValue}>
+                  {formatTime(appointment.scheduledTime)} ·{" "}
+                  {formatFullDate(date)}
+                </span>
+              </div>
+            </div>
+            <div className={styles.modalInfoItem}>
+              <div className={styles.modalInfoIcon}>
+                <Briefcase size={14} />
+              </div>
+              <div>
+                <span className={styles.modalInfoLabel}>Hình thức</span>
+                <span className={styles.modalInfoValue}>
+                  {getTypeLabel(appointment.appointmentType)}
+                </span>
+              </div>
+            </div>
+            <div className={styles.modalInfoItem}>
+              <div className={styles.modalInfoIcon}>
+                <Building2 size={14} />
+              </div>
+              <div>
+                <span className={styles.modalInfoLabel}>Doanh nghiệp</span>
+                <span className={styles.modalInfoValue}>
+                  {appointment.enterpriseName || "—"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.modalFooter}>
+          <button className={styles.modalCloseAction} onClick={onClose}>
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   RegionDetailCard — card cho CTO / HUG / STG
+─────────────────────────────────────────────────────────────────────────── */
+const RegionDetailCard = ({ data, month }) => {
+  const cfg = REGION_CONFIG[data.region] || {
+    label: data.region,
+    color: "#c8102e",
+  };
+  const contactPct =
+    data.totalEnterprises > 0
+      ? Math.round((data.contacted / data.totalEnterprises) * 100)
+      : 0;
+
+  // Cluster bar data
+  const clusterData = (data.clusters || []).map((c) => ({
+    name: c.clusterName,
+    total: c.total,
+    contacted: c.contacted,
+    notContacted: c.total - c.contacted,
+  }));
+
+  // Type pie data
+  const typeData = Object.entries(data.byType || {})
+    .map(([type, count]) => ({
+      name: ENTERPRISE_TYPE_LABEL[type] || type,
+      value: count,
+      color: TYPE_COLORS[type] || "#94a3b8",
+    }))
+    .filter((d) => d.value > 0);
+
+  return (
+    <div className={styles.regionDetailCard}>
+      {/* Card header */}
+      <div className={styles.rdcHeader} style={{ borderLeftColor: cfg.color }}>
+        <div className={styles.rdcHeaderLeft}>
+          <div
+            className={styles.rdcRegionDot}
+            style={{ background: cfg.color }}
+          />
+          <div>
+            <h4 className={styles.rdcTitle}>{cfg.label}</h4>
+            <span className={styles.rdcSubtitle}>Tháng {month}</span>
+          </div>
+        </div>
+        <div className={styles.rdcKpi}>
+          <span className={styles.rdcKpiVal} style={{ color: cfg.color }}>
+            {data.contacted}
+          </span>
+          <span className={styles.rdcKpiLabel}>
+            / {data.totalEnterprises} DN
+          </span>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className={styles.rdcProgressWrap}>
+        <div className={styles.rdcProgressBg}>
+          <div
+            className={styles.rdcProgressFill}
+            style={{ width: `${contactPct}%`, background: cfg.color }}
+          />
+        </div>
+        <span className={styles.rdcProgressPct}>{contactPct}% đã tiếp xúc</span>
+      </div>
+
+      {/* Two columns: cluster chart + type donut */}
+      <div className={styles.rdcCharts}>
+        {/* Cluster stacked bar */}
+        <div className={styles.rdcClusterSection}>
+          <span className={styles.rdcChartTitle}>
+            <BarChart2 size={12} /> Tiếp xúc theo cụm
+          </span>
+          {clusterData.length > 0 ? (
+            <ResponsiveContainer
+              width="100%"
+              height={clusterData.length * 32 + 24}
+            >
+              <BarChart
+                data={clusterData}
+                layout="vertical"
+                margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
+                barSize={10}
+              >
+                <XAxis type="number" hide />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  tick={{ fontSize: 10, fill: "#64748b" }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={80}
+                />
+                <Tooltip
+                  formatter={(val, name) => [
+                    val,
+                    name === "contacted" ? "Đã tiếp xúc" : "Chưa tiếp xúc",
+                  ]}
+                  contentStyle={{ fontSize: 11, padding: "4px 10px" }}
+                />
+                <Bar
+                  dataKey="contacted"
+                  name="Đã tiếp xúc"
+                  fill={cfg.color}
+                  radius={[0, 3, 3, 0]}
+                  stackId="a"
+                />
+                <Bar
+                  dataKey="notContacted"
+                  name="Chưa tiếp xúc"
+                  fill="#f1f5f9"
+                  radius={[0, 3, 3, 0]}
+                  stackId="a"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className={styles.rdcEmpty}>Không có dữ liệu</p>
+          )}
+        </div>
+
+        {/* Type donut */}
+        <div className={styles.rdcTypeSection}>
+          <span className={styles.rdcChartTitle}>Theo loại DN</span>
+          {typeData.length > 0 ? (
+            <>
+              <ResponsiveContainer width="100%" height={110}>
+                <PieChart>
+                  <Pie
+                    data={typeData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={28}
+                    outerRadius={44}
+                    paddingAngle={2}
+                    stroke="none"
+                  >
+                    {typeData.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(val) => [`${val} DN`]}
+                    contentStyle={{ fontSize: 11, padding: "4px 10px" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className={styles.rdcTypeLegend}>
+                {typeData.map((d, i) => (
+                  <div key={i} className={styles.rdcTypeLegendItem}>
+                    <span
+                      className={styles.rdcTypeDot}
+                      style={{ background: d.color }}
+                    />
+                    <span className={styles.rdcTypeName}>{d.name}</span>
+                    <span className={styles.rdcTypeVal}>{d.value}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className={styles.rdcEmpty}>Không có dữ liệu</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Main Dashboard Component
+─────────────────────────────────────────────────────────────────────────── */
 function Dashboard() {
   const [displayMetrics, setDisplayMetrics] = useState(null);
+  const [regionDetails, setRegionDetails] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState({
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
   });
 
+  // Modal state
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [selectedDayLabel, setSelectedDayLabel] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
+
   useEffect(() => {
     let isMounted = true;
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const res = await getDashboardMetrics(filter.month, filter.year);
-        const actualData = res.data?.data || res.data;
-        if (isMounted) setDisplayMetrics(actualData);
+        const [dashRes, regionRes] = await Promise.all([
+          getDashboardMetrics(filter.month, filter.year),
+          getRegionDetail(filter.month, filter.year).catch(() => ({
+            data: [],
+          })),
+        ]);
+        const actualData = dashRes.data?.data || dashRes.data;
+        const regionData = regionRes.data?.data || regionRes.data || [];
+        if (isMounted) {
+          setDisplayMetrics(actualData);
+          setRegionDetails(Array.isArray(regionData) ? regionData : []);
+        }
       } catch (err) {
         console.error("Dashboard error:", err);
       } finally {
@@ -194,6 +555,16 @@ function Dashboard() {
     };
   }, [filter]);
 
+  const handleAppointmentClick = useCallback((app, dayLabel, date) => {
+    setSelectedAppointment(app);
+    setSelectedDayLabel(dayLabel);
+    setSelectedDate(date);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setSelectedAppointment(null);
+  }, []);
+
   /* ── Derived data ── */
   const interactionPct = useMemo(() => {
     if (!displayMetrics?.totalEnterprises) return 0;
@@ -204,19 +575,21 @@ function Dashboard() {
     );
   }, [displayMetrics]);
 
+  // FIX: pie data must always sum correctly; use explicit two-slice approach
   const interactionPieData = useMemo(() => {
-    if (!displayMetrics) return [];
+    if (!displayMetrics)
+      return [
+        { name: "Đã tương tác", value: 0 },
+        { name: "Chưa", value: 1 },
+      ];
+    const contacted = displayMetrics.totalInteractedEnterprises || 0;
+    const total = displayMetrics.totalEnterprises || 0;
+    const notContacted = Math.max(0, total - contacted);
+    // Ensure we never have both zero (pie would render nothing)
+    if (total === 0) return [{ name: "Chưa tương tác", value: 1 }];
     return [
-      {
-        name: "Đã tương tác",
-        value: displayMetrics.totalInteractedEnterprises || 0,
-      },
-      {
-        name: "Chưa tương tác",
-        value:
-          (displayMetrics.totalEnterprises || 0) -
-          (displayMetrics.totalInteractedEnterprises || 0),
-      },
+      { name: "Đã tương tác", value: contacted },
+      { name: "Chưa tương tác", value: notContacted },
     ];
   }, [displayMetrics]);
 
@@ -231,24 +604,20 @@ function Dashboard() {
     );
   }, [displayMetrics]);
 
-  /* ── Trend summary stats ── */
   const trendStats = useMemo(() => {
     const trend = displayMetrics?.monthlyTrend;
     if (!trend?.length)
       return { curMtd: 0, prevMtd: 0, diff: 0, pct: 0, completionPct: 0 };
-
     const last = trend[trend.length - 1];
     const curMtd = last.cumContacted;
     const prevMtd = last.cumPrev;
     const diff = curMtd - prevMtd;
     const pct = prevMtd > 0 ? Math.round((diff / prevMtd) * 100) : 0;
-    // tỷ lệ hoàn thành = lũy kế / (trung bình ngày tháng trước * tổng ngày tháng này)
     const daysInMonth = new Date(filter.year, filter.month, 0).getDate();
     const avgPerDay = prevMtd > 0 ? prevMtd / trend.length : 0;
     const projected = Math.round(avgPerDay * daysInMonth);
     const completionPct =
       projected > 0 ? Math.round((curMtd / projected) * 100) : 0;
-
     return { curMtd, prevMtd, diff, pct, completionPct };
   }, [displayMetrics, filter]);
 
@@ -261,12 +630,22 @@ function Dashboard() {
     );
   }
 
-  const PIE_COLORS = ["#ffffff", "rgba(255,255,255,0.2)"];
-  const REGION_COLORS = ["#c8102e", "#e53e3e", "#feb2b2", "#fca5a5"];
+  const PIE_COLORS = ["#c8102e", "#f1f5f9"];
+  const REGION_COLORS = ["#c8102e", "#e53e3e", "#f87171", "#fca5a5"];
   const prev = displayMetrics.previousMonth ?? {};
 
   return (
     <div className={styles.dashboardContainer}>
+      {/* ── APPOINTMENT MODAL ── */}
+      {selectedAppointment && (
+        <AppointmentDetailModal
+          appointment={selectedAppointment}
+          dayLabel={selectedDayLabel}
+          date={selectedDate}
+          onClose={closeModal}
+        />
+      )}
+
       {/* ── HEADER ── */}
       <header className={styles.dashboardHeader}>
         <div>
@@ -325,28 +704,29 @@ function Dashboard() {
             />
           </div>
           <div className={styles.pieWrap}>
-            <ResponsiveContainer width={110} height={110}>
-              <PieChart>
-                <Pie
-                  data={interactionPieData}
-                  innerRadius={36}
-                  outerRadius={50}
-                  dataKey="value"
-                  stroke="none"
-                  startAngle={90}
-                  endAngle={-270}
-                >
-                  {interactionPieData.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i]} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
+            <PieChart width={110} height={110}>
+              <Pie
+                data={interactionPieData}
+                innerRadius={36}
+                outerRadius={50}
+                dataKey="value"
+                stroke="none"
+                startAngle={90}
+                endAngle={-270}
+              >
+                {interactionPieData.map((_, i) => (
+                  <Cell
+                    key={i}
+                    fill={i === 0 ? "#ffffff" : "rgba(255,255,255,0.2)"}
+                  />
+                ))}
+              </Pie>
+            </PieChart>
             <span className={styles.pct}>{interactionPct}%</span>
           </div>
         </div>
 
-        {/* DN mới 30 ngày */}
+        {/* Mini KPI cards */}
         <div className={styles.miniCard}>
           <Users className={styles.miniIcon} size={16} />
           <label>DN mới 30 ngày</label>
@@ -359,7 +739,6 @@ function Dashboard() {
           />
         </div>
 
-        {/* Tiếp xúc trong tháng */}
         <div className={styles.miniCard}>
           <TrendingUp className={styles.miniIcon} size={16} />
           <label>Tiếp xúc trong tháng</label>
@@ -372,7 +751,6 @@ function Dashboard() {
           />
         </div>
 
-        {/* Lịch hẹn tuần này */}
         <div className={styles.miniCard}>
           <Calendar className={styles.miniIcon} size={16} />
           <label>Lịch hẹn tuần này</label>
@@ -385,7 +763,6 @@ function Dashboard() {
           />
         </div>
 
-        {/* Tỷ lệ chuyển đổi */}
         <div className={`${styles.miniCard} ${styles.miniCardAccent}`}>
           <Briefcase className={styles.miniIcon} size={16} />
           <label>Tỷ lệ chuyển đổi</label>
@@ -399,10 +776,9 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* ── MONTHLY TREND (LŨY KẾ) ── */}
+      {/* ── MONTHLY TREND ── */}
       {displayMetrics.monthlyTrend?.length > 0 && (
         <div className={styles.trendBox}>
-          {/* Header */}
           <div className={styles.trendHeader}>
             <h3 className={styles.sectionTitle}>
               <TrendingUp size={16} strokeWidth={2} />
@@ -425,7 +801,6 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* KPI mini summary */}
           <div className={styles.trendStats}>
             <div className={styles.trendStat}>
               <span className={styles.trendStatLabel}>
@@ -434,11 +809,7 @@ function Dashboard() {
               <span className={styles.trendStatVal}>{trendStats.curMtd}</span>
               {trendStats.prevMtd > 0 && (
                 <span
-                  className={`${styles.trendDelta} ${
-                    trendStats.diff >= 0
-                      ? styles.trendDeltaUp
-                      : styles.trendDeltaDown
-                  }`}
+                  className={`${styles.trendDelta} ${trendStats.diff >= 0 ? styles.trendDeltaUp : styles.trendDeltaDown}`}
                 >
                   {trendStats.diff >= 0 ? "▲" : "▼"}&nbsp;
                   {trendStats.diff >= 0 ? "+" : ""}
@@ -458,27 +829,18 @@ function Dashboard() {
                 Tỷ lệ hoàn thành dự kiến
               </span>
               <span
-                className={`${styles.trendStatVal} ${
-                  trendStats.completionPct >= 100 ? styles.trendStatGreen : ""
-                }`}
+                className={`${styles.trendStatVal} ${trendStats.completionPct >= 100 ? styles.trendStatGreen : ""}`}
               >
                 {trendStats.completionPct}%
               </span>
             </div>
           </div>
 
-          {/* Chart */}
           <ResponsiveContainer width="100%" height={180}>
             <LineChart
               data={displayMetrics.monthlyTrend}
               margin={{ top: 8, right: 16, left: -8, bottom: 0 }}
             >
-              <defs>
-                <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#c8102e" stopOpacity={0.08} />
-                  <stop offset="95%" stopColor="#c8102e" stopOpacity={0} />
-                </linearGradient>
-              </defs>
               <CartesianGrid
                 strokeDasharray="3 3"
                 vertical={false}
@@ -489,7 +851,6 @@ function Dashboard() {
                 tick={{ fontSize: 11, fill: "#94a3b8" }}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(d) => String(d)}
                 interval={Math.floor(displayMetrics.monthlyTrend.length / 8)}
               />
               <YAxis
@@ -502,21 +863,17 @@ function Dashboard() {
                 content={<TrendTooltip month={filter.month} />}
                 cursor={{ stroke: "#e2e8f0", strokeWidth: 1 }}
               />
-              {/* Tháng hiện tại */}
               <Line
                 type="monotone"
                 dataKey="cumContacted"
-                name={`Tháng ${filter.month}`}
                 stroke="#c8102e"
                 strokeWidth={2.5}
                 dot={false}
                 activeDot={{ r: 4, fill: "#c8102e", strokeWidth: 0 }}
               />
-              {/* Tháng trước */}
               <Line
                 type="monotone"
                 dataKey="cumPrev"
-                name="Tháng trước"
                 stroke="#94a3b8"
                 strokeWidth={1.5}
                 strokeDasharray="5 3"
@@ -569,11 +926,15 @@ function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Phân bổ khu vực */}
+        {/* ── Phân bổ khu vực — FIX: dùng fixed width PieChart thay vì ResponsiveContainer ── */}
         <div className={styles.chartBox}>
-          <h3 className={styles.sectionTitle}>Phân bổ theo khu vực</h3>
+          <h3 className={styles.sectionTitle}>
+            <MapPin size={16} strokeWidth={2} />
+            Phân bổ theo khu vực
+          </h3>
           <div className={styles.regionSummary}>
             {displayMetrics.regionDistribution?.map((r, i) => {
+              const cfg = REGION_CONFIG[r.region] || {};
               const pct = r.totalEnterprises
                 ? Math.round((r.contacted / r.totalEnterprises) * 100)
                 : 0;
@@ -585,7 +946,9 @@ function Dashboard() {
                       background: REGION_COLORS[i % REGION_COLORS.length],
                     }}
                   />
-                  <span className={styles.regionName}>{r.region}</span>
+                  <span className={styles.regionName}>
+                    {cfg.label || r.region}
+                  </span>
                   <span className={styles.regionContacted}>
                     Tiếp xúc <strong>{r.contacted}</strong>/{r.totalEnterprises}{" "}
                     DN trong tháng
@@ -595,37 +958,41 @@ function Dashboard() {
               );
             })}
           </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              <Pie
-                data={displayMetrics.regionDistribution}
-                dataKey="totalEnterprises"
-                nameKey="region"
-                cx="50%"
-                cy="50%"
-                outerRadius={75}
-                innerRadius={30}
-                paddingAngle={2}
-                label={({ region, percent }) =>
-                  percent > 0.03
-                    ? `${region} ${(percent * 100).toFixed(0)}%`
-                    : ""
-                }
-                labelLine={{ stroke: "#cbd5e1", strokeWidth: 1 }}
-              >
-                {displayMetrics.regionDistribution?.map((_, i) => (
-                  <Cell
-                    key={i}
-                    fill={REGION_COLORS[i % REGION_COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip content={<RegionTooltip />} />
-            </PieChart>
-          </ResponsiveContainer>
+          {/* FIX: sử dụng div có chiều cao cố định và overflow hidden để tránh lỗi layout */}
+          <div className={styles.pieChartWrap}>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie
+                  data={displayMetrics.regionDistribution}
+                  dataKey="totalEnterprises"
+                  nameKey="region"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={72}
+                  innerRadius={30}
+                  paddingAngle={2}
+                  label={({ region, percent }) => {
+                    const cfg = REGION_CONFIG[region] || {};
+                    return percent > 0.03
+                      ? `${cfg.label || region} ${(percent * 100).toFixed(0)}%`
+                      : "";
+                  }}
+                  labelLine={{ stroke: "#cbd5e1", strokeWidth: 1 }}
+                >
+                  {displayMetrics.regionDistribution?.map((_, i) => (
+                    <Cell
+                      key={i}
+                      fill={REGION_COLORS[i % REGION_COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip content={<RegionTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        {/* Lịch hẹn trong tuần */}
+        {/* Lịch hẹn trong tuần — clickable */}
         <div className={styles.listBox}>
           <h3 className={styles.sectionTitle}>
             <Calendar size={16} strokeWidth={2} />
@@ -634,7 +1001,13 @@ function Dashboard() {
           <div className={styles.scrollList}>
             {weeklyAppointments.length ? (
               weeklyAppointments.map((app, idx) => (
-                <div key={idx} className={styles.appItem}>
+                <div
+                  key={idx}
+                  className={`${styles.appItem} ${styles.appItemClickable}`}
+                  onClick={() =>
+                    handleAppointmentClick(app, app._dayLabel, app._date)
+                  }
+                >
                   <div className={styles.appDateBadge}>
                     <span className={styles.appTime}>
                       {formatTime(app.scheduledTime)}
@@ -650,6 +1023,7 @@ function Dashboard() {
                       {getTypeLabel(app.appointmentType) || app.consultantName}
                     </p>
                   </div>
+                  <ChevronRight size={14} className={styles.appChevron} />
                 </div>
               ))
             ) : (
@@ -673,8 +1047,8 @@ function Dashboard() {
           <div className={styles.warnSummary}>
             Các doanh nghiệp thuộc danh sách ưu tiên <strong>VNR2000</strong> và{" "}
             <strong>VNR20K</strong> chưa có{" "}
-            <strong>bất kỳ lần tiếp xúc nào</strong> được ghi nhận trong hệ
-            thống. Cần ưu tiên liên hệ sớm để không bỏ lỡ cơ hội.
+            <strong>bất kỳ lần tiếp xúc nào</strong> được ghi nhận. Cần ưu tiên
+            liên hệ sớm.
           </div>
           <div className={styles.scrollList}>
             {displayMetrics.uncontactedEnterprises?.length ? (
@@ -701,6 +1075,25 @@ function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* ── REGION DETAIL SECTION (CTO / HUG / STG) ── */}
+      {regionDetails.length > 0 && (
+        <div className={styles.regionDetailSection}>
+          <h3 className={styles.regionDetailTitle}>
+            <MapPin size={16} strokeWidth={2} />
+            Chi tiết tiếp xúc theo khu vực — Tháng {filter.month}/{filter.year}
+          </h3>
+          <div className={styles.regionDetailGrid}>
+            {regionDetails.map((rd) => (
+              <RegionDetailCard
+                key={rd.region}
+                data={rd}
+                month={filter.month}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
