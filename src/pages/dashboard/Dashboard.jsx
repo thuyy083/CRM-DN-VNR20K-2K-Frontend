@@ -35,7 +35,6 @@ import {
 } from "lucide-react";
 import {
   getDashboardMetrics,
-  getRegionDetail,
 } from "../../services/dashboardService";
 import styles from "./Dashboard.module.scss";
 
@@ -514,7 +513,6 @@ const RegionDetailCard = ({ data, month }) => {
 ─────────────────────────────────────────────────────────────────────────── */
 function Dashboard() {
   const [displayMetrics, setDisplayMetrics] = useState(null);
-  const [regionDetails, setRegionDetails] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState({
     month: new Date().getMonth() + 1,
@@ -531,17 +529,12 @@ function Dashboard() {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const [dashRes, regionRes] = await Promise.all([
-          getDashboardMetrics(filter.month, filter.year),
-          getRegionDetail(filter.month, filter.year).catch(() => ({
-            data: [],
-          })),
+        const [dashRes] = await Promise.all([
+          getDashboardMetrics(filter.month, filter.year)
         ]);
         const actualData = dashRes.data?.data || dashRes.data;
-        const regionData = regionRes.data?.data || regionRes.data || [];
         if (isMounted) {
           setDisplayMetrics(actualData);
-          setRegionDetails(Array.isArray(regionData) ? regionData : []);
         }
       } catch (err) {
         console.error("Dashboard error:", err);
@@ -1076,24 +1069,6 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* ── REGION DETAIL SECTION (CTO / HUG / STG) ── */}
-      {regionDetails.length > 0 && (
-        <div className={styles.regionDetailSection}>
-          <h3 className={styles.regionDetailTitle}>
-            <MapPin size={16} strokeWidth={2} />
-            Chi tiết tiếp xúc theo khu vực — Tháng {filter.month}/{filter.year}
-          </h3>
-          <div className={styles.regionDetailGrid}>
-            {regionDetails.map((rd) => (
-              <RegionDetailCard
-                key={rd.region}
-                data={rd}
-                month={filter.month}
-              />
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
