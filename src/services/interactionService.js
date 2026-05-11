@@ -50,5 +50,14 @@ export const updateInteractionDescription = async (id, description) => {
 
 export const getInteractionImageUrl = (path) => {
   if (!path) return null;
-  return `http://localhost:8080/uploads/${path}`;
+
+  // import.meta.env.DEV là biến tự động của Vite. 
+  // Nó sẽ là true khi bạn gõ 'npm run dev', và false khi bạn 'npm run build'
+  if (import.meta.env.DEV) {
+    return `http://localhost:8080/uploads/${path}`;
+  }
+
+  // Trên môi trường Server Production, chỉ cần dùng đường dẫn tương đối.
+  // Nginx sẽ tự động hiểu và gắn tên miền https://crmkhdncto.id.vn vào.
+  return `/uploads/${path}`;
 };
