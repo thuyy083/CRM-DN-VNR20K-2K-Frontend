@@ -367,6 +367,7 @@ function EnterpriseDetailModal({
               <th>Chức vụ</th>
               <th>Email</th>
               <th>Phone</th>
+              <th>Liên hệ chính</th>
               <th></th>
             </tr>
           </thead>
@@ -377,6 +378,17 @@ function EnterpriseDetailModal({
                 <td>{c.position}</td>
                 <td>{c.email}</td>
                 <td>{c.phone}</td>
+                 <td>
+          {c.isPrimary ? (
+            <span className="primary-badge">
+              Chính
+            </span>
+          ) : (
+            <span className="secondary-badge">
+              Phụ
+            </span>
+          )}
+        </td>
                 <td>
                   <div className="action-btns">
                     <button

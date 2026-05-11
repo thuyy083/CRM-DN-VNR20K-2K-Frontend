@@ -69,7 +69,7 @@ function AppointmentTable({
             <th>Người liên hệ</th>
             <th onClick={() => requestSort("scheduledTime")}>Thời gian</th>
             <th>Hình thức</th>
-            <th>Địa điểm</th>
+            {/* <th>Địa điểm</th> */}
             <th>Trạng thái</th>
             <th>Hành động</th>
           </tr>
@@ -85,7 +85,7 @@ function AppointmentTable({
                 {/* 3. Dịch Hình thức ở đây */}
                 {typeLabels[e.appointmentType] || e.appointmentType}
               </td>
-              <td>{e.location}</td>
+              {/* <td>{e.location}</td> */}
               <td>
                 <span className={`status ${e.status?.toLowerCase()}`}>
                   {/* 4. Dịch Trạng thái ở đây */}

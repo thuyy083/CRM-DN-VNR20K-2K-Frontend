@@ -16,6 +16,9 @@ function Services() {
   const [filterStatus, setFilterStatus] = useState("ALL");
 
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const dropdownRef = useRef(null);
 
   const getNormalizedRole = (user) => {
@@ -48,17 +51,31 @@ function Services() {
 
   const fetchServices = useCallback(async () => {
     try {
-      const res = await getServices();
-      setServices(res.data?.data?.content || res.data || []);
+      let isActive = "";
+
+      if (filterStatus === "ACTIVE") {
+        isActive = true;
+      } else if (filterStatus === "INACTIVE") {
+        isActive = false;
+      }
+
+      const res = await getServices({
+        page: currentPage - 1,
+        size: 10,
+        keyword: searchTerm,
+        isActive,
+      });
+
+      setServices(res.data?.data?.content || []);
+      setTotalPages(res.data?.data?.totalPages || 0);
     } catch (error) {
       console.error(error);
     }
-  }, []);
-
+  }, [searchTerm, filterStatus, currentPage]);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchServices();
-  }, [fetchServices]);
+  }, [fetchServices, reloadTrigger]);
 
   const handleEdit = (service) => {
     setSelectedService(service);
@@ -76,36 +93,12 @@ function Services() {
       await deleteService(id);
       toast.success("Đã xóa dịch vụ thành công!");
       fetchServices();
-    // eslint-disable-next-line no-unused-vars
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       toast.error("Lỗi khi xóa dịch vụ!");
     }
   };
 
-  // ĐÃ SỬA: Sửa lỗi lọc trạng thái và tối ưu tìm kiếm
-  const filteredServices = services.filter((srv) => {
-    const term = searchTerm.toLowerCase();
-
-    // 1. Lấy dữ liệu an toàn (hỗ trợ cả snake_case và camelCase từ API)
-    const code = srv.service_code || srv.serviceCode || "";
-    const name = srv.service_name || srv.serviceName || "";
-    const status = srv.is_active ?? srv.isActive ?? false;
-
-    // 2. Lọc theo text search
-    const matchSearch =
-      code.toLowerCase().includes(term) || name.toLowerCase().includes(term);
-
-    // 3. Lọc theo trạng thái
-    let matchStatus = true;
-    if (filterStatus === "ACTIVE") {
-      matchStatus = status === true || String(status) === "true";
-    }
-    if (filterStatus === "INACTIVE") {
-      matchStatus = status === false || String(status) === "false";
-    }
-
-    return matchSearch && matchStatus;
-  });
 
   const statusOptions = [
     { value: "ALL", label: "Tất cả tình trạng" },
@@ -210,7 +203,10 @@ function Services() {
 
       <div className="table-card">
         <ServiceTable
-          services={filteredServices}
+          services={services}
+          totalPages={totalPages}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
           currentUserRole={currentUserRole}
           onEdit={handleEdit}
           onDelete={handleDelete}
@@ -224,7 +220,9 @@ function Services() {
           } /* TRUYỀN DANH SÁCH DỊCH VỤ ĐỂ MODAL DÒ TRÙNG MÃ */
           service={selectedService}
           close={() => setOpenModal(false)}
-          reload={fetchServices}
+          // reload={fetchServices}
+          reload={() => setReloadTrigger((prev) => prev + 1)}
+
         />
       )}
     </div>
