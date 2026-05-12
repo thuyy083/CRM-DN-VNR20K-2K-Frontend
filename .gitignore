@@ -26,3 +26,5 @@ deploy.bat
 *.njsproj
 *.sln
 *.sw?
+deploy.bat
+deploy.bat.zip

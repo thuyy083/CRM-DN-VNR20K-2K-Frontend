@@ -3,11 +3,14 @@ import { useState } from "react";
 import "./Profile.scss";
 
 import ProfileModal from "./ProfileModal";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 function Profile() {
+
     const user = useSelector((state) => state.auth.user);
 
     const [openModal, setOpenModal] = useState(false);
+    const [openPasswordModal, setOpenPasswordModal] = useState(false);
 
     const formatDate = (date) => {
 
@@ -17,6 +20,7 @@ function Profile() {
 
         return `${day}/${month}/${year}`;
     };
+
     const formatCreatedAt = (date) => {
 
         if (!date) return "";
@@ -29,11 +33,15 @@ function Profile() {
 
         return `${day}/${month}/${year}`;
     };
+
     return (
         <div className="profile-page">
             <div className="profile-card">
+
                 <div className="profile-header">
-                    <div className="avatar">{user?.fullName?.charAt(0)}</div>
+                    <div className="avatar">
+                        {user?.fullName?.charAt(0)}
+                    </div>
 
                     <div>
                         <h2>{user?.fullName}</h2>
@@ -42,6 +50,7 @@ function Profile() {
                 </div>
 
                 <div className="profile-body">
+
                     <div className="info-item">
                         <label>Email</label>
                         <span>{user?.email}</span>
@@ -54,7 +63,9 @@ function Profile() {
 
                     <div className="info-item">
                         <label>Ngày sinh</label>
-                        <span>{formatDate(user?.dateOfBirth) || "Chưa cập nhật"}</span>
+                        <span>
+                            {formatDate(user?.dateOfBirth) || "Chưa cập nhật"}
+                        </span>
                     </div>
 
                     <div className="info-item">
@@ -72,14 +83,35 @@ function Profile() {
                         <span>{formatCreatedAt(user?.createdAt)}</span>
                     </div>
 
-                    <button className="edit-btn" onClick={() => setOpenModal(true)}>
-                        Chỉnh sửa thông tin
-                    </button>
+                    <div className="profile-actions">
+                        <button
+                            className="edit-btn"
+                            onClick={() => setOpenModal(true)}
+                        >
+                            Chỉnh sửa thông tin
+                        </button>
+
+                        <button
+                            className="password-btn"
+                            onClick={() => setOpenPasswordModal(true)}
+                        >
+                            Đổi mật khẩu
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {openModal && (
-                <ProfileModal user={user} close={() => setOpenModal(false)} />
+                <ProfileModal
+                    user={user}
+                    close={() => setOpenModal(false)}
+                />
+            )}
+
+            {openPasswordModal && (
+                <ChangePasswordModal
+                    close={() => setOpenPasswordModal(false)}
+                />
             )}
         </div>
     );

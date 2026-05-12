@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { updateUser } from "../../services/userService";
@@ -8,6 +8,13 @@ import "./ProfileModal.scss";
 
 function ProfileModal({ user, close }) {
   const dispatch = useDispatch();
+  useEffect(() => {
+  document.body.style.overflow = "hidden";
+
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, []);
   const formatDateForInput = (date) => {
 
     if (!date) return "";
@@ -16,7 +23,7 @@ function ProfileModal({ user, close }) {
 
     return `${year}-${month}-${day}`;
   };
-  console.log("dateOfBirth from redux:", user?.dateOfBirth);
+  // console.log("dateOfBirth from redux:", user?.dateOfBirth);
 
   const formatDateForServer = (date) => {
     if (!date) return null;
@@ -120,9 +127,12 @@ function ProfileModal({ user, close }) {
   };
 
 
-  return (
-    <div className="modal">
-      <div className="modal-box">
+return (
+  <div className="modal open" onClick={close}>
+    <div
+      className="modal-box"
+      onClick={(e) => e.stopPropagation()}
+    >
         <h3>Chỉnh sửa thông tin cá nhân</h3>
 
         <div className="form-content">

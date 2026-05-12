@@ -150,7 +150,7 @@ const removeUsage = (index) => {
   setUsages(usages.filter((_, i) => i !== index));
 };
 
-  console.log("form", form)
+  // console.log("form", form)
 
   const parseInitDateTime = (str) => {
     if (!str) return null;
@@ -285,7 +285,7 @@ const removeUsage = (index) => {
             "",   // region
             ""    // type → để rỗng để search tất cả
           );
-          console.log("searchEnterprise:", searchEnterprise);
+          // console.log("searchEnterprise:", searchEnterprise);
 
           const data = res.data?.data?.content || [];
 
