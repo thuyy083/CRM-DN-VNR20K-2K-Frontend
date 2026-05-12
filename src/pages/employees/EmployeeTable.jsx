@@ -3,8 +3,15 @@ import { useSelector } from "react-redux";
 import { getClusters, getCommunes } from "../../services/locationsService";
 import "./EmployeeTable.scss";
 
-function EmployeeTable({ users, onEdit, onView }) {
-  const user = useSelector((state) => state.auth.user);
+function EmployeeTable({
+  users,
+  onEdit,
+  onView,
+  currentPage,
+  totalPages,
+  onPageChange,
+}) {
+    const user = useSelector((state) => state.auth.user);
   const getNormalizedRole = (user) => {
     const directRole = user?.role || user?.roleName;
     if (typeof directRole === "string" && directRole.trim()) {
@@ -32,14 +39,13 @@ function EmployeeTable({ users, onEdit, onView }) {
   };
 
   // 2. STATE PHÂN TRANG
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
 
   const roleMap = {
     ADMIN: "Quản trị viên",
     CONSULTANT: "Nhân viên tư vấn",
     MANAGER: "Quản lý khu vực",
     OPERATOR: "Quản lý điều hành",
+    ACCOUNT_MANAGER: "Nhân viên AM",
   };
 
   const [allClusters, setAllClusters] = useState([]);
@@ -84,95 +90,64 @@ function EmployeeTable({ users, onEdit, onView }) {
     return sortableItems;
   }, [users, sortConfig]);
 
-  const totalPages = Math.ceil(sortedUsers.length / itemsPerPage);
-
-  // ==========================================
-  // LOGIC PHÂN TRANG THÔNG MINH
-  // Bảo vệ người dùng không bị "đá văng" về trang 1 nếu dữ liệu lọc xong vẫn đủ dài.
-  // Chỉ quay về khi dữ liệu lọc ít đi và làm mất cái trang hiện tại đang đứng.
-  useEffect(() => {
-    if (totalPages > 0 && currentPage > totalPages) {
-      setCurrentPage(totalPages);
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-
-    } else if (totalPages === 0 && currentPage !== 1) {
-      setCurrentPage(1);
-    }
-  }, [totalPages, currentPage]);
 
   useEffect(() => {
-  const fetchLocations = async () => {
-    try {
-      // load tất cả clusters theo các region bạn dùng
-      const regions = ["CTO", "HUG", "STG"];
-      let clusters = [];
-      let communes = [];
+    const fetchLocations = async () => {
+      try {
+        // load tất cả clusters theo các region bạn dùng
+        const regions = ["CTO", "HUG", "STG"];
+        let clusters = [];
+        let communes = [];
 
-      for (const region of regions) {
-        const resCluster = await getClusters(region);
-        const listCluster = resCluster.data?.data || [];
+        for (const region of regions) {
+          const resCluster = await getClusters(region);
+          const listCluster = resCluster.data?.data || [];
 
-        clusters = [...clusters, ...listCluster];
+          clusters = [...clusters, ...listCluster];
 
-        // lấy communes của từng cluster
-        for (const cl of listCluster) {
-          const resCommune = await getCommunes(cl.id);
-          const listCommune = resCommune.data?.data || [];
+          // lấy communes của từng cluster
+          for (const cl of listCluster) {
+            const resCommune = await getCommunes(cl.id);
+            const listCommune = resCommune.data?.data || [];
 
-          // GẮN clusterId vào commune để map ngược
-          const mapped = listCommune.map((c) => ({
-            ...c,
-            clusterId: cl.id,
-            clusterName: cl.name,
-          }));
+            // GẮN clusterId vào commune để map ngược
+            const mapped = listCommune.map((c) => ({
+              ...c,
+              clusterId: cl.id,
+              clusterName: cl.name,
+            }));
 
-          communes = [...communes, ...mapped];
+            communes = [...communes, ...mapped];
+          }
         }
+
+        setAllClusters(clusters);
+        setAllCommunes(communes);
+      } catch (err) {
+        console.error("Load location error:", err);
       }
+    };
 
-      setAllClusters(clusters);
-      setAllCommunes(communes);
-    } catch (err) {
-      console.error("Load location error:", err);
-    }
-  };
-
-  fetchLocations();
-}, []);
+    fetchLocations();
+  }, []);
   // ==========================================
-const getUserLocationDisplay = (user) => {
-  if (!user?.communeIds?.length) return null;
+  const getUserLocationDisplay = (user) => {
+    if (!user?.communeIds?.length) return null;
 
-  const userCommunes = allCommunes.filter((c) =>
-    user.communeIds.includes(c.id)
-  );
+    const userCommunes = allCommunes.filter((c) =>
+      user.communeIds.includes(c.id)
+    );
 
-  if (userCommunes.length === 0) return null;
+    if (userCommunes.length === 0) return null;
 
-  const clusterName = userCommunes[0].clusterName;
+    const clusterName = userCommunes[0].clusterName;
 
-  return {
-    clusterName,
-    communes: userCommunes.map((c) => c.name),
+    return {
+      clusterName,
+      communes: userCommunes.map((c) => c.name),
+    };
   };
-};
-  // Logic Phân trang
-  const currentTableData = useMemo(() => {
-    // Đảm bảo an toàn không bị out of bound index
-    const safeCurrentPage =
-      currentPage > totalPages && totalPages > 0
-        ? totalPages
-        : currentPage === 0
-          ? 1
-          : currentPage;
-    const firstPageIndex = (safeCurrentPage - 1) * itemsPerPage;
-    const lastPageIndex = firstPageIndex + itemsPerPage;
-    return sortedUsers.slice(firstPageIndex, lastPageIndex);
-  }, [currentPage, sortedUsers, totalPages, itemsPerPage]);
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
 
   // const formatDate = (dateString) => {
   //   if (!dateString) return "-";
@@ -201,9 +176,7 @@ const getUserLocationDisplay = (user) => {
       <table className="employee-table">
         <thead>
           <tr>
-            <th onClick={() => requestSort("id")} className="sortable">
-              ID {getSortIcon("id")}
-            </th>
+<th>STT</th>
             <th
               onClick={() => requestSort("fullName")}
               className="sortable text-left"
@@ -231,7 +204,7 @@ const getUserLocationDisplay = (user) => {
         </thead>
 
         <tbody>
-          {currentTableData.length === 0 ? (
+          {users.length === 0 ? (
             <tr>
               <td colSpan="9" className="empty-state">
                 Chưa có dữ liệu nhân viên nào hoặc không tìm thấy kết quả phù
@@ -239,9 +212,9 @@ const getUserLocationDisplay = (user) => {
               </td>
             </tr>
           ) : (
-            currentTableData.map((user) => (
+            sortedUsers.map((user, index) => (
               <tr key={user.id}>
-                <td>{user.id}</td>
+                <td>{currentPage * 10 + index + 1}</td>
                 <td className="font-medium text-left">
                   <div className="employee-name-wrapper">
                     <span className="employee-name">
@@ -264,24 +237,24 @@ const getUserLocationDisplay = (user) => {
                 </td>
                 <td>{regionMap[user.region] || user.region || "-"}</td>
                 <td className="text-left">
-  {(() => {
-    const location = getUserLocationDisplay(user);
+                  {(() => {
+                    const location = getUserLocationDisplay(user);
 
-    if (!location) return "-";
+                    if (!location) return "-";
 
-    return (
-      <div>
-        <div className="cluster-name">{location.clusterName}</div>
+                    return (
+                      <div>
+                        <div className="cluster-name">{location.clusterName}</div>
 
-        {location.communes.map((name, index) => (
-          <div key={index} className="commune-item">
-            - {name}
-          </div>
-        ))}
-      </div>
-    );
-  })()}
-</td>
+                        {location.communes.map((name, index) => (
+                          <div key={index} className="commune-item">
+                            - {name}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </td>
                 <td>
                   {/* Chỉ ADMIN mới thấy toàn bộ các nút hành động */}
                   {canManageEmployees ? (
@@ -334,40 +307,85 @@ const getUserLocationDisplay = (user) => {
       </table>
 
       {/* GIAO DIỆN NÚT PHÂN TRANG */}
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button
-            className="page-btn"
-            disabled={currentPage === 1}
-            onClick={() => handlePageChange(currentPage - 1)}
-          >
-            &laquo; Trước
-          </button>
+     {totalPages > 1 && (
+  <div className="pagination">
 
-          <div className="page-numbers">
-            {[...Array(totalPages)].map((_, index) => {
-              const pageNumber = index + 1;
-              return (
-                <button
-                  key={pageNumber}
-                  className={`page-num ${currentPage === pageNumber ? "active" : ""}`}
-                  onClick={() => handlePageChange(pageNumber)}
-                >
-                  {pageNumber}
-                </button>
-              );
-            })}
-          </div>
+    <button
+      className="page-btn"
+      disabled={currentPage === 0}
+      onClick={() => onPageChange(0)}
+    >
+      &laquo;&laquo;
+    </button>
 
-          <button
-            className="page-btn"
-            disabled={currentPage === totalPages}
-            onClick={() => handlePageChange(currentPage + 1)}
-          >
-            Sau &raquo;
-          </button>
-        </div>
-      )}
+    <button
+      className="page-btn"
+      disabled={currentPage === 0}
+      onClick={() => onPageChange(currentPage - 1)}
+    >
+      &laquo; Trước
+    </button>
+
+    <div className="page-numbers">
+      {(() => {
+        const pages = [];
+        const maxVisible = 5;
+
+        let startPage = Math.max(
+          0,
+          currentPage - Math.floor(maxVisible / 2)
+        );
+
+        let endPage = Math.min(
+          totalPages - 1,
+          startPage + maxVisible - 1
+        );
+
+        if (endPage - startPage < maxVisible - 1) {
+          startPage = Math.max(
+            0,
+            endPage - maxVisible + 1
+          );
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+          const pageNumber = i + 1;
+
+          pages.push(
+            <button
+              key={pageNumber}
+              className={`page-num ${
+                currentPage === i ? "active" : ""
+              }`}
+              onClick={() => onPageChange(i)}
+            >
+              {pageNumber}
+            </button>
+          );
+        }
+
+        return pages;
+      })()}
+    </div>
+
+    <button
+      className="page-btn"
+      disabled={currentPage === totalPages - 1}
+      onClick={() => onPageChange(currentPage + 1)}
+    >
+      Sau &raquo;
+    </button>
+
+    <button
+      className="page-btn"
+      disabled={currentPage === totalPages - 1}
+      onClick={() => onPageChange(totalPages - 1)}
+    >
+      &raquo;&raquo;
+    </button>
+
+  </div>
+)}
     </div>
   );
 }

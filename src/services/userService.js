@@ -1,10 +1,19 @@
 import axios from "../config/axios";
 
-export const getUsers = () => {
+export const getUsers = (
+  page = 0,
+  size = 10,
+  search = "",
+  role = "",
+  status = ""
+) => {
   return axios.get("/users", {
     params: {
-      page: 0,
-      size: 10,
+      page,
+      size,
+      search,
+      role,
+      status,
     },
   });
 };

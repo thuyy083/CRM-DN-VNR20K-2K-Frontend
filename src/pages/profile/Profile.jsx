@@ -85,7 +85,7 @@ function Profile() {
 
                     <div className="profile-actions">
                         <button
-                            className="edit-btn"
+                            className="edit-btn-pf"
                             onClick={() => setOpenModal(true)}
                         >
                             Chỉnh sửa thông tin

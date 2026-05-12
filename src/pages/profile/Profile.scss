@@ -183,7 +183,7 @@ $primary: #EE0033;
 }
 
 /* Base button */
-.edit-btn,
+.edit-btn-pf,
 .password-btn {
     flex: 1;
 
@@ -205,14 +205,14 @@ $primary: #EE0033;
 }
 
 /* Edit button */
-.edit-btn {
+.edit-btn-pf {
     background: #EE0033;
     color: white;
 
     box-shadow: 0 4px 12px rgba(238, 0, 51, 0.2);
 }
 
-.edit-btn:hover {
+.edit-btn-pf:hover {
     transform: translateY(-1px);
 
     background: #d9002f;
@@ -244,7 +244,7 @@ $primary: #EE0033;
         flex-direction: column;
     }
 
-    .edit-btn,
+    .edit-btn-pf,
     .password-btn {
         width: 100%;
     }

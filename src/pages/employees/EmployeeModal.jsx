@@ -13,10 +13,9 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [clusters, setClusters] = useState([]);
-  const [communes, setCommunes] = useState([]);
-
-  const [selectedCluster, setSelectedCluster] = useState("");
+  const [selectedClusters, setSelectedClusters] = useState([]);
   const [selectedCommunes, setSelectedCommunes] = useState([]);
+  const [clusterCommunes, setClusterCommunes] = useState({});
   const [isChangingLocation, setIsChangingLocation] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -64,7 +63,7 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
 
   const [errors, setErrors] = useState({});
 
-  
+
   const isAdminLike = ["ADMIN", "OPERATOR", "CONSULTANT"].includes(form.role);
   const isManager = form.role === "MANAGER";
   const isAM = form.role === "ACCOUNT_MANAGER";
@@ -81,24 +80,23 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
 
   useEffect(() => {
     if (!form.region) {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-
       setClusters([]);
-      setSelectedCluster("");
+      setSelectedClusters([]);
+      setSelectedCommunes([]);
+      setClusterCommunes({});
       return;
     }
 
     const fetchClusters = async () => {
       try {
         const res = await getClusters(form.region);
+
         setClusters(res.data?.data || []);
-        if (!user) {
-          setSelectedCluster("");
-        }
-        if (!user) {
-          setCommunes([]);
-          setSelectedCommunes([]);
-        }
+
+        // reset khi đổi khu vực
+        setSelectedClusters([]);
+        setSelectedCommunes([]);
+        setClusterCommunes({});
       } catch (err) {
         console.error(err);
         toast.error("Không load được danh sách cụm");
@@ -108,27 +106,6 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
     fetchClusters();
   }, [form.region]);
 
-  useEffect(() => {
-    if (!selectedCluster) {
-      setCommunes([]);
-      return;
-    }
-
-    const fetchCommunes = async () => {
-      try {
-        const res = await getCommunes(selectedCluster);
-        setCommunes(res.data?.data || []);
-        if (!user) {
-          setSelectedCommunes([]);
-        }
-      } catch (err) {
-        console.error(err);
-        toast.error("Không load được danh sách xã");
-      }
-    };
-
-    fetchCommunes();
-  }, [selectedCluster]);
 
   useEffect(() => {
     if (user) {
@@ -140,10 +117,14 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
   useEffect(() => {
     if (!user || clusters.length === 0) return;
 
-    const findClusterForUser = async () => {
+    const loadUserClusters = async () => {
+      const matchedClusters = [];
+      const communesMap = {};
+
       for (const cluster of clusters) {
         try {
           const res = await getCommunes(cluster.id);
+
           const list = res.data?.data || [];
 
           const hasMatch = list.some((c) =>
@@ -151,39 +132,48 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
           );
 
           if (hasMatch) {
-            setSelectedCluster(cluster.id);
-            setCommunes(list);
-            setSelectedCommunes(user.communeIds || []);
-            break;
+            matchedClusters.push(cluster.id);
+            communesMap[cluster.id] = list;
           }
         } catch (err) {
           console.error(err);
         }
       }
+
+      setSelectedClusters(matchedClusters);
+      setClusterCommunes(communesMap);
+      setSelectedCommunes(user.communeIds || []);
     };
 
-    findClusterForUser();
+    loadUserClusters();
   }, [clusters, user, isChangingLocation]);
 
   useEffect(() => {
     if (isAdminLike) {
-      handleChange("region", "");
-      setSelectedCluster("");
+      // eslint-disable-next-line
+      setForm((prev) => ({
+        ...prev,
+        region: "",
+      }));
+
+      setSelectedClusters([]);
       setSelectedCommunes([]);
+      setClusterCommunes({});
     }
 
     if (isManager) {
-      setSelectedCluster("");
+      setSelectedClusters([]);
       setSelectedCommunes([]);
+      setClusterCommunes({});
     }
   }, [form.role]);
 
   useEffect(() => {
-  document.body.style.overflow = "hidden";
-  return () => {
-    document.body.style.overflow = "";
-  };
-}, []);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
 
   const handleChange = (field, value) => {
     setForm({ ...form, [field]: value });
@@ -201,16 +191,46 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
     }
     return date;
   };
-  const handleClusterChange = (newClusterId) => {
-    // nếu đã có xã mà đổi cluster
-    if (selectedCommunes.length > 0 && newClusterId !== selectedCluster) {
-      toast.warning("Vui lòng xóa hết xã/phường trước khi đổi cụm");
+  const handleClusterToggle = async (clusterId) => {
+    const isSelected = selectedClusters.includes(clusterId);
+
+    // UNCHECK
+    if (isSelected) {
+      const communesOfCluster =
+        clusterCommunes[clusterId]?.map((c) => c.id) || [];
+
+      setSelectedClusters((prev) =>
+        prev.filter((id) => id !== clusterId)
+      );
+
+      setSelectedCommunes((prev) =>
+        prev.filter((id) => !communesOfCluster.includes(id))
+      );
+
+      setClusterCommunes((prev) => {
+        const copy = { ...prev };
+        delete copy[clusterId];
+        return copy;
+      });
+
       return;
     }
 
-    setSelectedCluster(newClusterId);
-  };
+    // CHECK
+    try {
+      const res = await getCommunes(clusterId);
 
+      setSelectedClusters((prev) => [...prev, clusterId]);
+
+      setClusterCommunes((prev) => ({
+        ...prev,
+        [clusterId]: res.data?.data || [],
+      }));
+    } catch (err) {
+      console.error(err);
+      toast.error("Không load được danh sách xã");
+    }
+  };
   const handleSubmit = async () => {
     const newErrors = {};
     let hasError = false;
@@ -266,11 +286,16 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
       }
     }
     if (form.role === "ACCOUNT_MANAGER") {
-      if (!form.region || !selectedCluster || !selectedCommunes.length) {
+      if (
+        !form.region ||
+        !selectedClusters.length ||
+        !selectedCommunes.length
+      ) {
         toast.error("Vui lòng chọn đầy đủ Khu vực, Cụm và Xã/Phường");
 
         if (!form.region) newErrors.region = "Vui lòng chọn khu vực";
-        if (!selectedCluster) newErrors.cluster = "Vui lòng chọn cụm";
+        if (!selectedClusters.length)
+          newErrors.cluster = "Vui lòng chọn ít nhất 1 cụm";
         if (!selectedCommunes.length)
           newErrors.communes = "Vui lòng chọn ít nhất 1 xã/phường";
 
@@ -433,8 +458,8 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
   );
 
   return (
-<div className="modal open" onClick={close}>
-  <div className="modal-box" onClick={(e) => e.stopPropagation()} ref={dropdownRef}>
+    <div className="modal open" onClick={close}>
+      <div className="modal-box" onClick={(e) => e.stopPropagation()} ref={dropdownRef}>
         <h3>{user ? "Cập nhật nhân viên" : "Thêm nhân viên"}</h3>
 
         <div className="form-content">
@@ -591,7 +616,7 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
             {renderDropdown("role", "Vai trò", roleOptions, "role")}
           </div>
 
-          
+
 
 
           {user && (
@@ -599,7 +624,7 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
               {renderDropdown("status", "Trạng thái", statusOptions, "status")}
             </div>
           )}
-          {user && (
+          {user && !isAdminLike && (
             <div className="checkbox-group">
               <input
                 type="checkbox"
@@ -612,108 +637,143 @@ function EmployeeModal({ user, close, reload, currentUserRole = "ADMIN" }) {
               </label>
             </div>
           )}
-          {(!user || isChangingLocation) && !isAdminLike && (
-            <>
-              {/* REGION */}
-              <div className="form-row">
-                {renderDropdown("region", "Khu vực", regionOptions, "region")}
+{(!user || isChangingLocation) && !isAdminLike && (
+  <>
+    <div className="location-section">
 
-                {/* CLUSTER chỉ hiện với ACCOUNT_MANAGER */}
-                {isAM && (
-                  <div className="form-group">
-                    <label>Cụm</label>
-                    <select
-                      value={selectedCluster}
-                      onChange={(e) => handleClusterChange(Number(e.target.value))}
-                      disabled={!form.region}
-                    >
-                      <option value="">-- Chọn cụm --</option>
-                      {clusters.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
+      {/* REGION */}
+      <div className="region-row">
+        {renderDropdown(
+          "region",
+          "Khu vực",
+          regionOptions,
+          "region"
+        )}
+      </div>
 
-              {/* COMMUNE chỉ hiện với ACCOUNT_MANAGER */}
-              {isAM && (
-                <div className="form-group">
-                  <label>Xã / Phường</label>
+      {/* CLUSTER */}
+      {isAM && (
+        <div className="cluster-row">
+          <div className="form-group">
+            <label>Cụm</label>
 
-                  <div className="multi-select">
-                    <div className="selected-list">
-                      {selectedCommunes.map((id) => {
-                        const commune = communes.find((c) => c.id === id);
-                        return (
-                          <span key={id} className="tag">
-                            {commune?.name}
-                            <span
-                              className="remove"
-                              onClick={() =>
-                                setSelectedCommunes(
-                                  selectedCommunes.filter((item) => item !== id)
-                                )
-                              }
-                            >
-                              ×
-                            </span>
-                          </span>
-                        );
-                      })}
-                    </div>
+            <div className="cluster-checkbox-list">
+              {clusters.map((cluster) => (
+                <label
+                  key={cluster.id}
+                  className="cluster-checkbox"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedClusters.includes(cluster.id)}
+                    onChange={() =>
+                      handleClusterToggle(cluster.id)
+                    }
+                    disabled={!form.region}
+                  />
 
-                    <select
-                      className="select-box"
-                      onChange={(e) => {
-                        const value = Number(e.target.value);
-                        if (!selectedCommunes.includes(value)) {
-                          setSelectedCommunes([...selectedCommunes, value]);
-                        }
-                      }}
-                      value=""
-                    >
-                      <option value="">-- Chọn xã/phường --</option>
-                      {communes.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-        <div className="form-row">
-            <div className="form-group">
-              <label>Số điện thoại</label>
-              <input
-                className={errors.phone ? "input-error" : ""}
-                placeholder="Nhập số điện thoại"
-                value={form.phone}
-                onChange={(e) => handleChange("phone", e.target.value)}
-              />
-              {errors.phone && (
-                <span className="error-text">{errors.phone}</span>
-              )}
-            </div>
-            <div className="form-group">
-              <label>Ngày sinh</label>
-              <input
-                type="date"
-                className={errors.dateOfBirth ? "input-error" : ""}
-                value={form.dateOfBirth}
-                onChange={(e) => handleChange("dateOfBirth", e.target.value)}
-              />
-              {errors.dateOfBirth && (
-                <span className="error-text">{errors.dateOfBirth}</span>
-              )}
+                  <span>{cluster.name}</span>
+                </label>
+              ))}
             </div>
           </div>
+        </div>
+      )}
+    </div>
+
+    {/* COMMUNE */}
+    {isAM && (
+      <div className="form-group commune-section">
+        <label>Xã / Phường</label>
+
+        <div className="commune-group-wrapper">
+          {selectedClusters.map((clusterId) => {
+            const cluster = clusters.find(
+              (c) => c.id === clusterId
+            );
+
+            return (
+              <div
+                key={clusterId}
+                className="commune-group"
+              >
+                <h5>{cluster?.name}</h5>
+
+                <div className="commune-list">
+                  {clusterCommunes[clusterId]?.map(
+                    (commune) => (
+                      <label
+                        key={commune.id}
+                        className="commune-item"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedCommunes.includes(
+                            commune.id
+                          )}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedCommunes((prev) => {
+                                if (
+                                  prev.includes(commune.id)
+                                )
+                                  return prev;
+
+                                return [
+                                  ...prev,
+                                  commune.id,
+                                ];
+                              });
+                            } else {
+                              setSelectedCommunes((prev) =>
+                                prev.filter(
+                                  (id) => id !== commune.id
+                                )
+                              );
+                            }
+                          }}
+                        />
+
+                        <span>{commune.name}</span>
+                      </label>
+                    )
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    )}
+  </>
+)}
+        </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label>Số điện thoại</label>
+            <input
+              className={errors.phone ? "input-error" : ""}
+              placeholder="Nhập số điện thoại"
+              value={form.phone}
+              onChange={(e) => handleChange("phone", e.target.value)}
+            />
+            {errors.phone && (
+              <span className="error-text">{errors.phone}</span>
+            )}
+          </div>
+          <div className="form-group">
+            <label>Ngày sinh</label>
+            <input
+              type="date"
+              className={errors.dateOfBirth ? "input-error" : ""}
+              value={form.dateOfBirth}
+              onChange={(e) => handleChange("dateOfBirth", e.target.value)}
+            />
+            {errors.dateOfBirth && (
+              <span className="error-text">{errors.dateOfBirth}</span>
+            )}
+          </div>
+        </div>
 
         <div className="modal-actions">
           <button className="cancel-btn" onClick={close}>
