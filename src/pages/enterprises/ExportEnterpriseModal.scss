@@ -1,4 +1,4 @@
-@import "./EnterpriseModal.scss";
+@use "./EnterpriseModal.scss";
 
 .export-modal-box {
   width: min(560px, calc(100vw - 24px));
