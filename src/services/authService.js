@@ -1,7 +1,7 @@
 import axiosClient from "../config/axios";
 
 export const loginApi = (data) => {
-  console.log("data: ", data)
+  // console.log("data: ", data)
   return axiosClient.post("/login", data);
 };
 export const getMeApi = () => {
