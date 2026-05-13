@@ -6,3 +6,9 @@ export const getDashboardMetrics = (month, year) => {
     });
 };
 
+export const getRegionDetail = (month, year) => {
+  return axiosClient.get("/dashboard/region-detail", {
+    params: { month, year },
+  });
+};
+ 
