@@ -1,8 +1,13 @@
 import { useState, useMemo } from "react";
 import "./EnterpriseTable.scss";
 
-
-function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageChange }) {
+function EnterpriseTable({
+  enterprises,
+  onView,
+  currentPage,
+  totalPages,
+  onPageChange,
+}) {
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
 
   const isPotentialEnterprise = (item) => {
@@ -18,7 +23,9 @@ function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageC
     if (typeof raw === "number") return raw === 1;
     if (typeof raw === "string") {
       const normalized = raw.trim().toLowerCase();
-      return ["true", "1", "yes", "y", "potential", "tiem_nang"].includes(normalized);
+      return ["true", "1", "yes", "y", "potential", "tiem_nang"].includes(
+        normalized,
+      );
     }
     return false;
   };
@@ -32,7 +39,9 @@ function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageC
   };
 
   const isInactiveEnterprise = (item) => {
-    const normalized = String(item?.status || "").trim().toUpperCase();
+    const normalized = String(item?.status || "")
+      .trim()
+      .toUpperCase();
     return normalized === "INACTIVE";
   };
 
@@ -74,21 +83,24 @@ function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageC
         <tbody>
           {sortedData.map((e, index) => (
             <tr key={e.id}>
-              <td>
-                {currentPage * 10 + index + 1}
-              </td>
+              <td>{currentPage * 10 + index + 1}</td>
               <td className="font-medium">
                 <div className="enterprise-name-wrapper">
                   <span className="enterprise-name-cell">
                     <span>{e.name}</span>
                     {isPotentialEnterprise(e) && (
-                      <span className="potential-star" title="Doanh nghiệp tiềm năng">
+                      <span
+                        className="potential-star"
+                        title="Doanh nghiệp tiềm năng"
+                      >
                         ★
                       </span>
                     )}
                   </span>
                   {isInactiveEnterprise(e) && (
-                    <span className="enterprise-inactive-text">Ngừng hoạt động</span>
+                    <span className="enterprise-inactive-text">
+                      Ngừng hoạt động
+                    </span>
                   )}
                 </div>
               </td>
@@ -100,13 +112,26 @@ function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageC
 
               <td>
                 <div className="action-btns">
-                  <button className="view-btn" onClick={() => onView(e)}>
-                    Xem
+                  <button
+                    className="view-btn"
+                    title="Xem chi tiết"
+                    onClick={() => onView(e)}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      width="16"
+                      height="16"
+                    >
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
                   </button>
-
-                  {/* <button className="delete-btn" onClick={() => onDelete(e)}>
-                    Xóa
-                  </button> */}
                 </div>
               </td>
             </tr>
@@ -115,7 +140,6 @@ function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageC
       </table>
       {totalPages > 1 && (
         <div className="pagination">
-
           {/* Nút về trang đầu */}
           <button
             className="page-btn"
@@ -139,8 +163,14 @@ function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageC
               const pages = [];
               const maxVisible = 5;
 
-              let startPage = Math.max(0, currentPage - Math.floor(maxVisible / 2));
-              let endPage = Math.min(totalPages - 1, startPage + maxVisible - 1);
+              let startPage = Math.max(
+                0,
+                currentPage - Math.floor(maxVisible / 2),
+              );
+              let endPage = Math.min(
+                totalPages - 1,
+                startPage + maxVisible - 1,
+              );
 
               if (endPage - startPage < maxVisible - 1) {
                 startPage = Math.max(0, endPage - maxVisible + 1);
@@ -155,7 +185,7 @@ function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageC
                     onClick={() => onPageChange(i)}
                   >
                     {pageNumber}
-                  </button>
+                  </button>,
                 );
               }
               return pages;
@@ -179,7 +209,6 @@ function EnterpriseTable({ enterprises, onView, currentPage, totalPages, onPageC
           >
             &raquo;&raquo;
           </button>
-
         </div>
       )}
     </div>

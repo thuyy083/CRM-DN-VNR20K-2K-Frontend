@@ -55,7 +55,10 @@ function AppointmentTable({
 
   const canEditOrAction = (status) => {
     return (
-      status !== "COMPLETED" && status !== "CANCELLED" && status !== "REJECTED" && status !== "CONFIRMED"
+      status !== "COMPLETED" &&
+      status !== "CANCELLED" &&
+      status !== "REJECTED" &&
+      status !== "CONFIRMED"
     );
   };
 
@@ -94,25 +97,91 @@ function AppointmentTable({
               </td>
               <td>
                 <div className="action-btns">
-                  <button className="view-btn" onClick={() => onView(e)}>
-                    Xem
+                  {/* Xem */}
+                  <button
+                    className="view-btn"
+                    title="Xem chi tiết"
+                    onClick={() => onView(e)}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      width="16"
+                      height="16"
+                    >
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
                   </button>
+
                   {canEditOrAction(e.status) && (
                     <>
-                      <button className="edit-btn" onClick={() => onEdit(e)}>
-                        Sửa
+                      {/* Sửa */}
+                      <button
+                        className="edit-btn"
+                        title="Sửa"
+                        onClick={() => onEdit(e)}
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          width="16"
+                          height="16"
+                        >
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
                       </button>
+
+                      {/* Xác nhận */}
                       <button
                         className="confirm-btn"
+                        title="Xác nhận"
                         onClick={() => onConfirm(e)}
                       >
-                        Xác nhận
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          width="16"
+                          height="16"
+                        >
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
                       </button>
+
+                      {/* Hủy */}
                       <button
                         className="delete-btn"
+                        title="Hủy lịch hẹn"
                         onClick={() => onDelete(e)}
                       >
-                        Huỷ
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          width="16"
+                          height="16"
+                        >
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="15" y1="9" x2="9" y2="15"></line>
+                          <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
                       </button>
                     </>
                   )}

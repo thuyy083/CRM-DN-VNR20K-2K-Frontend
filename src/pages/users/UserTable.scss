@@ -164,33 +164,16 @@ $danger: #ef4444;
     }
   }
 
-    .view-btn {
-      background: #fef3c7;
-      color: #d97706;
+  .view-btn {
+    background: #fef3c7;
+    color: #d97706;
 
-      &:hover {
-        background: #fde68a;
-        transform: translateY(-1px);
-      }
-    }
-
-  .view-edit-btn {
-    width: auto;
-    min-width: 118px;
-    height: 36px;
-    padding: 0 12px;
-    border-radius: 10px;
-    background: #e0f2fe;
-    color: #0369a1;
-    display: inline-flex;
-    gap: 6px;
-
-    span {
-      font-size: 12px;
-      font-weight: 600;
-      white-space: nowrap;
+    &:hover {
+      background: #fde68a;
+      transform: translateY(-1px);
     }
   }
+
 
   .edit-btn {
     background: #e0e7ff;
@@ -200,6 +183,11 @@ $danger: #ef4444;
   .delete-btn {
     background: #fef2f2;
     color: $danger;
+    &:hover {
+      // ← thêm cái này
+      background: #fecaca;
+      transform: translateY(-1px);
+    }
   }
 }
 
