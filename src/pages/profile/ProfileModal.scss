@@ -4,18 +4,28 @@
   $border: #d1d5db;
   $bg-overlay: rgba(17,24,39,0.4);
 
-  .modal {
-    position: fixed;
-    inset: 0;
-    background: $bg-overlay;
-    backdrop-filter: blur(4px);
+.modal {
+  position: fixed;
+  inset: 0;
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
-    z-index: 1000;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+
+  z-index: 9999;
+
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
+
+  &.open {
+    opacity: 1;
+    pointer-events: auto;
   }
+}
   @media (max-width: 768px) {
     .modal {
       align-items: flex-end; // modal trượt từ dưới lên (UX mobile tốt hơn)

@@ -1,10 +1,19 @@
 import axios from "../config/axios";
 
-export const getUsers = () => {
+export const getUsers = (
+  page = 0,
+  size = 10,
+  search = "",
+  role = "",
+  status = ""
+) => {
   return axios.get("/users", {
     params: {
-      page: 0,
-      size: 10,
+      page,
+      size,
+      search,
+      role,
+      status,
     },
   });
 };
@@ -13,18 +22,12 @@ export const getUserById = (id) => {
   return axios.get(`/users/${id}`);
 };
 
-export const searchUsers = (role, keyword, page = 0, size = 10) => {
-  return axios.get("/users", {
-    params: { role, keyword, page, size },
-  });
-};
-
 export const createUser = (data) => {
   return axios.post("/users", data);
 };
 
 export const updateUser = (id, data) => {
-  console.log("data: ", data)
+  // console.log("data: ", data)
   return axios.put(`/users/${id}`, data);
 };
 

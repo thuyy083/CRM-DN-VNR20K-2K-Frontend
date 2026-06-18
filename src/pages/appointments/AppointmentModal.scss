@@ -331,3 +331,23 @@
   width: 120px;
   border-left: 1px solid #eee;
 }
+.checkbox-primary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+
+  span {
+    user-select: none;
+  }
+}

@@ -8,8 +8,6 @@ import {
   addServiceToEnterprise,
 } from "../../services/enterpriseService";
 import { createContact } from "../../services/enterpriseContactService";
-import { searchCommunes } from "../../services/locationsService";
-import { searchUsers } from "../../services/userService";
 
 const POTENTIAL_STORAGE_KEY = "enterprise_potential_map";
 
@@ -33,13 +31,10 @@ function EnterpriseModal({ enterprise, close, reload }) {
     address: enterprise?.address || "",
     website: enterprise?.website || "",
     phone: enterprise?.phone || "",
-    email: enterprise?.email || "",
     status: enterprise?.status || "ACTIVE",
-    communeId: enterprise?.communeId || "",
-    consultantId: enterprise?.consultantId || "",
+    region: enterprise?.region || "NONE",
     type: enterprise?.type || "HKD",
     establishedDate: enterprise?.establishedDate || "",
-    taxAuthority: enterprise?.taxAuthority || "",
 
     isPotential:
       normalizePotentialValue(
@@ -58,23 +53,6 @@ function EnterpriseModal({ enterprise, close, reload }) {
   const [searchIndustry, setSearchIndustry] = useState("");
   const [openDropdown, setOpenDropdown] = useState(false);
   const dropdownRef = useRef(null);
-
-  const [searchCommune, setSearchCommune] = useState(
-    enterprise?.communeName ? `${enterprise.communeName}` : ""
-  );
-  const [communeOptions, setCommuneOptions] = useState([]);
-  const [openCommuneDropdown, setOpenCommuneDropdown] = useState(false);
-  const [loadingCommune, setLoadingCommune] = useState(false);
-  const communeDropdownRef = useRef(null);
-
-  const [searchConsultant, setSearchConsultant] = useState(
-    enterprise?.consultantName ? `${enterprise.consultantName}` : ""
-  );
-  const [consultantOptions, setConsultantOptions] = useState([]);
-  const [openConsultantDropdown, setOpenConsultantDropdown] = useState(false);
-  const [loadingConsultant, setLoadingConsultant] = useState(false);
-  const consultantDropdownRef = useRef(null);
-
   const [showServiceForm] = useState(false);
   const [serviceForm] = useState({
     viettelServiceId: "",
@@ -143,58 +121,12 @@ function EnterpriseModal({ enterprise, close, reload }) {
     return true;
   };
 
-  const cacheCommuneRef = useRef({});
-  useEffect(() => {
-    const debounce = setTimeout(() => {
-      const run = async () => {
-        const keyword = searchCommune.trim().toLowerCase();
-        if (keyword.length < 2) {
-          setCommuneOptions([]);
-          return;
-        }
-        if (cacheCommuneRef.current[keyword]) {
-          setCommuneOptions(cacheCommuneRef.current[keyword]);
-          return;
-        }
-        setLoadingCommune(true);
-        try {
-          const res = await searchCommunes(keyword);
-          setCommuneOptions(res.data || []);
-          cacheCommuneRef.current[keyword] = res.data || [];
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setLoadingCommune(false);
-        }
-      };
-      run();
-    }, 500);
-    return () => clearTimeout(debounce);
-  }, [searchCommune]);
-
-  useEffect(() => {
-    const fetchAllConsultants = async () => {
-      setLoadingConsultant(true);
-      try {
-        const res = await searchUsers("CONSULTANT", "", 0, 100);
-        setConsultantOptions(res.data?.data?.content || res.data?.content || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoadingConsultant(false);
-      }
-    };
-    if (form.type === "VNR20K" || form.type === "VNR2000") {
-      fetchAllConsultants();
-    }
-  }, [form.type]);
-
   // đóng dropdown khi click ngoài
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setOpenDropdown(false);
-      if (communeDropdownRef.current && !communeDropdownRef.current.contains(e.target)) setOpenCommuneDropdown(false);
-      if (consultantDropdownRef.current && !consultantDropdownRef.current.contains(e.target)) setOpenConsultantDropdown(false);
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpenDropdown(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () =>
@@ -309,7 +241,7 @@ function EnterpriseModal({ enterprise, close, reload }) {
 
   return (
 <div className="modal open" onClick={close}>
-  <div className="modal-box enterprise-modal" onClick={(e) => e.stopPropagation()}>
+  <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-title-row">
           <h3>{enterprise ? "Cập nhật doanh nghiệp" : "Thêm doanh nghiệp"}</h3>
           <button type="button" className="modal-close-btn" onClick={close}>
@@ -318,7 +250,7 @@ function EnterpriseModal({ enterprise, close, reload }) {
         </div>
 
         <div className="form-grid">
-          {/* CỘT 1 */}
+          {/* LEFT */}
           <div className="form-col">
             <div className="form-group">
               <label>Tên doanh nghiệp</label>
@@ -335,70 +267,24 @@ function EnterpriseModal({ enterprise, close, reload }) {
                 onChange={(e) => handleChange("taxCode", e.target.value)}
               />
             </div>
-
             <div className="form-group">
-              <label>Cơ quan thuế</label>
-              <input
-                value={form.taxAuthority}
-                onChange={(e) => handleChange("taxAuthority", e.target.value)}
-                placeholder="VD: Cục thuế TP..."
-              />
-            </div>
-
-            {/* XÃ/PHƯỜNG (COMMUNE) */}
-            <div className="form-group" ref={communeDropdownRef}>
-              <label>Xã / Phường / Khu vực</label>
-              <div
-                className={`select-box ${openCommuneDropdown ? "active" : ""}`}
+              <label>Khu vực</label>
+              <select
+                value={form.region}
+                onChange={(e) => handleChange("region", e.target.value)}
               >
-                <input
-                  className="search"
-                  style={{ border: "none", padding: 0, outline: "none", height: "auto", width: "100%" }}
-                  placeholder="Tìm xã/phường..."
-                  value={searchCommune}
-                  onFocus={(e) => {
-                    setOpenCommuneDropdown(true);
-                    e.target.select();
-                  }}
-                  onChange={(e) => {
-                    setSearchCommune(e.target.value);
-                    handleChange("communeId", "");
-                  }}
-                />
-              </div>
-
-              {openCommuneDropdown && (
-                <div className="select-dropdown">
-                  <div className="options">
-                    {loadingCommune ? (
-                      <div className="option">Đang tìm...</div>
-                    ) : searchCommune.length < 2 ? (
-                      <div className="option">Nhập ít nhất 2 ký tự</div>
-                    ) : communeOptions.length === 0 ? (
-                      <div className="option">Không tìm thấy xã</div>
-                    ) : (
-                      communeOptions.map((item) => (
-                        <div
-                          key={item.id}
-                          className={`option ${form.communeId === item.id ? "selected" : ""}`}
-                          onClick={() => {
-                            handleChange("communeId", item.id);
-                            setSearchCommune(`${item.name} - ${item.clusterName}`);
-                            setOpenCommuneDropdown(false);
-                          }}
-                        >
-                          {item.name} - {item.clusterName}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
+                <option value="NONE">Chưa xác định</option>
+                <option value="CTO">Cần Thơ</option>
+                <option value="HUG">Hậu Giang</option>
+                <option value="STG">Sóc Trăng</option>
+                <option value="ALL">Tất cả</option>
+              </select>
             </div>
 
             {/* INDUSTRY */}
             <div className="form-group" ref={dropdownRef}>
               <label>Ngành nghề</label>
+
               <div
                 className={`select-box ${openDropdown ? "active" : ""}`}
                 onClick={() => setOpenDropdown(!openDropdown)}
@@ -406,6 +292,7 @@ function EnterpriseModal({ enterprise, close, reload }) {
                 <span className={form.industry ? "selected" : "placeholder"}>
                   {selectedIndustry?.name || "Chọn ngành nghề"}
                 </span>
+
                 <svg
                   className={`icon ${openDropdown ? "open" : ""}`}
                   viewBox="0 0 24 24"
@@ -422,11 +309,13 @@ function EnterpriseModal({ enterprise, close, reload }) {
                     value={searchIndustry}
                     onChange={(e) => setSearchIndustry(e.target.value)}
                   />
+
                   <div className="options">
                     {filteredIndustries.map((item) => (
                       <div
                         key={item.code}
-                        className={`option ${form.industry === item.code ? "selected" : ""}`}
+                        className={`option ${form.industry === item.code ? "selected" : ""
+                          }`}
                         onClick={() => {
                           handleChange("industry", item.code);
                           setOpenDropdown(false);
@@ -439,20 +328,33 @@ function EnterpriseModal({ enterprise, close, reload }) {
                 </div>
               )}
             </div>
-          </div>
 
-          {/* CỘT 2 */}
-          <div className="form-col">
             <div className="form-group">
-              <label>Địa chỉ</label>
+              <label>Nhân sự</label>
               <input
-                value={form.address}
-                onChange={(e) => handleChange("address", e.target.value)}
+                type="number"
+                value={form.employeeCount}
+                onChange={(e) =>
+                  handleChange("employeeCount", e.target.value)
+                }
               />
             </div>
 
+
+          </div>
+
+          {/* RIGHT */}
+          <div className="form-col">
             <div className="form-group">
-              <label>Loại hình doanh nghiệp <span className="required">*</span></label>
+  <label>Ngày thành lập</label>
+  <input
+    type="date"
+    value={form.establishedDate}
+    onChange={(e) => handleChange("establishedDate", e.target.value)}
+  />
+</div>
+            <div className="form-group">
+              <label>Loại doanh nghiệp</label>
               <select
                 value={form.type}
                 onChange={(e) => handleChange("type", e.target.value)}
@@ -465,41 +367,10 @@ function EnterpriseModal({ enterprise, close, reload }) {
             </div>
 
             <div className="form-group">
-              <label>Ngày thành lập</label>
+              <label>Địa chỉ</label>
               <input
-                type="date"
-                value={form.establishedDate}
-                onChange={(e) => handleChange("establishedDate", e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Nhân sự</label>
-              <input
-                type="number"
-                value={form.employeeCount}
-                onChange={(e) => handleChange("employeeCount", e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* CỘT 3 */}
-          <div className="form-col">
-            <div className="form-group">
-              <label>Điện thoại</label>
-              <input
-                value={form.phone}
-                onChange={(e) => handleChange("phone", e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Email doanh nghiệp</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => handleChange("email", e.target.value)}
-                placeholder="VD: info@congty.com"
+                value={form.address}
+                onChange={(e) => handleChange("address", e.target.value)}
               />
             </div>
 
@@ -508,6 +379,14 @@ function EnterpriseModal({ enterprise, close, reload }) {
               <input
                 value={form.website}
                 onChange={(e) => handleChange("website", e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Điện thoại</label>
+              <input
+                value={form.phone}
+                onChange={(e) => handleChange("phone", e.target.value)}
               />
             </div>
 
@@ -521,62 +400,6 @@ function EnterpriseModal({ enterprise, close, reload }) {
                   <option value="ACTIVE">Đang hoạt động</option>
                   <option value="INACTIVE">Ngưng hoạt động</option>
                 </select>
-              </div>
-            )}
-
-            {/* CONSULTANT (Chỉ hiển thị khi type là VNR20K hoặc VNR2000) */}
-            {(form.type === "VNR20K" || form.type === "VNR2000") && (
-              <div className="form-group" ref={consultantDropdownRef}>
-                <label>Nhân viên dự án phụ trách</label>
-                <div
-                  className={`select-box ${openConsultantDropdown ? "active" : ""}`}
-                >
-                  <input
-                    className="search"
-                    style={{ border: "none", padding: 0, outline: "none", height: "auto", width: "100%" }}
-                    placeholder="Tìm theo tên/sđt/email..."
-                    value={searchConsultant}
-                    onFocus={(e) => {
-                      setOpenConsultantDropdown(true);
-                      e.target.select();
-                    }}
-                    onChange={(e) => {
-                      setSearchConsultant(e.target.value);
-                      handleChange("consultantId", "");
-                    }}
-                  />
-                </div>
-
-                {openConsultantDropdown && (
-                  <div className="select-dropdown">
-                    <div className="options">
-                      {loadingConsultant ? (
-                        <div className="option">Đang tải danh sách...</div>
-                      ) : consultantOptions.length === 0 ? (
-                        <div className="option">Chưa có nhân viên nào</div>
-                      ) : (
-                        consultantOptions
-                          .filter((item) => 
-                            item.fullName.toLowerCase().includes(searchConsultant.toLowerCase()) || 
-                            (item.phone && item.phone.includes(searchConsultant))
-                          )
-                          .map((item) => (
-                          <div
-                            key={item.id}
-                            className={`option ${form.consultantId === item.id ? "selected" : ""}`}
-                            onClick={() => {
-                              handleChange("consultantId", item.id);
-                              setSearchConsultant(`${item.fullName} - ${item.phone}`);
-                              setOpenConsultantDropdown(false);
-                            }}
-                          >
-                            {item.fullName} - {item.phone}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </div>

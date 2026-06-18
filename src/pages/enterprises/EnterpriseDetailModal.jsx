@@ -310,13 +310,8 @@ function EnterpriseDetailModal({
   </div>
 
   <div className="info-item">
-    <span className="label">Cơ quan thuế</span>
-    <span className="value">{enterpriseInfo?.taxAuthority || "-"}</span>
-  </div>
-
-  <div className="info-item">
-    <span className="label">Xã/Phường</span>
-    <span className="value">{enterpriseInfo?.communeName ? `${enterpriseInfo.communeName}` : enterpriseInfo?.region}</span>
+    <span className="label">Cụm</span>
+    <span className="value">{enterpriseInfo?.region}</span>
   </div>
 
   <div className="info-item">
@@ -342,11 +337,6 @@ function EnterpriseDetailModal({
   </div>
 
   <div className="info-item">
-    <span className="label">Email</span>
-    <span className="value">{enterpriseInfo?.email || "-"}</span>
-  </div>
-
-  <div className="info-item">
     <span className="label">Website</span>
     <span className="value">{enterpriseInfo?.website}</span>
   </div>
@@ -356,32 +346,6 @@ function EnterpriseDetailModal({
     <span className="value">{enterpriseInfo?.establishedDate}</span>
   </div>
 </div>
-
-        {/* NHÂN VIÊN PHỤ TRÁCH */}
-        <div className="info-header" style={{ marginTop: "20px" }}>
-          <h4>Nhân viên phụ trách</h4>
-        </div>
-        <div className="info-grid" style={{ marginBottom: "20px" }}>
-          <div className="info-item full">
-            <span className="label">AM phụ trách</span>
-            <span className="value">
-              {enterpriseInfo?.amName 
-                ? `${enterpriseInfo.amName} - ${enterpriseInfo.amPhone || "Chưa có SĐT"}`
-                : "Chưa phân công"}
-            </span>
-          </div>
-          
-          {(enterpriseInfo?.type === "VNR20K" || enterpriseInfo?.type === "VNR2000") && (
-            <div className="info-item full">
-              <span className="label">Dự án (Consultant)</span>
-              <span className="value">
-                {enterpriseInfo?.consultantName 
-                  ? `${enterpriseInfo.consultantName} - ${enterpriseInfo.consultantPhone || "Chưa có SĐT"}`
-                  : "Chưa phân công"}
-              </span>
-            </div>
-          )}
-        </div>
 
         {/* CONTACT */}
         <div className="contact-header">
@@ -403,6 +367,7 @@ function EnterpriseDetailModal({
               <th>Chức vụ</th>
               <th>Email</th>
               <th>Phone</th>
+              <th>Liên hệ chính</th>
               <th></th>
             </tr>
           </thead>
@@ -413,6 +378,17 @@ function EnterpriseDetailModal({
                 <td>{c.position}</td>
                 <td>{c.email}</td>
                 <td>{c.phone}</td>
+                 <td>
+          {c.isPrimary ? (
+            <span className="primary-badge">
+              Chính
+            </span>
+          ) : (
+            <span className="secondary-badge">
+              Phụ
+            </span>
+          )}
+        </td>
                 <td>
                   <div className="action-btns">
                     <button

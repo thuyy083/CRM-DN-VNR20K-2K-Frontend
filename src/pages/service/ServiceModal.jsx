@@ -1,10 +1,8 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { createService, updateService } from "../../services/servicesService";
 import "./ServiceModal.scss";
 
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
 
 function ServiceModal({ services, service, close, reload }) {
   const [form, setForm] = useState({
@@ -16,20 +14,16 @@ function ServiceModal({ services, service, close, reload }) {
 
   const [errors, setErrors] = useState({});
 
-  const modules = useMemo(() => ({
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-      [{ 'align': [] }],
-      ['clean']
-    ],
-  }), []);
-
   const handleChange = (field, value) => {
-    setForm({ ...form, [field]: value });
-    if (errors[field]) setErrors({ ...errors, [field]: "" });
+setForm((prev) => ({
+  ...prev,
+  [field]: value,
+}));
+    if (errors[field]) 
+      setErrors((prev) => ({
+  ...prev,
+  [field]: "",
+}));
   };
 
   const handleSubmit = async () => {
@@ -86,8 +80,12 @@ function ServiceModal({ services, service, close, reload }) {
         toast.success("Thêm dịch vụ mới thành công!");
       }
 
-      await reload();
-      close();
+await reload();
+
+// delay nhẹ để table render xong
+setTimeout(() => {
+  close();
+}, 100);
     } catch (error) {
       const errorMsg = error.response?.data?.message;
       if (Array.isArray(errorMsg)) {
@@ -143,34 +141,38 @@ function ServiceModal({ services, service, close, reload }) {
           </div>
 
           {/* KHUNG SOẠN THẢO MÔ TẢ */}
-          <div className="form-group" style={{ marginBottom: "20px" }}>
-            <label style={{ marginBottom: "8px", display: "block" }}>
-              Mô tả dịch vụ
-            </label>
-<div style={{ minHeight: "180px", marginBottom: "20px" }}>
-                <ReactQuill
-                theme="snow"
-                value={form.description}
-                modules={modules}
-                placeholder="Nhập mô tả chi tiết, in đậm, in nghiêng..."
-                onChange={(content) => handleChange("description", content)}
-                style={{ height: "100%", fontFamily: "inherit" }}
-              />
-            </div>
-          </div>
+<div className="form-group">
+  <label>
+    Mô tả dịch vụ
+  </label>
 
-          <div className="form-group">
-            <label>Tình trạng bán</label>
-            <select
-              value={String(form.is_active)}
-              onChange={(e) =>
-                handleChange("is_active", e.target.value === "true")
-              }
-            >
-              <option value="true">Đang bán (Active)</option>
-              <option value="false">Đã ngừng cung cấp (Inactive)</option>
-            </select>
-          </div>
+  <textarea
+    placeholder="Nhập mô tả dịch vụ..."
+    value={form.description}
+    onChange={(e) => handleChange("description", e.target.value)}
+    rows={6}
+    style={{
+      resize: "vertical",
+      minHeight: "140px",
+    }}
+  />
+</div>
+
+{service && (
+  <div className="form-group">
+    <label>Tình trạng bán</label>
+
+    <select
+      value={String(form.is_active)}
+      onChange={(e) =>
+        handleChange("is_active", e.target.value === "true")
+      }
+    >
+      <option value="true">Đang bán</option>
+      <option value="false">Ngừng bán</option>
+    </select>
+  </div>
+)}
         </div>
 
         <div className="modal-actions">

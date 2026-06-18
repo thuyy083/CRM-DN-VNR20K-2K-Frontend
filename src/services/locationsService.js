@@ -12,7 +12,3 @@ export const getCommunes = (clusterId) => {
 
   return axios.get("/locations/communes", { params });
 };
-
-export const searchCommunes = (keyword) => {
-  return axios.get("/locations/communes/search", { params: { keyword } });
-};

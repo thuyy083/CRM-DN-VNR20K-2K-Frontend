@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import "./ServiceTable.scss";
 import ServiceViewModal from "./ServiceViewModal";
-import { getServices } from "../../services/servicesService";
 
 // Component Modal Xác nhận Xóa Dịch vụ Tùy chỉnh
 function DeleteServiceModal({ isOpen, onClose, onConfirm, serviceName }) {
@@ -33,36 +32,21 @@ function DeleteServiceModal({ isOpen, onClose, onConfirm, serviceName }) {
   );
 }
 
-function ServiceTable({ onEdit, onDelete, currentUserRole }) {
-    const [services, setServices] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize] = useState(5);
-    const [totalPages, setTotalPages] = useState(0);
+function ServiceTable({
+  services,
+  totalPages,
+  currentPage,
+  setCurrentPage,
+  onEdit,
+  onDelete,
+  currentUserRole,
+}) {
     const [sortConfig, setSortConfig] = useState({
       key: "originalIndex",
       direction: "asc",
     });
-const fetchServices = async () => {
-  try {
-    const res = await getServices({
-      page: currentPage - 1,
-      size: pageSize,
-      keyword: "",
-      isActive: "",
-    });
 
-    // ✅ FIX CHUẨN
-    setServices(res.data.data.content);
-    setTotalPages(res.data.data.totalPages);
 
-  } catch (err) {
-    console.error(err);
-  }
-};
-
-useEffect(() => {
-  fetchServices();
-}, [currentPage]);
 
   const processedServices = useMemo(() => {
     return (services || []).map((service, index) => ({
@@ -70,7 +54,7 @@ useEffect(() => {
       displayCode: service.service_code || service.serviceCode || "N/A",
       displayName: service.service_name || service.serviceName || "N/A",
       displayStatus: service.is_active ?? service.isActive ?? false,
-      originalIndex: index + 1,
+      originalIndex: (currentPage - 1) * 10 + index + 1,
     }));
   }, [services]);
 

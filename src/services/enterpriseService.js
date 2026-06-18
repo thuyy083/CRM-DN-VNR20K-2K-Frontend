@@ -88,9 +88,15 @@ export const downloadEnterpriseTemplate = () => {
   });
 };
 
+// export const exportEnterprises = (params) => {
+//   return axios.get("/enterprises/export", {
+//     params,
+//     responseType: "blob",
+//   });
+// };
+
 export const exportEnterprises = (params) => {
-  return axios.get("/enterprises/export", {
-    params,
+  return axios.get(`/enterprises/export?${params.toString()}`, {
     responseType: "blob",
   });
 };

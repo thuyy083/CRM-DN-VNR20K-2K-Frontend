@@ -15,18 +15,6 @@ const RESULT_MAP = {
   CLOSED_WON: "Ký hợp đồng",
   CLOSED_LOST: "Thất bại"
 };
-
-const TYPE_MAP = {
-  PHONE_CALL: "Gọi điện",
-  EMAIL_QUOTE: "Gửi báo giá",
-  SEND_MAIL: "Gửi mail",
-  ONLINE_MEETING: "Họp online",
-  OFFLINE_MEETING: "Gặp trực tiếp",
-  DEMO: "Demo sản phẩm",
-  CONTRACT_SIGNING: "Ký hợp đồng",
-  CUSTOMER_SUPPORT: "Hỗ trợ KH",
-  OTHER: "Khác"
-};
 const formatDateOnly = (value) => {
   if (!value) return "-";
   const date = new Date(value);
@@ -99,20 +87,21 @@ function InteractionTable({
             <td>{index + 1}</td>
             <td>{formatDateOnly(item.interactionTime)}</td>
 
-            <td>{TYPE_MAP[item.interactionType] || item.interactionType || "-"}</td>
-            {item.result === "CLOSED_WON" && item.usages?.length > 0 ? (
-              <button
-                className="result-badge clickable"
-                onClick={() => onViewContract(item)}
-              >
-                ✅ {RESULT_MAP[item.result]}
-              </button>
-            ) : (
-              <span className={`result-badge ${item.result}`}>
-                {RESULT_MAP[item.result] || item.result}
-              </span>
-            )}
-
+            <td>{item.interactionType || "-"}</td>
+            <td>
+              {item.result === "CLOSED_WON" && item.usages?.length > 0 ? (
+                <button
+                  className="result-badge clickable"
+                  onClick={() => onViewContract(item)}
+                >
+                  {RESULT_MAP[item.result]}
+                </button>
+              ) : (
+                <span className={`result-badge ${item.result}`}>
+                  {RESULT_MAP[item.result] || item.result}
+                </span>
+              )}
+            </td>
             <td>{item.contactName || "-"}</td>
             <td>{item.consultantName || "-"}</td>
             <td>{item.location || "-"}</td>
@@ -156,6 +145,7 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
   const [editingDescription, setEditingDescription] = useState("");
   const [previewImages, setPreviewImages] = useState([]);
   const [selectedContract, setSelectedContract] = useState([]);
+  const [zoomImage, setZoomImage] = useState(null);
   useEffect(() => {
     const fetchIndustries = async () => {
       try {
@@ -263,10 +253,6 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
                   <span>{enterpriseInfo?.phone || "-"}</span>
                 </div>
                 <div>
-                  <b>Email:</b>
-                  <span>{enterpriseInfo?.email || "-"}</span>
-                </div>
-                <div>
                   <b>Website:</b>
                   <span>{enterpriseInfo?.website || "-"}</span>
                 </div>
@@ -283,7 +269,12 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
                   setEditingDescription(item.description || "");
                 }}
                 onViewImages={(item) => {
-                  const images = (item.photoPaths || []).map(getInteractionImageUrl);
+                  if (!item.photoPaths || item.photoPaths.length === 0) {
+                    toast.warning("Tiếp xúc này không có hình ảnh!");
+                    return;
+                  }
+
+                  const images = item.photoPaths.map(getInteractionImageUrl);
                   setPreviewImages(images);
                 }}
                 onViewContract={(item) => {
@@ -369,21 +360,25 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
                   </div>
 
                   <div className="image-preview-grid">
-                    {previewImages.map((img, index) => {
-                      // Thêm điều kiện kiểm tra: img.startsWith('/uploads/')
-                      const imageSrc = (img.startsWith('http') || img.startsWith('data:') || img.startsWith('/uploads/'))
-                        ? img
-                        : `/uploads/${img}`;
-
-                      return (
-                        <img
-                          key={index}
-                          src={imageSrc}
-                          alt="interaction preview"
-                        />
-                      );
-                    })}
+                    {previewImages.map((img, index) => (
+                      <img
+                        key={index}
+                        src={img}
+                        alt="interaction"
+                        onClick={() => setZoomImage(img)}
+                      />
+                    ))}
                   </div>
+                  {zoomImage && (
+                    <div
+                      className="content-preview-overlay"
+                      onClick={() => setZoomImage(null)}
+                    >
+                      <div className="image-zoom-box" onClick={(e) => e.stopPropagation()}>
+                        <img src={zoomImage} alt="zoom" />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -407,33 +402,41 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
                   </div>
 
                   <div className="contract-list">
-                    {selectedContract.map((c) => (
+                    {selectedContract.map((c, index) => (
                       <div key={c.id} className="contract-card">
+
+                        {/* HEADER */}
                         <div className="contract-header">
-                          <span className="contract-service">{c.serviceName}</span>
+                          <div className="left">
+                            <span className="contract-index">HĐ #{index + 1}</span>
+                            <span className="contract-service">{c.serviceName}</span>
+                          </div>
+
                           <span className="contract-status">{c.status}</span>
                         </div>
 
-                        <div className="contract-body">
-                          <div>
-                            <b>Mã dịch vụ:</b>
-                            <span>{c.serviceCode}</span>
+                        {/* BODY 2 CỘT */}
+                        <div className="contract-grid">
+                          <div className="contract-field">
+                            <span>Mã dịch vụ</span>
+                            <b>{c.serviceCode}</b>
                           </div>
 
-                          <div>
-                            <b>Số hợp đồng:</b>
-                            <span>{c.contractNumber}</span>
+                          <div className="contract-field">
+                            <span>Số hợp đồng</span>
+                            <b className="highlight">{c.contractNumber}</b>
                           </div>
 
-                          <div>
-                            <b>Ngày bắt đầu:</b>
-                            <span>
+                          <div className="contract-field">
+                            <span>Ngày bắt đầu</span>
+                            <b>
                               {Array.isArray(c.startDate)
                                 ? `${c.startDate[2]}/${c.startDate[1]}/${c.startDate[0]}`
                                 : "-"}
-                            </span>
+                            </b>
                           </div>
                         </div>
+
                       </div>
                     ))}
                   </div>

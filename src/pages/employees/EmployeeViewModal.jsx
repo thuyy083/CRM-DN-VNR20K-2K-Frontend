@@ -11,7 +11,7 @@ function EmployeeViewModal({ user, communes = [], close }) {
 
   const regionMap = {
     CTO: "Cần Thơ",
-    HUG: "Huế",
+    HUG: "Hậu Giang",
     STG: "Sóc Trăng",
     NONE: "Chưa phân công",
   };

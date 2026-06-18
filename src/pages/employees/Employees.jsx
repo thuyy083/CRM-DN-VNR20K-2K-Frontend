@@ -27,6 +27,9 @@ function Employees() {
   const role = getNormalizedRole(user);
   const canManageEmployees = role === "ADMIN";
   const [users, setUsers] = useState([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const pageSize = 10;
   const [openModal, setOpenModal] = useState(false);
   const [openViewModal, setOpenViewModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -55,13 +58,21 @@ function Employees() {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const res = await getUsers();
-      setUsers(res.data?.data?.content || []);
+      const res = await getUsers(
+  currentPage,
+  pageSize,
+  searchTerm,
+  filterRole === "ALL" ? "" : filterRole,
+  filterStatus === "ALL" ? "" : filterStatus
+);
+      const responseData = res.data?.data;
+
+      setUsers(responseData?.content || []);
+      setTotalPages(responseData?.totalPages || 0);
     } catch (error) {
       console.error(error);
     }
-  }, []);
-
+}, [currentPage, searchTerm, filterRole, filterStatus]);
   useEffect(() => {
     // eslint-disable-next-line
     fetchUsers();
@@ -102,22 +113,6 @@ const handleView = async (user) => {
     setOpenModal(true);
   };
 
-  const filteredUsers = users.filter((user) => {
-    const term = searchTerm.toLowerCase();
-    const nameMatch = (user.fullName || user.name || "")
-      .toLowerCase()
-      .includes(term);
-    const emailMatch = (user.email || "").toLowerCase().includes(term);
-    const phoneMatch = (user.phone || "").includes(term);
-    const matchesSearch = nameMatch || emailMatch || phoneMatch;
-
-    const matchesRole = filterRole === "ALL" || user.role === filterRole;
-    const matchesStatus =
-      filterStatus === "ALL" || user.status === filterStatus;
-
-    return matchesSearch && matchesRole && matchesStatus;
-  });
-
   // Dữ liệu cho Dropdown
   const roleOptions = [
     { value: "ALL", label: "Tất cả vai trò" },
@@ -125,7 +120,7 @@ const handleView = async (user) => {
     { value: "CONSULTANT", label: "Nhân viên tư vấn" },
     { value: "OPERATOR", label: "Quản lý điều hành" },
     { value: "MANAGER", label: "Quản lý khu vực" },
-    { value: " ACCOUNT_MANAGER", label: "Nhân viên AM" },
+    { value: "ACCOUNT_MANAGER", label: "Nhân viên AM" },
   ];
 
   const statusOptions = [
@@ -172,8 +167,10 @@ const handleView = async (user) => {
               autoComplete="off"
               placeholder="Tìm tên, email, sđt..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              readOnly={true}
+onChange={(e) => {
+  setSearchTerm(e.target.value);
+  setCurrentPage(0);
+}}              readOnly={true}
               onFocus={(e) => e.target.removeAttribute("readonly")}
             />
 
@@ -228,6 +225,7 @@ const handleView = async (user) => {
                     key={opt.value}
                     className={`dropdown-item ${filterRole === opt.value ? "selected" : ""}`}
                     onClick={() => {
+                      setCurrentPage(0);
                       setFilterRole(opt.value);
                       setOpenDropdown(null);
                     }}
@@ -272,6 +270,7 @@ const handleView = async (user) => {
                     key={opt.value}
                     className={`dropdown-item ${filterStatus === opt.value ? "selected" : ""}`}
                     onClick={() => {
+                      setCurrentPage(0);
                       setFilterStatus(opt.value);
                       setOpenDropdown(null);
                     }}
@@ -293,12 +292,15 @@ const handleView = async (user) => {
       </div>
 
       <div className="table-card">
-        <EmployeeTable
-          users={filteredUsers}
-          refresh={fetchUsers}
-          onEdit={handleEdit}
-          onView={handleView}
-        />
+<EmployeeTable
+  users={users}
+  currentPage={currentPage}
+  totalPages={totalPages}
+  onPageChange={setCurrentPage}
+  refresh={fetchUsers}
+  onEdit={handleEdit}
+  onView={handleView}
+/>
       </div>
 
       {/* MODAL THÊM / SỬA */}
