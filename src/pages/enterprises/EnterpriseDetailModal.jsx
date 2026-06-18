@@ -310,8 +310,13 @@ function EnterpriseDetailModal({
   </div>
 
   <div className="info-item">
-    <span className="label">Cụm</span>
-    <span className="value">{enterpriseInfo?.region}</span>
+    <span className="label">Cơ quan thuế</span>
+    <span className="value">{enterpriseInfo?.taxAuthority || "-"}</span>
+  </div>
+
+  <div className="info-item">
+    <span className="label">Cụm / Xã</span>
+    <span className="value">{enterpriseInfo?.communeName || enterpriseInfo?.region || "-"}</span>
   </div>
 
   <div className="info-item">
@@ -341,10 +346,31 @@ function EnterpriseDetailModal({
     <span className="value">{enterpriseInfo?.website}</span>
   </div>
 
-  <div className="info-item full">
-    <span className="label">Ngày thành lập</span>
-    <span className="value">{enterpriseInfo?.establishedDate}</span>
+  <div className="info-item">
+    <span className="label">Email</span>
+    <span className="value">{enterpriseInfo?.email || "-"}</span>
   </div>
+
+  <div className="info-item">
+    <span className="label">Ngày thành lập</span>
+    <span className="value">{enterpriseInfo?.establishedDate || "-"}</span>
+  </div>
+
+  <div className="info-item full">
+    <span className="label">Nhân viên phụ trách (AM)</span>
+    <span className="value">
+      {enterpriseInfo?.amName ? `${enterpriseInfo.amName} - ${enterpriseInfo.amPhone || ''}` : "Chưa có AM"}
+    </span>
+  </div>
+
+  {(enterpriseInfo?.type === 'VNR20K' || enterpriseInfo?.type === 'VNR2000') && (
+    <div className="info-item full">
+      <span className="label">Nhân viên dự án phụ trách</span>
+      <span className="value">
+        {enterpriseInfo?.consultantName ? `${enterpriseInfo.consultantName} - ${enterpriseInfo.consultantPhone || ''}` : "Chưa có Consultant"}
+      </span>
+    </div>
+  )}
 </div>
 
         {/* CONTACT */}

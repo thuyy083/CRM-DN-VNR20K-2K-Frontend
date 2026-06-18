@@ -104,10 +104,7 @@ const [dtLocal, setDtLocal] = useState(
         const list = res.data?.data || res.data || [];
         setContacts(list);
 
-        if (list.length === 0) {
-          toast.warning("Doanh nghiệp chưa có người liên hệ");
-          setShowCreateContactForm(true);
-        }
+        // Không hiện warning nếu chưa có người liên hệ
       } catch (err) {
         console.error(err);
         setContacts([]);
@@ -493,7 +490,7 @@ const [dtLocal, setDtLocal] = useState(
                 value={form.contactId}
                 onChange={(e) => handleChange("contactId", e.target.value)}
               >
-                <option value="">-- Chọn người liên hệ --</option>
+                <option value="">{selectedEnterpriseObj?.name || "-- Chọn người liên hệ --"}</option>
                 {contacts.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.fullName} - {c.position}
@@ -516,6 +513,7 @@ const [dtLocal, setDtLocal] = useState(
                   Offline (Gặp gỡ trực tiếp)
                 </option>
                 <option value="PHONE_CALL">Gọi điện thoại</option>
+                <option value="SEND_MAIL">Gửi Mail</option>
                 <option value="EMAIL_QUOTE">Gửi báo giá</option>
                 {/* <option value="CONTRACT_SIGNING">Ký hợp đồng</option> */}
                 <option value="CUSTOMER_SUPPORT">Hỗ trợ khách hàng</option>

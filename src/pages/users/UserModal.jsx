@@ -25,6 +25,7 @@ const getContactName = (contact) =>
 
 const typeOptions = [
   { value: "PHONE_CALL", label: "Gọi điện" },
+  { value: "SEND_MAIL", label: "Gửi Mail" },
   { value: "EMAIL_QUOTE", label: "Gửi báo giá" },
   { value: "ONLINE_MEETING", label: "Họp online" },
   { value: "OFFLINE_MEETING", label: "Gặp trực tiếp" },
@@ -75,6 +76,7 @@ const [usages, setUsages] = useState([
 
   const [openEnterpriseDropdown, setOpenEnterpriseDropdown] = useState(false);
   const [searchEnterprise, setSearchEnterprise] = useState("");
+  const [inputValue, setInputValue] = useState(interaction?.enterpriseName || interaction?.enterprise?.name || "");
   const enterpriseDropdownRef = useRef(null);
 
   const noContactToastEnterpriseRef = useRef("");
@@ -201,15 +203,6 @@ const removeUsage = (index) => {
         const list = await getContactsByEnterprise(form.enterpriseId);
         setContacts(list);
 
-        if (list.length === 0) {
-          if (noContactToastEnterpriseRef.current !== String(form.enterpriseId)) {
-            toast.warning("Doanh nghiệp chưa có người liên hệ");
-            noContactToastEnterpriseRef.current = String(form.enterpriseId);
-          }
-        } else {
-          noContactToastEnterpriseRef.current = "";
-        }
-
         if (form.contactId) {
           // Khi mở form edit, đồng bộ lại chức vụ từ contact đang chọn (nếu có).
           const selected = list.find(
@@ -244,16 +237,7 @@ const removeUsage = (index) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (
-      form.enterpriseId &&
-      !loadingContacts &&
-      contacts.length === 0 &&
-      !isViettelEnterprise
-    ) {
-      setShowCreateContactForm(true);
-    }
-  }, [interaction, form.enterpriseId, loadingContacts, contacts.length, isViettelEnterprise]);
+  // Bỏ tự động mở form thêm liên hệ
 
   const cacheRef = useRef({});
 
@@ -626,12 +610,14 @@ const removeUsage = (index) => {
             <input
               className={`select-box ${errors.enterpriseId ? "input-error" : ""}`}
               placeholder="Tìm doanh nghiệp..."
-              value={searchEnterprise}
+              value={inputValue}
               onFocus={() => {
                 setOpenEnterpriseDropdown(true);
                 setSearchEnterprise("");
               }} onChange={(e) => {
-                setSearchEnterprise(e.target.value);
+                const val = e.target.value;
+                setInputValue(val);
+                setSearchEnterprise(val);
                 handleChange("enterpriseId", ""); // reset chọn cũ khi gõ
               }}
             />
@@ -669,8 +655,9 @@ const removeUsage = (index) => {
                           handleChange("enterpriseId", id);
                           setSelectedEnterpriseObj(enterprise);
 
-                          // 🔥 QUAN TRỌNG: hiển thị lại text vào input
+                          setInputValue(name);
                           setSearchEnterprise(name);
+                          setOpenEnterpriseDropdown(false);
 
                           // reset dữ liệu liên hệ
                           handleChange("contactId", "");
@@ -702,14 +689,6 @@ const removeUsage = (index) => {
               <span className="error-text">{errors.enterpriseId}</span>
             )}
 
-            {form.enterpriseId &&
-              !loadingContacts &&
-              contacts.length === 0 &&
-              isViettelEnterprise && (
-                <span className="error-text">
-                  Doanh nghiệp này chưa có người liên hệ. Hãy tạo liên hệ trước khi gắn vào tiếp xúc.
-                </span>
-              )}
           </div>
 
           <div className="form-group">
@@ -719,22 +698,13 @@ const removeUsage = (index) => {
               onChange={(e) => {
                 const selectedContactId = e.target.value;
                 handleChange("contactId", selectedContactId);
-
-                const selected = contacts.find(
-                  (contact) => String(getContactId(contact)) === String(selectedContactId)
-                );
-
-                if (selected) {
-                  handleChange("contactPosition", selected.position || "");
-                }
-                handleChange("contactPosition", selected?.position || "");
               }}
               disabled={!form.enterpriseId || loadingContacts}
             >
-              <option value="">{loadingContacts ? "Đang tải..." : "Chọn người liên hệ"}</option>
+              <option value="">{loadingContacts ? "Đang tải..." : (getEnterpriseName(selectedEnterprise) || "Chọn người liên hệ")}</option>
               {contacts.map((contact) => (
                 <option key={getContactId(contact)} value={getContactId(contact)}>
-                  {getContactName(contact)}
+                  {getContactName(contact)}{contact.position ? ` - ${contact.position}` : ""}
                 </option>
               ))}
             </select>
@@ -856,16 +826,6 @@ const removeUsage = (index) => {
               </div>
             </div>
           )}
-
-          <div className="form-group">
-            <label>Chức vụ người liên hệ</label>
-            <input
-              readOnly
-              value={form.contactPosition}
-              onChange={(e) => handleChange("contactPosition", e.target.value)}
-            // placeholder="VD: Giám đốc, Kế toán..."
-            />
-          </div>
 
           <div className="form-group">
             <label>

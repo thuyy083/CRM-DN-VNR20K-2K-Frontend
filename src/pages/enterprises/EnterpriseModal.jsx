@@ -8,6 +8,8 @@ import {
   addServiceToEnterprise,
 } from "../../services/enterpriseService";
 import { createContact } from "../../services/enterpriseContactService";
+import { searchCommunes } from "../../services/locationsService";
+import { getUsers } from "../../services/userService";
 
 const POTENTIAL_STORAGE_KEY = "enterprise_potential_map";
 
@@ -31,10 +33,13 @@ function EnterpriseModal({ enterprise, close, reload }) {
     address: enterprise?.address || "",
     website: enterprise?.website || "",
     phone: enterprise?.phone || "",
+    email: enterprise?.email || "",
     status: enterprise?.status || "ACTIVE",
-    region: enterprise?.region || "NONE",
+    communeId: enterprise?.communeId || "",
+    consultantId: enterprise?.consultantId || "",
     type: enterprise?.type || "HKD",
     establishedDate: enterprise?.establishedDate || "",
+    taxAuthority: enterprise?.taxAuthority || "",
 
     isPotential:
       normalizePotentialValue(
@@ -74,9 +79,15 @@ function EnterpriseModal({ enterprise, close, reload }) {
     }
   };
 
+  const [communes, setCommunes] = useState(
+    enterprise?.communeId ? [{ id: enterprise.communeId, name: enterprise.communeName || "Đang tải..." }] : []
+  );
+  const [searchCommuneText, setSearchCommuneText] = useState(enterprise?.communeName || "");
+  const [consultants, setConsultants] = useState([]);
+
   useEffect(() => {
     fetchIndustries();
-     
+    fetchConsultants();
   }, []);
 
   const fetchIndustries = async () => {
@@ -88,7 +99,29 @@ function EnterpriseModal({ enterprise, close, reload }) {
     }
   };
 
+  const fetchConsultants = async () => {
+    try {
+      const res = await getUsers(0, 1000, "", "CONSULTANT");
+      if (res.data?.data?.content) {
+        setConsultants(res.data.data.content);
+      }
+    } catch (error) {
+      console.error("Lỗi lấy danh sách consultant:", error);
+    }
+  };
 
+  const handleSearchCommune = async (text) => {
+    setSearchCommuneText(text);
+    if (!text || text.trim().length < 2) return;
+    try {
+      const res = await searchCommunes(text.trim());
+      if (res.data?.data) {
+        setCommunes(res.data.data);
+      }
+    } catch (error) {
+      console.error("Lỗi tìm xã:", error);
+    }
+  };
   const handleChange = (field, value) => {
     setForm({
       ...form,
@@ -250,10 +283,8 @@ function EnterpriseModal({ enterprise, close, reload }) {
         </div>
 
         <div className="form-grid">
-          {/* LEFT */}
-          <div className="form-col">
             <div className="form-group">
-              <label>Tên doanh nghiệp</label>
+              <label>Tên doanh nghiệp (*)</label>
               <input
                 value={form.name}
                 onChange={(e) => handleChange("name", e.target.value)}
@@ -261,24 +292,19 @@ function EnterpriseModal({ enterprise, close, reload }) {
             </div>
 
             <div className="form-group">
-              <label>Mã số thuế</label>
+              <label>Mã số thuế (*)</label>
               <input
                 value={form.taxCode}
                 onChange={(e) => handleChange("taxCode", e.target.value)}
               />
             </div>
+
             <div className="form-group">
-              <label>Khu vực</label>
-              <select
-                value={form.region}
-                onChange={(e) => handleChange("region", e.target.value)}
-              >
-                <option value="NONE">Chưa xác định</option>
-                <option value="CTO">Cần Thơ</option>
-                <option value="HUG">Hậu Giang</option>
-                <option value="STG">Sóc Trăng</option>
-                <option value="ALL">Tất cả</option>
-              </select>
+              <label>Cơ quan thuế</label>
+              <input
+                value={form.taxAuthority}
+                onChange={(e) => handleChange("taxAuthority", e.target.value)}
+              />
             </div>
 
             {/* INDUSTRY */}
@@ -340,19 +366,15 @@ function EnterpriseModal({ enterprise, close, reload }) {
               />
             </div>
 
-
-          </div>
-
-          {/* RIGHT */}
-          <div className="form-col">
             <div className="form-group">
-  <label>Ngày thành lập</label>
-  <input
-    type="date"
-    value={form.establishedDate}
-    onChange={(e) => handleChange("establishedDate", e.target.value)}
-  />
-</div>
+              <label>Ngày thành lập</label>
+              <input
+                type="date"
+                value={form.establishedDate}
+                onChange={(e) => handleChange("establishedDate", e.target.value)}
+              />
+            </div>
+
             <div className="form-group">
               <label>Loại doanh nghiệp</label>
               <select
@@ -364,6 +386,30 @@ function EnterpriseModal({ enterprise, close, reload }) {
                 <option value="VNR2000">VNR2000</option>
                 <option value="SME">SME</option>
               </select>
+            </div>
+
+            <div className="form-group">
+              <label>Xã / Phường</label>
+              <input
+                placeholder="Nhập tên xã để tìm kiếm..."
+                value={searchCommuneText}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleSearchCommune(val);
+                  const selected = communes.find(c => c.name === val);
+                  if (selected) {
+                    handleChange("communeId", selected.id);
+                  } else {
+                    handleChange("communeId", "");
+                  }
+                }}
+                list="commune-list"
+              />
+              <datalist id="commune-list">
+                {communes.map((c) => (
+                  <option key={c.id} value={c.name} />
+                ))}
+              </datalist>
             </div>
 
             <div className="form-group">
@@ -390,9 +436,30 @@ function EnterpriseModal({ enterprise, close, reload }) {
               />
             </div>
 
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                value={form.email}
+                onChange={(e) => handleChange("email", e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Nhân viên dự án phụ trách</label>
+              <select
+                value={form.consultantId}
+                onChange={(e) => handleChange("consultantId", e.target.value)}
+              >
+                <option value="">Chọn Consultant (Tùy chọn)</option>
+                {consultants.map((c) => (
+                  <option key={c.id} value={c.id}>{c.fullName} - {c.email}</option>
+                ))}
+              </select>
+            </div>
+
             {enterprise && (
               <div className="form-group">
-                <label>Trạng thái doanh nghiệp</label>
+                <label>Trạng thái</label>
                 <select
                   value={form.status}
                   onChange={(e) => handleChange("status", e.target.value)}
@@ -402,7 +469,6 @@ function EnterpriseModal({ enterprise, close, reload }) {
                 </select>
               </div>
             )}
-          </div>
         </div>
 
         <div className="form-group full-width contact-inline-module">
