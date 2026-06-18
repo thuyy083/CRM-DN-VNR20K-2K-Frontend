@@ -13,6 +13,12 @@ export const getUserById = (id) => {
   return axios.get(`/users/${id}`);
 };
 
+export const searchUsers = (role, keyword, page = 0, size = 10) => {
+  return axios.get("/users", {
+    params: { role, keyword, page, size },
+  });
+};
+
 export const createUser = (data) => {
   return axios.post("/users", data);
 };

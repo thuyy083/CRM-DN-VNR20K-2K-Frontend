@@ -15,6 +15,18 @@ const RESULT_MAP = {
   CLOSED_WON: "Ký hợp đồng",
   CLOSED_LOST: "Thất bại"
 };
+
+const TYPE_MAP = {
+  PHONE_CALL: "Gọi điện",
+  EMAIL_QUOTE: "Gửi báo giá",
+  SEND_MAIL: "Gửi mail",
+  ONLINE_MEETING: "Họp online",
+  OFFLINE_MEETING: "Gặp trực tiếp",
+  DEMO: "Demo sản phẩm",
+  CONTRACT_SIGNING: "Ký hợp đồng",
+  CUSTOMER_SUPPORT: "Hỗ trợ KH",
+  OTHER: "Khác"
+};
 const formatDateOnly = (value) => {
   if (!value) return "-";
   const date = new Date(value);
@@ -87,7 +99,7 @@ function InteractionTable({
             <td>{index + 1}</td>
             <td>{formatDateOnly(item.interactionTime)}</td>
 
-            <td>{item.interactionType || "-"}</td>
+            <td>{TYPE_MAP[item.interactionType] || item.interactionType || "-"}</td>
             {item.result === "CLOSED_WON" && item.usages?.length > 0 ? (
               <button
                 className="result-badge clickable"
@@ -249,6 +261,10 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
                 <div>
                   <b>Phone:</b>
                   <span>{enterpriseInfo?.phone || "-"}</span>
+                </div>
+                <div>
+                  <b>Email:</b>
+                  <span>{enterpriseInfo?.email || "-"}</span>
                 </div>
                 <div>
                   <b>Website:</b>
