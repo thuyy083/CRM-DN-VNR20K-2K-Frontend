@@ -33,9 +33,7 @@ import {
   ChevronRight,
   BarChart2,
 } from "lucide-react";
-import {
-  getDashboardMetrics,
-} from "../../services/dashboardService";
+import { getDashboardMetrics } from "../../services/dashboardService";
 import styles from "./Dashboard.module.scss";
 
 /* ─── Appointment type labels ─── */
@@ -530,7 +528,7 @@ function Dashboard() {
       setIsLoading(true);
       try {
         const [dashRes] = await Promise.all([
-          getDashboardMetrics(filter.month, filter.year)
+          getDashboardMetrics(filter.month, filter.year),
         ]);
         const actualData = dashRes.data?.data || dashRes.data;
         if (isMounted) {
@@ -951,37 +949,107 @@ function Dashboard() {
               );
             })}
           </div>
-          {/* FIX: sử dụng div có chiều cao cố định và overflow hidden để tránh lỗi layout */}
-          <div className={styles.pieChartWrap}>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={displayMetrics.regionDistribution}
-                  dataKey="totalEnterprises"
-                  nameKey="region"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={72}
-                  innerRadius={30}
-                  paddingAngle={2}
-                  label={({ region, percent }) => {
-                    const cfg = REGION_CONFIG[region] || {};
-                    return percent > 0.03
-                      ? `${cfg.label || region} ${(percent * 100).toFixed(0)}%`
-                      : "";
-                  }}
-                  labelLine={{ stroke: "#cbd5e1", strokeWidth: 1 }}
-                >
-                  {displayMetrics.regionDistribution?.map((_, i) => (
-                    <Cell
-                      key={i}
-                      fill={REGION_COLORS[i % REGION_COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip content={<RegionTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
+          <div className={styles.donutRow}>
+            <div className={styles.donutWrap}>
+              <svg viewBox="0 0 160 160" width="160" height="160">
+                {(() => {
+                  const data = displayMetrics.regionDistribution || [];
+                  const total = data.reduce(
+                    (s, r) => s + (r.totalEnterprises || 0),
+                    0,
+                  );
+                  const colors = REGION_COLORS;
+                  const r = 60,
+                    cx = 80,
+                    cy = 80,
+                    strokeW = 22;
+                  const circ = 2 * Math.PI * r;
+                  let offset = -94.25; // bắt đầu từ đỉnh (90°)
+                  return [
+                    <circle
+                      key="bg"
+                      cx={cx}
+                      cy={cy}
+                      r={r}
+                      fill="none"
+                      stroke="#f1f5f9"
+                      strokeWidth={strokeW}
+                    />,
+                    ...data.map((d, i) => {
+                      const pct = total ? d.totalEnterprises / total : 0;
+                      const dash = pct * circ;
+                      const gap = circ - dash;
+                      const el = (
+                        <circle
+                          key={i}
+                          cx={cx}
+                          cy={cy}
+                          r={r}
+                          fill="none"
+                          stroke={colors[i % colors.length]}
+                          strokeWidth={strokeW}
+                          strokeDasharray={`${dash.toFixed(1)} ${gap.toFixed(1)}`}
+                          strokeDashoffset={-offset}
+                          strokeLinecap="butt"
+                        />
+                      );
+                      offset += dash;
+                      return el;
+                    }),
+                  ];
+                })()}
+              </svg>
+              <div className={styles.donutCenter}>
+                <span className={styles.donutCenterVal}>
+                  {(displayMetrics.regionDistribution || []).reduce(
+                    (s, r) => s + (r.totalEnterprises || 0),
+                    0,
+                  )}
+                </span>
+                <span className={styles.donutCenterLabel}>tổng DN</span>
+              </div>
+            </div>
+
+            {/* Legend bên phải — không bao giờ bị clip */}
+            <div className={styles.donutLegend}>
+              {(displayMetrics.regionDistribution || []).map((r, i) => {
+                const total = (displayMetrics.regionDistribution || []).reduce(
+                  (s, x) => s + (x.totalEnterprises || 0),
+                  0,
+                );
+                const pct = total
+                  ? Math.round((r.totalEnterprises / total) * 100)
+                  : 0;
+                const cfg = REGION_CONFIG[r.region] || {};
+                const color = REGION_COLORS[i % REGION_COLORS.length];
+                return (
+                  <div key={r.region} className={styles.donutLegendItem}>
+                    <div className={styles.donutLegendHeader}>
+                      <span
+                        className={styles.donutLegendDot}
+                        style={{ background: color }}
+                      />
+                      <span className={styles.donutLegendName}>
+                        {cfg.label || r.region}
+                      </span>
+                      <span className={styles.donutLegendCount}>
+                        {r.totalEnterprises} DN · {pct}%
+                      </span>
+                    </div>
+                    <div className={styles.donutBarBg}>
+                      <div
+                        className={styles.donutBarFill}
+                        style={{ width: `${pct}%`, background: color }}
+                      />
+                    </div>
+                    <span className={styles.donutLegendDetail}>
+                      {r.contacted} đã tiếp xúc ·{" "}
+                      {r.totalEnterprises - r.contacted} chưa tiếp xúc
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -1068,7 +1136,6 @@ function Dashboard() {
           </div>
         </div>
       </div>
-
     </div>
   );
 }

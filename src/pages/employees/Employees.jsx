@@ -40,7 +40,7 @@ function Employees() {
   const [filterStatus, setFilterStatus] = useState("ALL");
 
   // State quản lý Custom Dropdown
-  const [openDropdown, setOpenDropdown] = useState(null); 
+  const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
 
   const [communes, setCommunes] = useState([]);
@@ -59,12 +59,12 @@ function Employees() {
   const fetchUsers = useCallback(async () => {
     try {
       const res = await getUsers(
-  currentPage,
-  pageSize,
-  searchTerm,
-  filterRole === "ALL" ? "" : filterRole,
-  filterStatus === "ALL" ? "" : filterStatus
-);
+        currentPage,
+        pageSize,
+        searchTerm,
+        filterRole === "ALL" ? "" : filterRole,
+        filterStatus === "ALL" ? "" : filterStatus,
+      );
       const responseData = res.data?.data;
 
       setUsers(responseData?.content || []);
@@ -72,7 +72,7 @@ function Employees() {
     } catch (error) {
       console.error(error);
     }
-}, [currentPage, searchTerm, filterRole, filterStatus]);
+  }, [currentPage, searchTerm, filterRole, filterStatus]);
   useEffect(() => {
     // eslint-disable-next-line
     fetchUsers();
@@ -83,30 +83,30 @@ function Employees() {
     setOpenModal(true);
   };
 
-const handleView = async (user) => {
-  setSelectedUser(user);
+  const handleView = async (user) => {
+    setSelectedUser(user);
 
-  try {
-    // 1. Lấy clusters theo region
-    const clusterRes = await getClusters(user.region);
-    const clusters = clusterRes.data?.data || [];
+    try {
+      // 1. Lấy clusters theo region
+      const clusterRes = await getClusters(user.region);
+      const clusters = clusterRes.data?.data || [];
 
-    let allCommunes = [];
+      let allCommunes = [];
 
-    // 2. Lấy tất cả communes của các cluster
-    for (const cluster of clusters) {
-      const res = await getCommunes(cluster.id);
-      const list = res.data?.data || [];
-      allCommunes = [...allCommunes, ...list];
+      // 2. Lấy tất cả communes của các cluster
+      for (const cluster of clusters) {
+        const res = await getCommunes(cluster.id);
+        const list = res.data?.data || [];
+        allCommunes = [...allCommunes, ...list];
+      }
+
+      setCommunes(allCommunes);
+    } catch (err) {
+      console.error(err);
     }
 
-    setCommunes(allCommunes);
-  } catch (err) {
-    console.error(err);
-  }
-
-  setOpenViewModal(true);
-};
+    setOpenViewModal(true);
+  };
 
   const handleCreate = () => {
     setSelectedUser(null);
@@ -167,11 +167,11 @@ const handleView = async (user) => {
               autoComplete="off"
               placeholder="Tìm tên, email, sđt..."
               value={searchTerm}
-onChange={(e) => {
-  setSearchTerm(e.target.value);
-  setCurrentPage(0);
-}}              readOnly={true}
-              onFocus={(e) => e.target.removeAttribute("readonly")}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(0);
+              }}
+              
             />
 
             {/* THÊM NÚT X XÓA NHANH Ở ĐÂY */}
@@ -292,15 +292,15 @@ onChange={(e) => {
       </div>
 
       <div className="table-card">
-<EmployeeTable
-  users={users}
-  currentPage={currentPage}
-  totalPages={totalPages}
-  onPageChange={setCurrentPage}
-  refresh={fetchUsers}
-  onEdit={handleEdit}
-  onView={handleView}
-/>
+        <EmployeeTable
+          users={users}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          refresh={fetchUsers}
+          onEdit={handleEdit}
+          onView={handleView}
+        />
       </div>
 
       {/* MODAL THÊM / SỬA */}
@@ -316,7 +316,7 @@ onChange={(e) => {
       {openViewModal && (
         <EmployeeViewModal
           user={selectedUser}
-           communes={communes}
+          communes={communes}
           close={() => setOpenViewModal(false)}
         />
       )}

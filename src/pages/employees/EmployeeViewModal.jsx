@@ -25,14 +25,14 @@ function EmployeeViewModal({ user, communes = [], close }) {
     return gender;
   };
 
-const getCommuneNames = () => {
-  if (!user?.communeIds?.length) return [];
+  const getCommuneNames = () => {
+    if (!user?.communeIds?.length) return [];
 
-  return user.communeIds.map((id) => {
-    const found = communes.find((c) => c.id === id);
-    return found?.name || `ID ${id}`;
-  });
-};
+    return user.communeIds.map((id) => {
+      const found = communes.find((c) => c.id === id);
+      return found?.name || `ID ${id}`;
+    });
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";
@@ -165,15 +165,15 @@ const getCommuneNames = () => {
                     : "Chưa phân công"}
                 </span>
               </div>
-<div className="info-block">
-  <span className="info-label">Xã / Phường:</span>
+              <div className="info-block">
+                <span className="info-label">Xã / Phường:</span>
 
-  <span className="info-value">
-    {getCommuneNames().length > 0
-      ? getCommuneNames().join(", ")
-      : "Chưa phân công"}
-  </span>
-</div>
+                <span className="info-value">
+                  {getCommuneNames().length > 0
+                    ? getCommuneNames().join(", ")
+                    : "Chưa phân công"}
+                </span>
+              </div>
             </div>
           </div>
 

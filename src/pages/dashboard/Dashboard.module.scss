@@ -496,9 +496,108 @@ $shadow-modal:
 // ─── Pie chart wrapper FIX ────────────────────────────────────────────────────
 .pieChartWrap {
   width: 100%;
-  height: 200px;
+  height: 260px;
   overflow: hidden;
   position: relative;
+}
+
+// ─── Donut + Legend layout ─────────────────────────────────────────────────
+.donutRow {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.donutWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.donutCenter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.donutCenterVal {
+  font-size: 20px;
+  font-weight: 700;
+  color: $text-primary;
+  line-height: 1;
+}
+
+.donutCenterLabel {
+  font-size: 10px;
+  color: $text-muted;
+  margin-top: 3px;
+}
+
+.donutLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.donutLegendItem {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.donutLegendHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.donutLegendDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.donutLegendName {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-primary;
+  flex: 1;
+}
+
+.donutLegendCount {
+  font-size: 12px;
+  color: $text-secondary;
+  white-space: nowrap;
+}
+
+.donutBarBg {
+  height: 4px;
+  background: $bg-page;
+  border-radius: 100px;
+  overflow: hidden;
+  border: 1px solid $border;
+  margin-left: 17px;
+}
+
+.donutBarFill {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 0.6s ease;
+  min-width: 2px;
+}
+
+.donutLegendDetail {
+  font-size: 11px;
+  color: $text-muted;
+  margin-left: 17px;
 }
 
 // ─── Tooltips ────────────────────────────────────────────────────────────────

@@ -11,7 +11,7 @@ function EmployeeTable({
   totalPages,
   onPageChange,
 }) {
-    const user = useSelector((state) => state.auth.user);
+  const user = useSelector((state) => state.auth.user);
   const getNormalizedRole = (user) => {
     const directRole = user?.role || user?.roleName;
     if (typeof directRole === "string" && directRole.trim()) {
@@ -90,7 +90,6 @@ function EmployeeTable({
     return sortableItems;
   }, [users, sortConfig]);
 
-
   useEffect(() => {
     const fetchLocations = async () => {
       try {
@@ -135,7 +134,7 @@ function EmployeeTable({
     if (!user?.communeIds?.length) return null;
 
     const userCommunes = allCommunes.filter((c) =>
-      user.communeIds.includes(c.id)
+      user.communeIds.includes(c.id),
     );
 
     if (userCommunes.length === 0) return null;
@@ -147,7 +146,6 @@ function EmployeeTable({
       communes: userCommunes.map((c) => c.name),
     };
   };
-
 
   // const formatDate = (dateString) => {
   //   if (!dateString) return "-";
@@ -176,7 +174,7 @@ function EmployeeTable({
       <table className="employee-table">
         <thead>
           <tr>
-<th>STT</th>
+            <th>STT</th>
             <th
               onClick={() => requestSort("fullName")}
               className="sortable text-left"
@@ -244,7 +242,9 @@ function EmployeeTable({
 
                     return (
                       <div>
-                        <div className="cluster-name">{location.clusterName}</div>
+                        <div className="cluster-name">
+                          {location.clusterName}
+                        </div>
 
                         {location.communes.map((name, index) => (
                           <div key={index} className="commune-item">
@@ -307,85 +307,78 @@ function EmployeeTable({
       </table>
 
       {/* GIAO DIỆN NÚT PHÂN TRANG */}
-     {totalPages > 1 && (
-  <div className="pagination">
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button
+            className="page-btn"
+            disabled={currentPage === 0}
+            onClick={() => onPageChange(0)}
+          >
+            &laquo;&laquo;
+          </button>
 
-    <button
-      className="page-btn"
-      disabled={currentPage === 0}
-      onClick={() => onPageChange(0)}
-    >
-      &laquo;&laquo;
-    </button>
+          <button
+            className="page-btn"
+            disabled={currentPage === 0}
+            onClick={() => onPageChange(currentPage - 1)}
+          >
+            &laquo; Trước
+          </button>
 
-    <button
-      className="page-btn"
-      disabled={currentPage === 0}
-      onClick={() => onPageChange(currentPage - 1)}
-    >
-      &laquo; Trước
-    </button>
+          <div className="page-numbers">
+            {(() => {
+              const pages = [];
+              const maxVisible = 5;
 
-    <div className="page-numbers">
-      {(() => {
-        const pages = [];
-        const maxVisible = 5;
+              let startPage = Math.max(
+                0,
+                currentPage - Math.floor(maxVisible / 2),
+              );
 
-        let startPage = Math.max(
-          0,
-          currentPage - Math.floor(maxVisible / 2)
-        );
+              let endPage = Math.min(
+                totalPages - 1,
+                startPage + maxVisible - 1,
+              );
 
-        let endPage = Math.min(
-          totalPages - 1,
-          startPage + maxVisible - 1
-        );
+              if (endPage - startPage < maxVisible - 1) {
+                startPage = Math.max(0, endPage - maxVisible + 1);
+              }
 
-        if (endPage - startPage < maxVisible - 1) {
-          startPage = Math.max(
-            0,
-            endPage - maxVisible + 1
-          );
-        }
+              for (let i = startPage; i <= endPage; i++) {
+                const pageNumber = i + 1;
 
-        for (let i = startPage; i <= endPage; i++) {
-          const pageNumber = i + 1;
+                pages.push(
+                  <button
+                    key={pageNumber}
+                    className={`page-num ${currentPage === i ? "active" : ""}`}
+                    onClick={() => onPageChange(i)}
+                  >
+                    {pageNumber}
+                  </button>,
+                );
+              }
 
-          pages.push(
-            <button
-              key={pageNumber}
-              className={`page-num ${
-                currentPage === i ? "active" : ""
-              }`}
-              onClick={() => onPageChange(i)}
-            >
-              {pageNumber}
-            </button>
-          );
-        }
+              return pages;
+            })()}
+          </div>
 
-        return pages;
-      })()}
-    </div>
+          <button
+            className="page-btn"
+            disabled={currentPage === totalPages - 1}
+            onClick={() => onPageChange(currentPage + 1)}
+          >
+            Sau &raquo;
+          </button>
 
-    <button
-      className="page-btn"
-      disabled={currentPage === totalPages - 1}
-      onClick={() => onPageChange(currentPage + 1)}
-    >
-      Sau &raquo;
-    </button>
-
-    <button
-      className="page-btn"
-      disabled={currentPage === totalPages - 1}
-      onClick={() => onPageChange(totalPages - 1)}
-    >
-      &raquo;&raquo;
-    </button>
-
-  </div>
-)}
+          <button
+            className="page-btn"
+            disabled={currentPage === totalPages - 1}
+            onClick={() => onPageChange(totalPages - 1)}
+          >
+            &raquo;&raquo;
+          </button>
+        </div>
+      )}
     </div>
   );
 }

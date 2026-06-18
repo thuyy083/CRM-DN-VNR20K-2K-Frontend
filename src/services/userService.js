@@ -3,17 +3,17 @@ import axios from "../config/axios";
 export const getUsers = (
   page = 0,
   size = 10,
-  search = "",
+  keyword = "",
   role = "",
-  status = ""
+  //status = ""
 ) => {
   return axios.get("/users", {
     params: {
       page,
       size,
-      search,
-      role,
-      status,
+      keyword,
+      role: role || undefined,
+      //status,
     },
   });
 };
