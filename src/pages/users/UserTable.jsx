@@ -1,13 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import "./UserTable.scss";
 
-function UserTable({ interactions, onView, onDeleteEnterprise }) {
+function UserTable({ interactions, onView, onDeleteEnterprise, isLoading, currentPage = 0, totalPages = 0, onPageChange }) {
   const [sortConfig, setSortConfig] = useState({ key: "latestInteractionDate", direction: "desc" });
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
 
   const requestSort = (key) => {
-  
     let direction = "asc";
     if (sortConfig.key === key && sortConfig.direction === "asc") {
       direction = "desc";
@@ -15,41 +12,18 @@ function UserTable({ interactions, onView, onDeleteEnterprise }) {
     setSortConfig({ key, direction });
   };
 
+  // Sort phía client trong trang hiện tại (data ít, nhanh)
   const sortedData = useMemo(() => {
     const data = [...(interactions || [])];
-
-    // Sort phía client để thao tác nhanh với danh sách đã tải sẵn.
     data.sort((a, b) => {
       const aVal = a[sortConfig.key] ?? "";
       const bVal = b[sortConfig.key] ?? "";
-
       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
-
     return data;
   }, [interactions, sortConfig]);
-
-  const totalPages = Math.max(1, Math.ceil(sortedData.length / itemsPerPage));
-
-  useEffect(() => {
-    
-    if (currentPage > totalPages) {
-      setCurrentPage(1);
-    }
-  }, [currentPage, totalPages]);
-
-  const currentTableData = useMemo(() => {
-   
-    const first = (currentPage - 1) * itemsPerPage;
-    const last = first + itemsPerPage;
-    return sortedData.slice(first, last);
-  }, [sortedData, currentPage]);
-
-  const changePage = (page) => {
-    setCurrentPage(page);
-  };
 
   const formatDate = (value) => {
     if (!value) return "-";
@@ -63,6 +37,10 @@ function UserTable({ interactions, onView, onDeleteEnterprise }) {
     return sortConfig.direction === "asc" ? " ↑" : " ↓";
   };
 
+  // Tính STT tuyệt đối theo trang (currentPage là 0-indexed)
+  const PAGE_SIZE = 10;
+  const baseIndex = currentPage * PAGE_SIZE;
+
   return (
     <>
       <div className="table-container">
@@ -70,7 +48,6 @@ function UserTable({ interactions, onView, onDeleteEnterprise }) {
           <thead>
             <tr>
               <th>STT</th>
-
               <th onClick={() => requestSort("enterpriseName")} className="sortable">
                 Doanh nghiệp {getSortIcon("enterpriseName")}
               </th>
@@ -85,17 +62,28 @@ function UserTable({ interactions, onView, onDeleteEnterprise }) {
           </thead>
 
           <tbody>
-            {currentTableData.length === 0 ? (
+            {isLoading ? (
+              // Skeleton loading rows
+              [...Array(10)].map((_, i) => (
+                <tr key={`skeleton-${i}`} className="skeleton-row">
+                  <td><div className="skeleton-cell" style={{ width: "30px" }} /></td>
+                  <td className="td-enterprise"><div className="skeleton-cell" style={{ width: "180px" }} /></td>
+                  <td><div className="skeleton-cell" style={{ width: "50px", margin: "0 auto" }} /></td>
+                  <td><div className="skeleton-cell" style={{ width: "100px", margin: "0 auto" }} /></td>
+                  <td><div className="skeleton-cell" style={{ width: "120px", margin: "0 auto" }} /></td>
+                </tr>
+              ))
+            ) : sortedData.length === 0 ? (
               <tr>
-                <td colSpan="6" className="empty-state">
+                <td colSpan="5" className="empty-state">
                   Chưa có dữ liệu tiếp xúc
                 </td>
               </tr>
             ) : (
-              currentTableData.map((item, index) => (
-                <tr key={item.id}>
-                  <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                  <td>
+              sortedData.map((item, index) => (
+                <tr key={item.enterpriseId || index}>
+                  <td>{baseIndex + index + 1}</td>
+                  <td className="td-enterprise">
                     <span className="enterprise-name-cell">
                       <span>{item.enterpriseName || "-"}</span>
                       {Boolean(item?.isPotential) && (
@@ -130,28 +118,33 @@ function UserTable({ interactions, onView, onDeleteEnterprise }) {
           </tbody>
         </table>
 
-        {totalPages > 1 && (
+        {totalPages > 1 && !isLoading && (
           <div className="pagination">
-            <button className="page-btn" disabled={currentPage === 1} onClick={() => changePage(currentPage - 1)}>
+            <button
+              className="page-btn"
+              disabled={currentPage === 0}
+              onClick={() => onPageChange(currentPage - 1)}
+            >
               &laquo; Trước
             </button>
 
             <div className="page-numbers">
-              {[...Array(totalPages)].map((_, index) => {
-                const page = index + 1;
-                return (
-                  <button
-                    key={page}
-                    className={`page-num ${currentPage === page ? "active" : ""}`}
-                    onClick={() => changePage(page)}
-                  >
-                    {page}
-                  </button>
-                );
-              })}
+              {[...Array(totalPages)].map((_, index) => (
+                <button
+                  key={index}
+                  className={`page-num ${currentPage === index ? "active" : ""}`}
+                  onClick={() => onPageChange(index)}
+                >
+                  {index + 1}
+                </button>
+              ))}
             </div>
 
-            <button className="page-btn" disabled={currentPage === totalPages} onClick={() => changePage(currentPage + 1)}>
+            <button
+              className="page-btn"
+              disabled={currentPage === totalPages - 1}
+              onClick={() => onPageChange(currentPage + 1)}
+            >
               Sau &raquo;
             </button>
           </div>

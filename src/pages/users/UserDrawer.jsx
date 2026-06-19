@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getEnterpriseById, getIndustries } from "../../services/enterpriseService";
 import "./UserDrawer.scss";
 import { toast } from "react-toastify";
-import { getInteractionImageUrl, updateInteractionDescription } from "../../services/interactionService";
+import { getInteractionImageUrl, getInteractions, updateInteractionDescription } from "../../services/interactionService";
 
 const POTENTIAL_STORAGE_KEY = "enterprise_potential_map";
 
@@ -15,11 +15,36 @@ const RESULT_MAP = {
   CLOSED_WON: "Ký hợp đồng",
   CLOSED_LOST: "Thất bại"
 };
+
+const TYPE_MAP = {
+  PHONE_CALL: "Gọi điện",
+  SEND_MAIL: "Gửi Mail",
+  EMAIL_QUOTE: "Gửi báo giá",
+  ONLINE_MEETING: "Họp online",
+  OFFLINE_MEETING: "Gặp trực tiếp",
+  DEMO: "Demo sản phẩm",
+  CONTRACT_SIGNING: "Ký hợp đồng",
+  CUSTOMER_SUPPORT: "Hỗ trợ khách hàng",
+  OTHER: "Khác",
+};
 const formatDateOnly = (value) => {
   if (!value) return "-";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleDateString("vi-VN");
+};
+
+const formatDateTime = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 const getTimeValue = (value) => {
@@ -85,9 +110,9 @@ function InteractionTable({
         {rows.map((item, index) => (
           <tr key={item.id}>
             <td>{index + 1}</td>
-            <td>{formatDateOnly(item.interactionTime)}</td>
+            <td>{formatDateTime(item.interactionTime)}</td>
 
-            <td>{item.interactionType || "-"}</td>
+            <td>{TYPE_MAP[item.interactionType] || item.interactionType || "-"}</td>
             <td>
               {item.result === "CLOSED_WON" && item.usages?.length > 0 ? (
                 <button
@@ -187,11 +212,37 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
     Boolean(interaction?.isPotential) ||
     potentialFromStorage;
 
+  const [isLoadingInteractions, setIsLoadingInteractions] = useState(false);
+
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    setLocalInteractions(interaction?.allInteractions || []);
+    const fetchInteractionsForEnterprise = async () => {
+      const eid = interaction?.enterpriseId;
+      if (!open || !eid) {
+        setLocalInteractions([]);
+        return;
+      }
+      try {
+        setIsLoadingInteractions(true);
+        // Load tất cả interactions của doanh nghiệp này (tối đa 200)
+        const res = await getInteractions({ enterpriseId: eid, page: 0, size: 200 });
+        const content =
+          res?.data?.data?.content ||
+          res?.data?.content ||
+          res?.data?.data ||
+          res?.data ||
+          [];
+        setLocalInteractions(Array.isArray(content) ? content : []);
+      } catch (err) {
+        console.error(err);
+        setLocalInteractions([]);
+      } finally {
+        setIsLoadingInteractions(false);
+      }
+    };
+
+    fetchInteractionsForEnterprise();
     setEnterpriseInfo(null);
-  }, [interaction]);
+  }, [open, interaction]);
 
   useEffect(() => {
     const fetchEnterpriseInfo = async () => {

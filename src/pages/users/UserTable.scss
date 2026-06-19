@@ -67,6 +67,10 @@ $danger: #ef4444;
     gap: 6px;
   }
 
+  .td-enterprise {
+    text-align: left;
+  }
+
   .potential-star {
     color: #facc15;
     font-size: 14px;
@@ -208,6 +212,29 @@ $danger: #ef4444;
   padding: 40px !important;
   color: $text-muted;
   font-style: italic;
+}
+
+// Skeleton loading
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-row td {
+  padding: 18px 16px;
+}
+
+.skeleton-cell {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
 }
 
 .pagination {

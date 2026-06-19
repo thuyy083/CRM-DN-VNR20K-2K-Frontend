@@ -22,6 +22,46 @@ export const getInteractions = ({
   });
 };
 
+// Lấy toàn bộ interactions bằng cách tự động phân trang (dùng cho export Excel)
+export const getAllInteractions = async () => {
+  const PAGE_SIZE = 200;
+  let page = 0;
+  let allItems = [];
+
+  while (true) {
+    const res = await getInteractions({ page, size: PAGE_SIZE });
+
+    // Hỗ trợ nhiều dạng response từ BE
+    const content =
+      res?.data?.data?.content ||
+      res?.data?.content ||
+      res?.data?.data ||
+      res?.data ||
+      [];
+
+    if (!Array.isArray(content) || content.length === 0) break;
+
+    allItems = allItems.concat(content);
+
+    // Nếu lấy được ít hơn PAGE_SIZE thì đã hết trang
+    if (content.length < PAGE_SIZE) break;
+
+    page += 1;
+  }
+
+  return allItems;
+};
+
+/**
+ * Lấy danh sách doanh nghiệp kèm thống kê tiếp xúc — phân trang phía server.
+ * Mỗi phần tử = 1 doanh nghiệp: { enterpriseId, enterpriseName, interactionCount, latestInteractionDate, consultantName }
+ */
+export const getEnterpriseInteractionSummary = ({ page = 0, size = 10 } = {}) => {
+  return axios.get("/interactions/enterprise-summary", {
+    params: { page, size },
+  });
+};
+
 
 export const getInteractionById = (id) => {
   return axios.get(`/interactions/${id}`);
