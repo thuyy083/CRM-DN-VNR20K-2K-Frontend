@@ -156,17 +156,9 @@ const removeUsage = (index) => {
 
   const parseInitDateTime = (str) => {
     if (!str) return null;
-
-    const match = String(str).match(
-      /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/
-    );
-
-    if (match) {
-      const [, day, month, year, hour, minute] = match;
-      return new Date(`${year}-${month}-${day}T${hour}:${minute}`);
-    }
-
-    return new Date(str);
+    const d = new Date(str);
+    if (!Number.isNaN(d.getTime())) return d;
+    return null;
   };
 
   const [dtInteraction, setDtInteraction] = useState(
@@ -458,7 +450,8 @@ const removeUsage = (index) => {
     if (!form.interactionTime) nextErrors.interactionTime = "Vui lòng chọn ngày tiếp xúc";
 
     if (interaction && form.futureInteractionDate && form.interactionTime) {
-      const currentDate = new Date(`${form.interactionTime}T00:00:00`).getTime();
+      const parsedInteraction = parseInitDateTime(form.interactionTime);
+      const currentDate = parsedInteraction ? parsedInteraction.getTime() : 0;
       const futureDate = new Date(`${form.futureInteractionDate}T00:00:00`).getTime();
       if (!Number.isNaN(currentDate) && !Number.isNaN(futureDate) && futureDate <= currentDate) {
         nextErrors.futureInteractionDate = "Ngày tương lai phải lớn hơn ngày tiếp xúc";
@@ -856,7 +849,7 @@ const removeUsage = (index) => {
                 setDtInteraction(date);
 
                 if (date) {
-                  const formatted = dayjs(date).format("DD/MM/YYYY HH:mm");
+                  const formatted = date.toISOString();
                   handleChange("interactionTime", formatted);
                 } else {
                   handleChange("interactionTime", "");

@@ -182,8 +182,8 @@ function Users() {
       Array.from(groupedMap.values()).forEach((group) => {
         // Sắp xếp các lần tiếp xúc mới nhất lên đầu
         const sortedInteractions = group.interactions.sort((a, b) => {
-          const ta = new Date(a.interactionTime).getTime() || 0;
-          const tb = new Date(b.interactionTime).getTime() || 0;
+          const ta = getTimeValue(a.interactionTime) || 0;
+          const tb = getTimeValue(b.interactionTime) || 0;
           return tb - ta;
         });
 
@@ -191,7 +191,7 @@ function Users() {
 
         // Format cột Lịch sử tiếp xúc
         const historyLines = sortedInteractions.map(item => {
-          const time = item.interactionTime
+          const timeStr = item.interactionTime
             ? new Date(item.interactionTime).toLocaleString("vi-VN", {
                 day: "2-digit", month: "2-digit", year: "numeric",
                 hour: "2-digit", minute: "2-digit",
@@ -201,7 +201,7 @@ function Users() {
           const contact = item.contactName || "-";
           const content = sanitizeInteractionContent(item.description);
           
-          return `[${time}] ${type} | LH: ${contact} | ND: ${content}`;
+          return `[${timeStr}] ${type} | LH: ${contact} | ND: ${content}`;
         });
 
         rows.push({

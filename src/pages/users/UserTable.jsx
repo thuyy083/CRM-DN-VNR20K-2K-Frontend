@@ -12,12 +12,23 @@ function UserTable({ interactions, onView, onDeleteEnterprise, isLoading, curren
     setSortConfig({ key, direction });
   };
 
+  const parseDateStr = (str) => {
+    if (!str) return 0;
+    return new Date(str).getTime() || 0;
+  };
+
   // Sort phía client trong trang hiện tại (data ít, nhanh)
   const sortedData = useMemo(() => {
     const data = [...(interactions || [])];
     data.sort((a, b) => {
-      const aVal = a[sortConfig.key] ?? "";
-      const bVal = b[sortConfig.key] ?? "";
+      let aVal = a[sortConfig.key] ?? "";
+      let bVal = b[sortConfig.key] ?? "";
+      
+      if (sortConfig.key === "latestInteractionDate") {
+        aVal = parseDateStr(aVal);
+        bVal = parseDateStr(bVal);
+      }
+
       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
