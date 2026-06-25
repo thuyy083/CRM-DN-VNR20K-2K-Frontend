@@ -10,6 +10,7 @@ import { createContact, getContactsByEnterprise } from "../../services/enterpris
 import { createInteraction, updateInteraction } from "../../services/interactionService";
 import { getEnterprises } from "../../services/enterpriseService";
 import { getServices } from "../../services/servicesService";
+import { getUsers } from "../../services/userService";
 
 const getEnterpriseId = (enterprise) =>
   enterprise?.id ?? enterprise?.enterpriseId ?? enterprise?.enterprise_id ?? "";
@@ -68,6 +69,7 @@ const [usages, setUsages] = useState([
   {
     viettelServiceId: "",
     contractNumber: "",
+    revenue: "",
     startDate: "",
     quantity: "",
   },
@@ -98,7 +100,23 @@ const [usages, setUsages] = useState([
     futureInteractionDate: "",
     location: interaction?.location || "",
     description: sanitizeInteractionContent(interaction?.description || ""),
+    consultantId: interaction?.consultantId || "",
   });
+
+  const [consultants, setConsultants] = useState([]);
+  useEffect(() => {
+    const fetchConsultants = async () => {
+      try {
+        const res = await getUsers(0, 1000, "", "CONSULTANT");
+        if (res.data?.data?.content) {
+          setConsultants(res.data.data.content);
+        }
+      } catch (error) {
+        console.error("Lỗi lấy danh sách consultant:", error);
+      }
+    };
+    fetchConsultants();
+  }, []);
 
   const [services, setServices] = useState([]);
 const [loadingServices, setLoadingServices] = useState(false);
@@ -142,6 +160,7 @@ const addUsage = () => {
     {
       viettelServiceId: "",
       contractNumber: "",
+      revenue: "",
       startDate: "",
       quantity: "",
     },
@@ -446,6 +465,11 @@ const removeUsage = (index) => {
     const nextErrors = {};
 
     if (!form.enterpriseId) nextErrors.enterpriseId = "Vui lòng chọn doanh nghiệp";
+    
+    const isVNR = selectedEnterprise?.type === "VNR2000" || selectedEnterprise?.type === "VNR20K";
+    if (isVNR && !selectedEnterprise?.consultantId && !form.consultantId && !interaction?.consultantId) {
+      nextErrors.consultantId = "Vui lòng chọn người phụ trách";
+    }
     if (!form.interactionType) nextErrors.interactionType = "Vui lòng chọn loại tiếp xúc";
     if (!form.interactionTime) nextErrors.interactionTime = "Vui lòng chọn ngày tiếp xúc";
 
@@ -482,6 +506,9 @@ const removeUsage = (index) => {
       if (nextErrors.enterpriseId) {
         toast.error(nextErrors.enterpriseId);
       }
+      if (nextErrors.consultantId) {
+        toast.error(nextErrors.consultantId);
+      }
       if (nextErrors.interactionType) {
         toast.error(nextErrors.interactionType);
       }
@@ -500,6 +527,15 @@ const removeUsage = (index) => {
       return;
     }
 
+    if (form.result === "CLOSED_WON") {
+      for (let i = 0; i < usages.length; i++) {
+        if (!usages[i].revenue) {
+          toast.error(`Vui lòng nhập doanh thu cho dịch vụ ở dòng ${i + 1}`);
+          return;
+        }
+      }
+    }
+
     //  tạo mới và cập nhật.
     const basePayload = {
       enterpriseId: Number(form.enterpriseId),
@@ -509,7 +545,8 @@ const removeUsage = (index) => {
       interactionTime: form.interactionTime,
       location: form.location?.trim() || null,
       description: sanitizeInteractionContent(form.description) || null,
-      newUsages: form.result === "CLOSED_WON" ? usages : [],
+      consultantId: form.consultantId ? Number(form.consultantId) : null,
+      newUsages: form.result === "CLOSED_WON" ? usages.map(u => ({ ...u, revenue: Number(u.revenue) })) : [],
     };
 
     try {
@@ -820,6 +857,39 @@ const removeUsage = (index) => {
             </div>
           )}
 
+          {(selectedEnterprise?.type === "VNR2000" || selectedEnterprise?.type === "VNR20K") && (
+            <div className="form-group">
+              <label>
+                Người phụ trách <span className="required">*</span>
+              </label>
+              {interaction?.consultantId ? (
+                <input
+                  className="input"
+                  disabled
+                  value={interaction.consultantName || "Đã có người phụ trách"}
+                />
+              ) : selectedEnterprise?.consultantId ? (
+                <input
+                  className="input"
+                  disabled
+                  value={selectedEnterprise.consultantName || "Đã có người phụ trách"}
+                />
+              ) : (
+                <select
+                  className={errors.consultantId ? "input-error" : ""}
+                  value={form.consultantId}
+                  onChange={(e) => handleChange("consultantId", e.target.value)}
+                >
+                  <option value="">Chọn người phụ trách</option>
+                  {consultants.map(c => (
+                    <option key={c.id} value={c.id}>{c.fullName}</option>
+                  ))}
+                </select>
+              )}
+              {errors.consultantId && <span className="error-text">{errors.consultantId}</span>}
+            </div>
+          )}
+
           <div className="form-group">
             <label>
               Loại tiếp xúc <span className="required">*</span>
@@ -923,6 +993,18 @@ const removeUsage = (index) => {
             onChange={(e) =>
               updateUsageField(index, "contractNumber", e.target.value)
             }
+          />
+        </div>
+
+        <div className="field">
+          <label>Doanh thu (*)</label>
+          <input
+            type="number"
+            value={item.revenue}
+            onChange={(e) =>
+              updateUsageField(index, "revenue", e.target.value)
+            }
+            placeholder="VNĐ"
           />
         </div>
 

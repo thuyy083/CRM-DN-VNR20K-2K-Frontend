@@ -62,6 +62,8 @@ function EnterpriseModal({ enterprise, close, reload }) {
   const [serviceForm] = useState({
     viettelServiceId: "",
     contractNumber: "",
+    revenue: "",
+    quantity: "",
     startDate: "",
     endDate: "",
     status: "ACTIVE",
@@ -135,8 +137,8 @@ function EnterpriseModal({ enterprise, close, reload }) {
       toast.error("Vui lòng chọn dịch vụ");
       return false;
     }
-    if (!serviceForm.contractNumber.trim()) {
-      toast.error("Vui lòng nhập số hợp đồng");
+    if (!serviceForm.revenue) {
+      toast.error("Vui lòng nhập doanh thu");
       return false;
     }
     if (!serviceForm.startDate) {
@@ -248,6 +250,8 @@ function EnterpriseModal({ enterprise, close, reload }) {
       await addServiceToEnterprise(createdEnterpriseId, {
         viettelServiceId: Number(serviceForm.viettelServiceId),
         contractNumber: serviceForm.contractNumber.trim(),
+        revenue: Number(serviceForm.revenue),
+        quantity: serviceForm.quantity ? Number(serviceForm.quantity) : null,
         startDate: serviceForm.startDate,
         endDate: serviceForm.endDate || null,
         status: serviceForm.status,

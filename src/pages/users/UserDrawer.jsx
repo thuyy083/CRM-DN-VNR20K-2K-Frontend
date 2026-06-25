@@ -475,7 +475,17 @@ function UserDrawer({ open, interaction, onClose, onReload }) {
 
                           <div className="contract-field">
                             <span>Số hợp đồng</span>
-                            <b className="highlight">{c.contractNumber}</b>
+                            <b className="highlight">{c.contractNumber || "-"}</b>
+                          </div>
+
+                          <div className="contract-field">
+                            <span>Doanh thu</span>
+                            <b className="highlight">{c.revenue ? Number(c.revenue).toLocaleString('vi-VN') + ' VNĐ' : "-"}</b>
+                          </div>
+
+                          <div className="contract-field">
+                            <span>Số lượng</span>
+                            <b>{c.quantity || "-"}</b>
                           </div>
 
                           <div className="contract-field">

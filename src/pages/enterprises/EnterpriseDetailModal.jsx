@@ -37,6 +37,8 @@ function EnterpriseDetailModal({
   const [addServiceForm, setAddServiceForm] = useState({
     viettelServiceId: "",
     contractNumber: "",
+    revenue: "",
+    quantity: "",
     startDate: "",
     endDate: "",
     status: "ACTIVE",
@@ -168,8 +170,8 @@ function EnterpriseDetailModal({
       toast.error("Vui lòng chọn dịch vụ Viettel");
       return;
     }
-    if (!addServiceForm.contractNumber.trim()) {
-      toast.error("Vui lòng nhập số hợp đồng");
+    if (!addServiceForm.revenue) {
+      toast.error("Vui lòng nhập doanh thu");
       return;
     }
     if (!addServiceForm.startDate) {
@@ -186,6 +188,8 @@ function EnterpriseDetailModal({
       await addServiceToEnterprise(enterprise.id, {
         viettelServiceId: Number(addServiceForm.viettelServiceId),
         contractNumber: addServiceForm.contractNumber.trim(),
+        revenue: Number(addServiceForm.revenue),
+        quantity: addServiceForm.quantity ? Number(addServiceForm.quantity) : null,
         startDate: addServiceForm.startDate,
         endDate: addServiceForm.endDate || null,
         status: addServiceForm.status,
@@ -196,6 +200,8 @@ function EnterpriseDetailModal({
         ...prev,
         viettelServiceId: "",
         contractNumber: "",
+        revenue: "",
+        quantity: "",
         startDate: "",
         endDate: "",
       }));
@@ -473,6 +479,8 @@ function EnterpriseDetailModal({
                 <th>Dịch vụ</th>
                 <th>Mã DV</th>
                 <th>Số hợp đồng</th>
+                <th>Doanh thu</th>
+                <th>Số lượng</th>
                 <th>Ngày bắt đầu</th>
                 <th>Ngày kết thúc</th>
                 <th>Trạng thái</th>
@@ -484,6 +492,8 @@ function EnterpriseDetailModal({
                   <td>{usage.serviceName || "-"}</td>
                   <td>{usage.serviceCode || "-"}</td>
                   <td>{usage.contractNumber || "-"}</td>
+                  <td>{usage.revenue ? Number(usage.revenue).toLocaleString('vi-VN') + ' VNĐ' : "-"}</td>
+                  <td>{usage.quantity || "-"}</td>
                   <td>{formatDate(usage.startDate)}</td>
                   <td>{formatDate(usage.endDate)}</td>
                   <td>
@@ -500,7 +510,7 @@ function EnterpriseDetailModal({
 
               {!loadingUsages && filteredServiceUsages.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="empty-cell">
+                  <td colSpan="8" className="empty-cell">
                     {serviceUsages.length === 0
                       ? "Chưa có bản ghi sử dụng dịch vụ"
                       : "Không tìm thấy số hợp đồng phù hợp"}
@@ -510,7 +520,7 @@ function EnterpriseDetailModal({
 
               {loadingUsages && (
                 <tr>
-                  <td colSpan="6" className="empty-cell">
+                  <td colSpan="8" className="empty-cell">
                     Đang tải dữ liệu dịch vụ...
                   </td>
                 </tr>
@@ -557,6 +567,26 @@ function EnterpriseDetailModal({
                     value={addServiceForm.contractNumber}
                     onChange={(e) => handleChangeAddServiceForm("contractNumber", e.target.value)}
                     placeholder="Ví dụ: HD12345/V-CA"
+                  />
+                </div>
+
+                <div className="field">
+                  <label>Doanh thu (*)</label>
+                  <input
+                    type="number"
+                    value={addServiceForm.revenue}
+                    onChange={(e) => handleChangeAddServiceForm("revenue", e.target.value)}
+                    placeholder="Nhập doanh thu (VNĐ)"
+                  />
+                </div>
+
+                <div className="field">
+                  <label>Số lượng</label>
+                  <input
+                    type="number"
+                    value={addServiceForm.quantity}
+                    onChange={(e) => handleChangeAddServiceForm("quantity", e.target.value)}
+                    placeholder="Nhập số lượng"
                   />
                 </div>
 
