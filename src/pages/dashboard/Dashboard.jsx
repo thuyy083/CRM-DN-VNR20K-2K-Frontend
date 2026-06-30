@@ -721,15 +721,38 @@ function Dashboard() {
 
         {/* Mini KPI cards */}
         <div className={styles.miniCard}>
-          <Users className={styles.miniIcon} size={16} />
-          <label>DN mới 30 ngày</label>
-          <div className={styles.miniVal}>
-            {displayMetrics.newEnterprisesLast30Days ?? 0}
+          <Building2 className={styles.miniIcon} size={16} />
+          <label>Tổng số DN</label>
+          <div className={styles.miniVal}>{displayMetrics.totalEnterprises ?? 0}</div>
+        </div>
+
+        <div className={styles.miniCard} style={{ padding: "12px 16px" }}>
+          <BarChart2 className={styles.miniIcon} size={16} />
+          <label>Phân loại DN</label>
+          <div style={{ display: "flex", flexDirection: "column", gap: "5px", marginTop: "6px" }}>
+            {[
+              { key: "totalSme",  label: "SME",     color: "#e53e3e" },
+              { key: "totalHkd",  label: "HKD",     color: "#f87171" },
+              { key: "total2000", label: "VNR 2000", color: "#1d4ed8" },
+              { key: "total20k",  label: "VNR 20K",  color: "#7c3aed" },
+            ].map(({ key, label, color }) => (
+              <div
+                key={key}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  fontSize: "11px",
+                }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: "5px", color: "#555" }}>
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />
+                  {label}
+                </span>
+                <span style={{ fontWeight: 700, color }}>{displayMetrics[key] ?? 0}</span>
+              </div>
+            ))}
           </div>
-          <DeltaBadge
-            current={displayMetrics.newEnterprisesLast30Days ?? 0}
-            previous={prev.newEnterprisesLast30Days}
-          />
         </div>
 
         <div className={styles.miniCard}>
@@ -753,18 +776,6 @@ function Dashboard() {
           <DeltaBadge
             current={displayMetrics.appointmentsThisWeek ?? 0}
             previous={prev.appointmentsThisWeek}
-          />
-        </div>
-
-        <div className={`${styles.miniCard} ${styles.miniCardAccent}`}>
-          <Briefcase className={styles.miniIcon} size={16} />
-          <label>Tỷ lệ chuyển đổi</label>
-          <div className={`${styles.miniVal} ${styles.accentVal}`}>
-            {displayMetrics.conversionRate}%
-          </div>
-          <DeltaBadge
-            current={displayMetrics.conversionRate}
-            previous={prev.conversionRate}
           />
         </div>
       </div>

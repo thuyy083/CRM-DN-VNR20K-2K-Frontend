@@ -7,9 +7,25 @@ export const injectStore = (_store) => {
 };
 
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080",
   // baseURL: "/api"
-
+  paramsSerializer: (params) => {
+    const parts = [];
+    for (const key in params) {
+      const val = params[key];
+      if (val === null || val === undefined || val === "") continue;
+      if (Array.isArray(val)) {
+        val.forEach((v) => {
+          if (v !== null && v !== undefined && v !== "") {
+            parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(v)}`);
+          }
+        });
+      } else {
+        parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(val)}`);
+      }
+    }
+    return parts.join("&");
+  },
 });
 
 // request interceptor

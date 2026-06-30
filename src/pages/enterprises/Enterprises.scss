@@ -211,6 +211,32 @@ $bg: #ffffff;
   }
 }
 
+/* Nút lọc "Tôi phụ trách" cho CONSULTANT */
+.enterprises-page .filter-assigned-btn {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1.5px solid #d1d5db;
+  font-weight: 500;
+  transition: all 0.18s ease;
+
+  &:hover {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+  }
+
+  &.active-assigned {
+    background: #0ea5e9;
+    color: #fff;
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.18);
+
+    &:hover {
+      background: #0284c7;
+      border-color: #0284c7;
+    }
+  }
+}
+
 /* =========================
    TABLE CARD
 ========================= */

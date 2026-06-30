@@ -33,6 +33,7 @@ function Enterprises() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [filterPotential] = useState("ALL");
+  const [filterAssigned, setFilterAssigned] = useState(false); // Bộ lọc tôi phụ trách (CONSULTANT)
 
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
@@ -42,7 +43,7 @@ const [exportLoading, setExportLoading] = useState(false);
 const [openExport, setOpenExport] = useState(false);
 
 
-  const { role, region } = useSelector((state) => state.auth.user || {});
+  const { role, region, id: userId } = useSelector((state) => state.auth.user || {});
 
   const getPotentialStorageMap = () => {
     try {
@@ -81,17 +82,23 @@ const [openExport, setOpenExport] = useState(false);
           ? region // 🔥 ép theo region của user
           : (filterRegion === "ALL" ? "" : filterRegion);
 
-      const finalType =
-        role === "ACCOUNT_MANAGER"
-          ? (filterType === "ALL" ? "" : filterType) // BE sẽ tự filter thêm SME, HKD
-          : (filterType === "ALL" ? "" : filterType);
+      // Resolve type: VNR -> [VNR20K, VNR2000], ALL -> [], others -> [value]
+      const resolvedTypes =
+        filterType === "VNR"
+          ? ["VNR20K", "VNR2000"]
+          : filterType === "ALL"
+          ? []
+          : [filterType];
+
+      const consultantIdParam = (role === "CONSULTANT" && filterAssigned) ? userId : null;
       const res = await getEnterprises(
         currentPage,
         10,
         searchTerm,
         filterStatus === "ALL" ? "" : filterStatus,
         finalRegion,
-        finalType,
+        resolvedTypes,
+        consultantIdParam,
       );
 
       const data = res.data?.data?.content || [];
@@ -130,6 +137,9 @@ const [openExport, setOpenExport] = useState(false);
     filterRegion,
     filterType,
     filterPotential,
+    filterAssigned,
+    role,
+    userId,
   ]);
 
   const fetchIndustries = async () => {
@@ -195,6 +205,9 @@ const [openExport, setOpenExport] = useState(false);
     filterRegion,
     filterType,
     filterPotential,
+    filterAssigned,
+    role,
+    userId,
   ]);
 
   useEffect(() => {
@@ -241,10 +254,16 @@ const [openExport, setOpenExport] = useState(false);
   const typeOptions = [
     { value: "ALL", label: "Tất cả loại DN" },
     { value: "HKD", label: "Hộ kinh doanh" },
-    { value: "VNR20K", label: "VNR20K" },
-    { value: "VNR2000", label: "VNR2000" },
+    { value: "VNR", label: "DN VNR (2000 + 20K)" },
     { value: "SME", label: "SME" },
   ];
+
+  // Map giá trị VNR sang 2 type thực tế khi gọi API
+  const resolveTypeParam = (value) => {
+    if (value === "VNR") return ["VNR20K", "VNR2000"];
+    if (value === "ALL") return [];
+    return [value];
+  };
   const hideRegionFilter = ["MANAGER", "ACCOUNT_MANAGER"].includes(role);
 
   const getTypeOptionsByRole = () => {
@@ -456,46 +475,21 @@ const [openExport, setOpenExport] = useState(false);
             )}
           </div>
 
-          {/* <div className="custom-dropdown">
-            <div
-              className={`dropdown-trigger ${openDropdown === "potential" ? "active" : ""}`}
-              onClick={() =>
-                setOpenDropdown(
-                  openDropdown === "potential" ? null : "potential",
-                )
-              }
-            >
-              <span>
-                {
-                  potentialOptions.find((o) => o.value === filterPotential)
-                    ?.label
-                }
-              </span>
-              <svg
-                className={`icon-chevron ${openDropdown === "potential" ? "open" : ""}`}
-                viewBox="0 0 24 24"
-              >
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </div>
+          {/* POTENTIAL DROPDOWN (đã ẩn) */}
 
-            {openDropdown === "potential" && (
-              <div className="dropdown-menu">
-                {potentialOptions.map((opt) => (
-                  <div
-                    key={opt.value}
-                    className={`dropdown-item ${filterPotential === opt.value ? "selected" : ""}`}
-                    onClick={() => {
-                      setFilterPotential(opt.value);
-                      setOpenDropdown(null);
-                    }}
-                  >
-                    {opt.label}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div> */}
+          {/* BỘ LỌC: TÔI PHỤ TRÁCH (chỉ CONSULTANT) */}
+          {role === "CONSULTANT" && (
+            <button
+              className={`add-btn filter-assigned-btn ${filterAssigned ? "active-assigned" : ""}`}
+              onClick={() => {
+                setFilterAssigned((prev) => !prev);
+                setCurrentPage(0);
+              }}
+              title={filterAssigned ? "Đang lọc: Tôi phụ trách" : "Xem DN tôi phụ trách"}
+            >
+              {filterAssigned ? "✓ Tôi phụ trách" : "Tôi phụ trách"}
+            </button>
+          )}
 
           {/* BUTTONS */}
 
