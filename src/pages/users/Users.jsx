@@ -7,7 +7,8 @@ import UserModal from "./UserModal";
 import UserDrawer from "./UserDrawer";
 
 import { deleteInteraction, getAllInteractions, getEnterpriseInteractionSummary, getInteractions } from "../../services/interactionService";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 import { deleteContact, deleteEnterprise, getEnterprises } from "../../services/enterpriseService";
 import { getContactsByEnterprise } from "../../services/enterpriseContactService";
 
@@ -155,86 +156,172 @@ function Users() {
     try {
       toast.info("Đang tải dữ liệu để xuất...");
       const allItems = await getAllInteractions();
-      setAllInteractionsForExport(allItems);
 
       if (!allItems || allItems.length === 0) {
         toast.warning("Không có dữ liệu để xuất!");
         return;
       }
 
-      // Gom nhóm tiếp xúc theo doanh nghiệp
+      // ── 1. Gom nhóm tiếp xúc theo doanh nghiệp ────────────────────────
       const groupedMap = new Map();
       allItems.forEach((item) => {
-        const entId = item.enterpriseId || item.enterpriseName;
+        const entId = item.enterpriseId ?? item.enterpriseName;
         if (!groupedMap.has(entId)) {
           groupedMap.set(entId, {
             enterpriseName: item.enterpriseName || "-",
-            interactions: []
+            interactions: [],
           });
         }
         groupedMap.get(entId).interactions.push(item);
       });
 
-      const rows = [];
-      let index = 1;
+      // ── 2. Tạo workbook ExcelJS ────────────────────────────────────────
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = "CRM Viettel";
+      const sheet = workbook.addWorksheet("Danh Sach Tiep Xuc");
 
-      // Xử lý từng doanh nghiệp
+      // ── 3. Định nghĩa cột ─────────────────────────────────────────────
+      sheet.columns = [
+        { key: "stt",         header: "STT",                  width: 6  },
+        { key: "dn",          header: "Tên doanh nghiệp",      width: 36 },
+        { key: "soLan",       header: "Số lần tiếp xúc",       width: 14 },
+        { key: "ngayTX",      header: "Ngày tiếp xúc",         width: 20 },
+        { key: "hinhThuc",    header: "Hình thức",             width: 18 },
+        { key: "nguoiTX",     header: "Người tiếp xúc",        width: 24 },
+        { key: "diaDiem",     header: "Địa điểm",              width: 22 },
+        { key: "mucDich",     header: "Mục đích / Nội dung",   width: 34 },
+        { key: "ketQua",      header: "Kết quả",               width: 22 },
+        { key: "nvPhuTrach",  header: "Nhân viên phụ trách",   width: 24 },
+        { key: "dichVu",      header: "Dịch vụ ký kết",        width: 24 },
+        { key: "soHD",        header: "Số hợp đồng",           width: 20 },
+        { key: "doanhThu",    header: "Doanh thu (VNĐ)",       width: 18 },
+      ];
+
+      // ── 4. Style Header ────────────────────────────────────────────────
+      const headerRow = sheet.getRow(1);
+      headerRow.height = 24;
+      headerRow.eachCell((cell) => {
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1565C0" } };
+        cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 10 };
+        cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+        cell.border = {
+          top:    { style: "thin", color: { argb: "FFFFFFFF" } },
+          bottom: { style: "thin", color: { argb: "FFFFFFFF" } },
+          left:   { style: "thin", color: { argb: "FFFFFFFF" } },
+          right:  { style: "thin", color: { argb: "FFFFFFFF" } },
+        };
+      });
+
+      // ── 5. Ghi từng doanh nghiệp ──────────────────────────────────────
+      let stt = 1;
+      let excelRowIdx = 2; // dòng 1 là header
+
       Array.from(groupedMap.values()).forEach((group) => {
-        // Sắp xếp các lần tiếp xúc mới nhất lên đầu
-        const sortedInteractions = group.interactions.sort((a, b) => {
-          const ta = getTimeValue(a.interactionTime) || 0;
-          const tb = getTimeValue(b.interactionTime) || 0;
-          return tb - ta;
+        const sortedTX = [...group.interactions].sort((a, b) => {
+          const ta = a.interactionTime ? new Date(a.interactionTime).getTime() : 0;
+          const tb = b.interactionTime ? new Date(b.interactionTime).getTime() : 0;
+          return ta - tb; // cũ → mới
         });
 
-        const latest = sortedInteractions[0];
+        const dnStartRow = excelRowIdx;
+        const totalRows  = sortedTX.length;
 
-        // Format cột Lịch sử tiếp xúc
-        const historyLines = sortedInteractions.map(item => {
-          const timeStr = item.interactionTime
+        sortedTX.forEach((item, idx) => {
+          const isWon = item.result === "CLOSED_WON";
+
+          // Format ngày
+          const ngayTX = item.interactionTime
             ? new Date(item.interactionTime).toLocaleString("vi-VN", {
                 day: "2-digit", month: "2-digit", year: "numeric",
                 hour: "2-digit", minute: "2-digit",
               })
             : "-";
-          const type = TYPE_MAP[item.interactionType] || item.interactionType || "-";
-          const contact = item.contactName || "-";
-          const content = sanitizeInteractionContent(item.description);
-          
-          return `[${timeStr}] ${type} | LH: ${contact} | ND: ${content}`;
+
+          const rowData = {
+            stt:        idx === 0 ? stt : "",          // chỉ hiện ở dòng đầu (sẽ merge)
+            dn:         idx === 0 ? group.enterpriseName : "",
+            soLan:      idx === 0 ? totalRows : "",
+            ngayTX,
+            hinhThuc:   TYPE_MAP[item.interactionType] || item.interactionType || "-",
+            nguoiTX:    item.contactName || "-",
+            diaDiem:    item.location || "-",
+            mucDich:    sanitizeInteractionContent(item.description),
+            ketQua:     RESULT_MAP_EXPORT[item.result] || item.result || "-",
+            nvPhuTrach: item.consultantName || "-",
+            // Cột hợp đồng: chỉ điền nếu CLOSED_WON
+            dichVu:     isWon ? (item.serviceName  || item.viettelServiceName || "-") : "",
+            soHD:       isWon ? (item.contractNumber || "-") : "",
+            doanhThu:   isWon ? (item.revenue ?? "") : "",
+          };
+
+          const excelRow = sheet.addRow(rowData);
+          excelRow.height = 18;
+
+          // Style từng ô
+          excelRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            // Border cho tất cả ô
+            cell.border = {
+              top:    { style: "thin", color: { argb: "FFD1D5DB" } },
+              bottom: { style: "thin", color: { argb: "FFD1D5DB" } },
+              left:   { style: "thin", color: { argb: "FFD1D5DB" } },
+              right:  { style: "thin", color: { argb: "FFD1D5DB" } },
+            };
+            cell.alignment = { vertical: "middle", wrapText: colNumber === 8 };
+
+            // Cột A-C (STT, Tên DN, Số lần): nền xanh nhạt + bold
+            if (colNumber <= 3) {
+              cell.fill   = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE3F2FD" } };
+              cell.font   = { bold: true, size: 10 };
+              cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+            } else if (colNumber >= 11) {
+              // Cột hợp đồng (K-M): nền vàng nhạt
+              cell.fill = {
+                type: "pattern", pattern: "solid",
+                fgColor: { argb: isWon ? "FFFFF9C4" : "FFFAFAFA" },
+              };
+            } else {
+              cell.font = { size: 10 };
+            }
+
+            // Dòng CLOSED_WON: chữ xanh lá đậm cho cột Kết quả
+            if (colNumber === 9 && isWon) {
+              cell.font = { bold: true, color: { argb: "FF2E7D32" }, size: 10 };
+            }
+
+            // Format số doanh thu
+            if (colNumber === 13 && isWon && rowData.doanhThu !== "") {
+              cell.numFmt = '#,##0';
+            }
+          });
+
+          excelRowIdx++;
         });
 
-        rows.push({
-          "STT": index++,
-          "Doanh nghiệp": group.enterpriseName,
-          "Tổng số lần": sortedInteractions.length,
-          "Nhân viên phụ trách": latest?.consultantName || "-",
-          "Kết quả gần nhất": RESULT_MAP_EXPORT[latest?.result] || latest?.result || "-",
-          "Lịch sử tiếp xúc": historyLines.join("\n\n") // Nối bằng xuống dòng
-        });
+        // ── Merge ô A-C dọc cho cùng 1 DN ──
+        if (totalRows > 1) {
+          const endRow = dnStartRow + totalRows - 1;
+          sheet.mergeCells(dnStartRow, 1, endRow, 1); // STT
+          sheet.mergeCells(dnStartRow, 2, endRow, 2); // Tên DN
+          sheet.mergeCells(dnStartRow, 3, endRow, 3); // Số lần
+        }
+
+        stt++;
       });
 
-      const ws = XLSX.utils.json_to_sheet(rows);
+      // ── 6. Freeze header ──────────────────────────────────────────────
+      sheet.views = [{ state: "frozen", xSplit: 0, ySplit: 1 }];
 
-      // Căn chỉnh độ rộng cột
-      const colWidths = [
-        { wch: 6 },   // STT
-        { wch: 40 },  // Doanh nghiệp
-        { wch: 15 },  // Tổng số lần
-        { wch: 25 },  // Nhân viên phụ trách
-        { wch: 20 },  // Kết quả gần nhất
-        { wch: 120 }, // Lịch sử tiếp xúc (rất dài)
-      ];
-      ws["!cols"] = colWidths;
+      // ── 7. Xuất file ──────────────────────────────────────────────────
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob   = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
 
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Tổng hợp tiếp xúc");
-
-      const today = new Date();
+      const today   = new Date();
       const dateStr = `${today.getDate().toString().padStart(2, "0")}${(today.getMonth() + 1).toString().padStart(2, "0")}${today.getFullYear()}`;
-      XLSX.writeFile(wb, `TongHop_TiepXuc_${dateStr}.xlsx`);
-      
-      toast.success(`Đã xuất ${rows.length} doanh nghiệp!`);
+      saveAs(blob, `DanhSach_TiepXuc_${dateStr}.xlsx`);
+
+      toast.success(`Đã xuất ${stt - 1} doanh nghiệp thành công!`);
     } catch (err) {
       console.error(err);
       toast.error("Xuất file thất bại!");

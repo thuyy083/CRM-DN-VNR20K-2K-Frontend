@@ -14,6 +14,7 @@ function AppointmentConfirmModal({ appointment, close, reload }) {
     {
       viettelServiceId: "",
       contractNumber: "",
+      revenue: "",
       startDate: "",
       quantity: "",
     },
@@ -86,9 +87,18 @@ function AppointmentConfirmModal({ appointment, close, reload }) {
     try {
       const formData = new FormData();
       if (result === "CLOSED_WON") {
+        // Validate revenue
+        for (let i = 0; i < newUsages.length; i++) {
+          if (!newUsages[i].revenue) {
+            toast.error(`Vui lòng nhập doanh thu cho dịch vụ ở dòng ${i + 1}`);
+            return;
+          }
+        }
+
         const formatted = newUsages.map((item) => ({
           viettelServiceId: Number(item.viettelServiceId),
           contractNumber: item.contractNumber,
+          revenue: Number(item.revenue),
           startDate: item.startDate,
           quantity: Number(item.quantity),
         }));
@@ -220,6 +230,20 @@ function AppointmentConfirmModal({ appointment, close, reload }) {
                   </div>
 
                   <div className="field">
+                    <label>Doanh thu (*)</label>
+                    <input
+                      type="number"
+                      value={item.revenue}
+                      placeholder="Nhập doanh thu (VNĐ)"
+                      onChange={(e) => {
+                        const updated = [...newUsages];
+                        updated[index].revenue = e.target.value;
+                        setNewUsages(updated);
+                      }}
+                    />
+                  </div>
+
+                  <div className="field">
                     <label>Ngày bắt đầu</label>
                     <input
                       type="date"
@@ -270,6 +294,7 @@ function AppointmentConfirmModal({ appointment, close, reload }) {
                   {
                     viettelServiceId: "",
                     contractNumber: "",
+                    revenue: "",
                     startDate: "",
                     quantity: "",
                   },

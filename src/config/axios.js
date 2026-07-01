@@ -7,8 +7,8 @@ export const injectStore = (_store) => {
 };
 
 const axiosClient = axios.create({
+  // baseURL: "/api",
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080",
-  // baseURL: "/api"
   paramsSerializer: (params) => {
     const parts = [];
     for (const key in params) {
