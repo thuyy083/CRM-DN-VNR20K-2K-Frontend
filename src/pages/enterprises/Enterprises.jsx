@@ -305,13 +305,13 @@ function Enterprises() {
   const filteredRegionOptions = getRegionOptionsByRole();
 
   return (
-    <div className="employees-page">
+    <div className="enterprises-page">
       {" "}
       {/* ✅ dùng chung class */}
       <div className="header">
         <h2>Quản lý doanh nghiệp</h2>
 
-        <div className="header-actions" ref={dropdownRef}>
+        <div className="enterprise-header-actions" ref={dropdownRef}>
           {/* Autofill fix giống Employee */}
           <input
             type="text"
@@ -321,9 +321,9 @@ function Enterprises() {
             type="password"
             style={{ position: "absolute", opacity: 0, width: 0 }}
           />
-          <div className="header-filters">
+          <div className="enterprise-header-filters">
             {/* SEARCH */}
-            <div className="search-box">
+            <div className="enterprise-search-box">
               <svg
                 className="icon-search"
                 viewBox="0 0 24 24"
@@ -358,9 +358,9 @@ function Enterprises() {
             </div>
 
             {/* DROPDOWN - TRẠNG THÁI */}
-            <div className="custom-dropdown">
+            <div className="enterprise-dropdown">
               <div
-                className={`dropdown-trigger ${openDropdown === "status" ? "active" : ""}`}
+                className={`enterprise-dropdown-trigger ${openDropdown === "status" ? "active" : ""}`}
                 onClick={() =>
                   setOpenDropdown(openDropdown === "status" ? null : "status")
                 }
@@ -377,11 +377,11 @@ function Enterprises() {
               </div>
 
               {openDropdown === "status" && (
-                <div className="dropdown-menu">
+                <div className="enterprise-dropdown-menu">
                   {statusOptions.map((opt) => (
                     <div
                       key={opt.value}
-                      className={`dropdown-item ${filterStatus === opt.value ? "selected" : ""}`}
+                      className={`enterprise-dropdown-item ${filterStatus === opt.value ? "selected" : ""}`}
                       onClick={() => {
                         setFilterStatus(opt.value);
                         setOpenDropdown(null);
@@ -395,9 +395,9 @@ function Enterprises() {
             </div>
             {/* REGION */}
             {!hideRegionFilter && (
-              <div className="custom-dropdown">
+              <div className="enterprise-dropdown">
                 <div
-                  className={`dropdown-trigger ${openDropdown === "region" ? "active" : ""}`}
+                  className={`enterprise-dropdown-trigger ${openDropdown === "region" ? "active" : ""}`}
                   onClick={() =>
                     setOpenDropdown(openDropdown === "region" ? null : "region")
                   }
@@ -414,11 +414,11 @@ function Enterprises() {
                 </div>
 
                 {openDropdown === "region" && (
-                  <div className="dropdown-menu">
+                  <div className="enterprise-dropdown-menu">
                     {filteredRegionOptions.map((opt) => (
                       <div
                         key={opt.value}
-                        className={`dropdown-item ${filterRegion === opt.value ? "selected" : ""
+                        className={`enterprise-dropdown-item ${filterRegion === opt.value ? "selected" : ""
                           }`}
                         onClick={() => {
                           setFilterRegion(opt.value);
@@ -434,9 +434,9 @@ function Enterprises() {
               </div>
             )}
             {/* TYPE */}
-            <div className="custom-dropdown">
+            <div className="enterprise-dropdown">
               <div
-                className={`dropdown-trigger ${openDropdown === "type" ? "active" : ""
+                className={`enterprise-dropdown-trigger ${openDropdown === "type" ? "active" : ""
                   }`}
                 onClick={() => {
                   // if (role === "CONSULTANT") return;
@@ -455,11 +455,11 @@ function Enterprises() {
               </div>
 
               {openDropdown === "type" && (
-                <div className="dropdown-menu">
+                <div className="enterprise-dropdown-menu">
                   {filteredTypeOptions.map((opt) => (
                     <div
                       key={opt.value}
-                      className={`dropdown-item ${filterType === opt.value ? "selected" : ""
+                      className={`enterprise-dropdown-item ${filterType === opt.value ? "selected" : ""
                         }`}
                       onClick={() => {
                         setFilterType(opt.value);
@@ -491,7 +491,7 @@ function Enterprises() {
             )} */}
 
             {role === "CONSULTANT" && (
-              <label className="assigned-filter">
+              <label className="enterprise-assigned-filter">
                   <input
                       type="checkbox"
                       checked={filterAssigned}
@@ -505,7 +505,7 @@ function Enterprises() {
               </label>
             )}
           </div>
-          <div className="header-buttons">
+          <div className="enterprise-header-buttons">
             {/* BUTTONS */}
 
             {role !== "ACCOUNT_MANAGER" && (
