@@ -38,9 +38,9 @@ function Enterprises() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
 
-const [exportLoading, setExportLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
 
-const [openExport, setOpenExport] = useState(false);
+  const [openExport, setOpenExport] = useState(false);
 
 
   const { role, region, id: userId } = useSelector((state) => state.auth.user || {});
@@ -87,8 +87,8 @@ const [openExport, setOpenExport] = useState(false);
         filterType === "VNR"
           ? ["VNR20K", "VNR2000"]
           : filterType === "ALL"
-          ? []
-          : [filterType];
+            ? []
+            : [filterType];
 
       const consultantIdParam = (role === "CONSULTANT" && filterAssigned) ? userId : null;
       const res = await getEnterprises(
@@ -226,10 +226,10 @@ const [openExport, setOpenExport] = useState(false);
     fetchIndustries();
   }, []);
   useEffect(() => {
-  if (hideRegionFilter) {
-    setFilterRegion("ALL");
-  }
-}, [role]);
+    if (hideRegionFilter) {
+      setFilterRegion("ALL");
+    }
+  }, [role]);
 
   const statusOptions = [
     { value: "ALL", label: "Tất cả trạng thái" },
@@ -321,164 +321,163 @@ const [openExport, setOpenExport] = useState(false);
             type="password"
             style={{ position: "absolute", opacity: 0, width: 0 }}
           />
-
-          {/* SEARCH */}
-          <div className="search-box">
-            <svg
-              className="icon-search"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-
-            <input
-              type="text"
-              placeholder="Tìm tên doanh nghiệp, MST..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(0);
-              }}
-            />
-
-            {searchTerm && (
+          <div className="header-filters">
+            {/* SEARCH */}
+            <div className="search-box">
               <svg
-                className="icon-clear"
+                className="icon-search"
                 viewBox="0 0 24 24"
-                onClick={() => setSearchTerm("")}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
               >
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
-            )}
-          </div>
 
-          {/* DROPDOWN - TRẠNG THÁI */}
-          <div className="custom-dropdown">
-            <div
-              className={`dropdown-trigger ${openDropdown === "status" ? "active" : ""}`}
-              onClick={() =>
-                setOpenDropdown(openDropdown === "status" ? null : "status")
-              }
-            >
-              <span>
-                {statusOptions.find((o) => o.value === filterStatus)?.label}
-              </span>
-              <svg
-                className={`icon-chevron ${openDropdown === "status" ? "open" : ""}`}
-                viewBox="0 0 24 24"
-              >
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
+              <input
+                type="text"
+                placeholder="Tìm tên doanh nghiệp, MST..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(0);
+                }}
+              />
+
+              {searchTerm && (
+                <svg
+                  className="icon-clear"
+                  viewBox="0 0 24 24"
+                  onClick={() => setSearchTerm("")}
+                >
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              )}
             </div>
 
-            {openDropdown === "status" && (
-              <div className="dropdown-menu">
-                {statusOptions.map((opt) => (
-                  <div
-                    key={opt.value}
-                    className={`dropdown-item ${filterStatus === opt.value ? "selected" : ""}`}
-                    onClick={() => {
-                      setFilterStatus(opt.value);
-                      setOpenDropdown(null);
-                    }}
+            {/* DROPDOWN - TRẠNG THÁI */}
+            <div className="custom-dropdown">
+              <div
+                className={`dropdown-trigger ${openDropdown === "status" ? "active" : ""}`}
+                onClick={() =>
+                  setOpenDropdown(openDropdown === "status" ? null : "status")
+                }
+              >
+                <span>
+                  {statusOptions.find((o) => o.value === filterStatus)?.label}
+                </span>
+                <svg
+                  className={`icon-chevron ${openDropdown === "status" ? "open" : ""}`}
+                  viewBox="0 0 24 24"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+
+              {openDropdown === "status" && (
+                <div className="dropdown-menu">
+                  {statusOptions.map((opt) => (
+                    <div
+                      key={opt.value}
+                      className={`dropdown-item ${filterStatus === opt.value ? "selected" : ""}`}
+                      onClick={() => {
+                        setFilterStatus(opt.value);
+                        setOpenDropdown(null);
+                      }}
+                    >
+                      {opt.label}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* REGION */}
+            {!hideRegionFilter && (
+              <div className="custom-dropdown">
+                <div
+                  className={`dropdown-trigger ${openDropdown === "region" ? "active" : ""}`}
+                  onClick={() =>
+                    setOpenDropdown(openDropdown === "region" ? null : "region")
+                  }
+                >
+                  <span>
+                    {filteredRegionOptions.find((o) => o.value === filterRegion)?.label}
+                  </span>
+                  <svg
+                    className={`icon-chevron ${openDropdown === "region" ? "open" : ""}`}
+                    viewBox="0 0 24 24"
                   >
-                    {opt.label}
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </div>
+
+                {openDropdown === "region" && (
+                  <div className="dropdown-menu">
+                    {filteredRegionOptions.map((opt) => (
+                      <div
+                        key={opt.value}
+                        className={`dropdown-item ${filterRegion === opt.value ? "selected" : ""
+                          }`}
+                        onClick={() => {
+                          setFilterRegion(opt.value);
+                          setCurrentPage(0);
+                          setOpenDropdown(null);
+                        }}
+                      >
+                        {opt.label}
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             )}
-          </div>
-          {/* REGION */}
-{!hideRegionFilter && (
-  <div className="custom-dropdown">
-    <div
-      className={`dropdown-trigger ${openDropdown === "region" ? "active" : ""}`}
-      onClick={() =>
-        setOpenDropdown(openDropdown === "region" ? null : "region")
-      }
-    >
-      <span>
-        {filteredRegionOptions.find((o) => o.value === filterRegion)?.label}
-      </span>
-      <svg
-        className={`icon-chevron ${openDropdown === "region" ? "open" : ""}`}
-        viewBox="0 0 24 24"
-      >
-        <polyline points="6 9 12 15 18 9"></polyline>
-      </svg>
-    </div>
-
-    {openDropdown === "region" && (
-      <div className="dropdown-menu">
-        {filteredRegionOptions.map((opt) => (
-          <div
-            key={opt.value}
-            className={`dropdown-item ${
-              filterRegion === opt.value ? "selected" : ""
-            }`}
-            onClick={() => {
-              setFilterRegion(opt.value);
-              setCurrentPage(0);
-              setOpenDropdown(null);
-            }}
-          >
-            {opt.label}
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-)}
-          {/* TYPE */}
-          <div className="custom-dropdown">
-            <div
-              className={`dropdown-trigger ${openDropdown === "type" ? "active" : ""
-                }`}
-              onClick={() => {
-                // if (role === "CONSULTANT") return;
-                setOpenDropdown(openDropdown === "type" ? null : "type");
-              }}
-            >
-              <span>
-                {filteredTypeOptions.find((o) => o.value === filterType)?.label}    </span>
-              <svg
-                className={`icon-chevron ${openDropdown === "type" ? "open" : ""
+            {/* TYPE */}
+            <div className="custom-dropdown">
+              <div
+                className={`dropdown-trigger ${openDropdown === "type" ? "active" : ""
                   }`}
-                viewBox="0 0 24 24"
+                onClick={() => {
+                  // if (role === "CONSULTANT") return;
+                  setOpenDropdown(openDropdown === "type" ? null : "type");
+                }}
               >
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
+                <span>
+                  {filteredTypeOptions.find((o) => o.value === filterType)?.label}    </span>
+                <svg
+                  className={`icon-chevron ${openDropdown === "type" ? "open" : ""
+                    }`}
+                  viewBox="0 0 24 24"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+
+              {openDropdown === "type" && (
+                <div className="dropdown-menu">
+                  {filteredTypeOptions.map((opt) => (
+                    <div
+                      key={opt.value}
+                      className={`dropdown-item ${filterType === opt.value ? "selected" : ""
+                        }`}
+                      onClick={() => {
+                        setFilterType(opt.value);
+                        setCurrentPage(0);
+                        setOpenDropdown(null);
+                      }}
+                    >
+                      {opt.label}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {openDropdown === "type" && (
-              <div className="dropdown-menu">
-                {filteredTypeOptions.map((opt) => (
-                  <div
-                    key={opt.value}
-                    className={`dropdown-item ${filterType === opt.value ? "selected" : ""
-                      }`}
-                    onClick={() => {
-                      setFilterType(opt.value);
-                      setCurrentPage(0);
-                      setOpenDropdown(null);
-                    }}
-                  >
-                    {opt.label}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+            {/* POTENTIAL DROPDOWN (đã ẩn) */}
 
-          {/* POTENTIAL DROPDOWN (đã ẩn) */}
-
-          {/* BỘ LỌC: TÔI PHỤ TRÁCH (chỉ CONSULTANT) */}
-          {role === "CONSULTANT" && (
+            {/* BỘ LỌC: TÔI PHỤ TRÁCH (chỉ CONSULTANT) */}
+            {/* {role === "CONSULTANT" && (
             <button
               className={`add-btn filter-assigned-btn ${filterAssigned ? "active-assigned" : ""}`}
               onClick={() => {
@@ -489,43 +488,60 @@ const [openExport, setOpenExport] = useState(false);
             >
               {filterAssigned ? "✓ Tôi phụ trách" : "Tôi phụ trách"}
             </button>
-          )}
+            )} */}
 
-          {/* BUTTONS */}
+            {role === "CONSULTANT" && (
+              <label className="assigned-filter">
+                  <input
+                      type="checkbox"
+                      checked={filterAssigned}
+                      onChange={() => {
+                          setFilterAssigned((prev) => !prev);
+                          setCurrentPage(0);
+                      }}
+                  />
 
-         {role !== "ACCOUNT_MANAGER" && (
-            <>
-              <button className="add-btn" onClick={() => setOpenImport(true)}>
-                Import Excel
-              </button>
-              <button className="add-btn" onClick={handleDownloadTemplate}>
-                Tải file mẫu
-              </button>
-              {/* <button className="add-btn" onClick={handleExport} disabled={exportLoading}>
+                  <span>Chỉ doanh nghiệp tôi phụ trách</span>
+              </label>
+            )}
+          </div>
+          <div className="header-buttons">
+            {/* BUTTONS */}
+
+            {role !== "ACCOUNT_MANAGER" && (
+              <>
+                <button className="add-btn" onClick={() => setOpenImport(true)}>
+                  Import Excel
+                </button>
+                <button className="add-btn" onClick={handleDownloadTemplate}>
+                  Tải file mẫu
+                </button>
+                {/* <button className="add-btn" onClick={handleExport} disabled={exportLoading}>
                 {exportLoading ? "Đang xuất file..." : "Xuất Excel"}
               </button> */}
-              <button
-  className="add-btn"
-  onClick={() => setOpenExport(true)}
->
-  Xuất Excel
-</button>
-            </>
-          )}
-          {exportLoading && (
-  <div className="export-overlay">
-    <div className="export-box">
-      <div className="spinner"></div>
-      <p>Đang xuất file, vui lòng chờ...</p>
-    </div>
-  </div>
-)}
-          <button className="add-btn" onClick={() => {
-            setSelectedEnterprise(null);
-            setOpenModal(true);
-          }}>
-            + Thêm doanh nghiệp
-          </button>
+                <button
+                  className="add-btn"
+                  onClick={() => setOpenExport(true)}
+                >
+                  Xuất Excel
+                </button>
+              </>
+            )}
+            {exportLoading && (
+              <div className="export-overlay">
+                <div className="export-box">
+                  <div className="spinner"></div>
+                  <p>Đang xuất file, vui lòng chờ...</p>
+                </div>
+              </div>
+            )}
+            <button className="add-btn" onClick={() => {
+              setSelectedEnterprise(null);
+              setOpenModal(true);
+            }}>
+              + Thêm doanh nghiệp
+            </button>
+          </div>
         </div>
       </div>
       <div className="table-card">
@@ -571,10 +587,10 @@ const [openExport, setOpenExport] = useState(false);
         />
       )}
       {openExport && (
-  <ExportEnterpriseModal
-    close={() => setOpenExport(false)}
-  />
-)}
+        <ExportEnterpriseModal
+          close={() => setOpenExport(false)}
+        />
+      )}
     </div>
   );
 }

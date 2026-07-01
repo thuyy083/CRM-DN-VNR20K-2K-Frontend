@@ -23,7 +23,6 @@ const TYPE_MAP = {
   ONLINE_MEETING: "Họp online",
   OFFLINE_MEETING: "Gặp trực tiếp",
   DEMO: "Demo sản phẩm",
-  CONTRACT_SIGNING: "Ký hợp đồng",
   CUSTOMER_SUPPORT: "Hỗ trợ khách hàng",
   OTHER: "Khác",
 };
